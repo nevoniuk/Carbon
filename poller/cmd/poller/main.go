@@ -3,7 +3,6 @@ package main
 import (
 	//import all packages
 	"context"
-	"smartservice"
 	//"crypto/tls"
 	"flag"
 	"fmt"
@@ -24,21 +23,16 @@ import (
 	"goa.design/clue/trace"
 	goagrpcmiddleware "goa.design/goa/v3/grpc/middleware"
 	"google.golang.org/grpc"
-
-	//"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-	//import clients
-	"clients/carbonara"
-
-	//carbon "."
-
-	//clikchouse
-	//smartservice
-	//smartservice/clients/db
-	//smartservice/clients/cs
-	gencarbon "gen/data"
-	gengrpc "gen/grpc/data/pb"
-	genpb "gen/grpc/data/server"
+	
+	//"github.com/crossnokaye/rates/clients/clickhouse"
+	"github.com/crossnokaye/carbon/poller"
+	"github.com/crossnokaye/carbon/poller/clients/storage"
+	"github.com/crossnokaye/carbon/poller/clients/carbonara"
+	genpb "github.com/crossnokaye/carbon/poller/gen/grpc/data/pb"
+	gengrpc "github.com/crossnokaye/carbon/poller/gen/grpc/data/server"
+	genpoller "github.com/crossnokaye/carbon/poller/gen/data"
 )
 
 func main() {

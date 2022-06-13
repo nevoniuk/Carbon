@@ -1,11 +1,15 @@
-package smartservice
+package poller
 
 import (
 	"context"
-
+	"goa.design/clue/log"
+	"database/sql"
+	"time"
 	//why would we need a facility config object but not for the other clients
-	"clients/carbonara"
-	gencarbon "gen/data"
+	//fc "github.com/crossnokaye/rates/services/weather/clients/facilityconfig"
+	"github.com/crossnokaye/carbon/poller/clients/carbonara"
+	"github.com/crossnokaye/carbon/poller/clients/storage"
+	genpoller "github.com/crossnokaye/carbon/poller/gen/data"
 )
 
 type (
