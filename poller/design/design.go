@@ -17,8 +17,6 @@ var _ = Service("Data", func() {
 
 	Method("carbon_emissions", func() {
 		Description("query api getting search data for carbon_intensity event")
-		Payload(ArrayOf(String), Period)
-		Result(CarbonForecast)
 		Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
@@ -29,9 +27,7 @@ var _ = Service("Data", func() {
 	})
 
 	Method("fuels", func() {
-		Description("query api using a search call for a fuel event")
-		Payload(ArrayOf(String), Period, String)
-		Result(FuelsForecast)
+		Description("query api using a search call for a fuel event from Carbonara API")
 		Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
@@ -41,10 +37,8 @@ var _ = Service("Data", func() {
 		})
 	})
 
-	Method("get_aggregate_data", func() {
-		Description("get the aggregate data for an event")
-		Payload(String, Period, String)
-		Result(aggregateData)
+	Method("aggregate_data", func() {
+		Description("get the aggregate data for an event from clickhouse")
 		Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
@@ -84,7 +78,7 @@ var _ = Service("Data", func() {
 
 var CarbonForecast = Type("CarbonForecast", func() {
 	Description("Emissions Forecast")
-
+	
 	Field(1, "generated_rate", Float64, "generated_rate", func() {
 		Example(37.8267)
 	})
@@ -108,124 +102,102 @@ var CarbonForecast = Type("CarbonForecast", func() {
 	Field(8, "emission_factor", String, "emission_factor", func() {
 		Example("EGRID_2019")
 	})
+	Field(9, "aggregate_data_generated", aggregateData, "aggregate_data_generated", func() {
 
+	})
+	Field(10, "aggregate_data_consumed", aggregateData, "aggregate_data_consumed", func() {
+
+	})
+	Field(11, "aggregate_data_marginal", aggregateData, "aggregate_data_marginal", func() {
+
+	})
+	Field(12, "report_duration", String, "report_duration", func() {
+		Example("hour, day, week, month")
+	})
+	Field(13, "region", String, "region", func() {
+		Example("MISO, ISO...")
+	})
 	Required("generated_rate", "marginal_rate", "consumed_rate",
-		"duration", "marginal_source", "consumed_source", "generated_source", "emission_factor")
+		"duration", "marginal_source", "consumed_source", "generated_source", "emission_factor",
+		 "aggregate_data_generated","aggregate_data_consumed", "aggregate_data_marginal", "report_duration", "region")
 })
 
 var FuelsForecast = Type("FuelsForecast", func() {
 	Description("Emissions Forecast")
 
 	Field(1, "fuels", FuelMix, "fuels")
+
 	Field(2, "duration", Period, "duration")
+
 	Field(3, "marginal_source", String, "marginal_source", func() {
 		Example("EGRID_2019")
 	})
 	Field(4, "generated_source", String, "generated_source", func() {
 		Example("EGRID_2019")
 	})
+	Field(5, "report_duration", String, "report_duration", func() {
+		Example("hour, day, week, month")
+	})
 
-	Required("fuels", "duration", "marginal_source", "generated_source")
+	Required("fuels", "duration", "marginal_source", "generated_source", "report_duration")
 })
 
 var aggregateData = Type("aggregateData", func() {
 	Description("aggregate data")
 
-	Field(1, "average", Float64, "average", func() {
+	Field(1, "min", Float64, "min", func() {
 		Example(37.8267)
 	})
-	Field(2, "count", Int, "count", func() {
-		Example(1000)
-	})
-	Field(3, "max", Float64, "max", func() {
+	Field(2, "max", Float64, "max", func() {
 		Example(37.8267)
 	})
-	Field(4, "min", Float64, "min", func() {
+	Field(3, "sum", Float64, "sum", func() {
 		Example(37.8267)
 	})
-	Field(5, "sum", Float64, "sum", func() {
+	Field(4, "count", Float64, "count", func() {
 		Example(37.8267)
+	})
+	Field(5, "period", Period, "period", func() {
+		//Example(37.8267)
 	})
 
-	Required("average", "count", "max", "min", "sum")
+	Required("count", "max", "min", "sum", "period")
 })
 
-/**
-var DailyForecast = Type("DailyForecast", func() {
-	Description("Daily Emissions Forecast")
-
-	Field(1, "generated_rate", Float64, "generated_rate", func() {
-		Example(37.8267)
-	})
-	Field(2, "marginal_rate", Float64, "marginal_rate", func() {
-		Example(37.8267)
-	})
-	Field(3, "consumed_rate", Float64, "consumed_rate", func() {
-		Example(37.8267)
-	})
-	Field(4, "duration", Period, "duration", func() {
-		//Example("2022-06-07T00:20:00+00:00")
-	})
-	Field(5, "marginal_source", String, "marginal_source", func() {
-		Example("EGRID_2019")
-	})
-	Field(6, "consumed_source", String, "consumed_source", func() {
-		Example("EGRID_2019")
-	})
-	Field(7, "generated_source", String, "generated_source", func() {
-		Example("EGRID_2019")
-	})
-
-	Required("generated_rate", "marginal_rate", "consumed_rate",
-	"duration", "marginal_source", "consumed_source", "generated_source")
+var CarbonResponse = Type("CarbonResponse", func() {
+	Field(1, "HourlyReports", HourlyCarbonReports, "HourlyReports")
+	Field(2, "DailyReports", DailyCarbonReports, "DailyReports")
+	Field(3, "WeeklyReports", WeeklyCarbonReports, "WeeklyReports")
+	Field(4, "MonthlyReports", MonthlyCarbonReports, "MonthlyReports")
+	Required("HourlyReports", "DailyReports", "WeeklyReports", "MonthlyReports")
 })
 
-var MonthlyForecast = Type("MonthlyForecast", func() {
-	Description("MonthlyEmissions Forecast")
-
-	Field(1, "generated_rate", Float64, "generated_rate", func() {
-		Example(37.8267)
-	})
-	Field(2, "marginal_rate", Float64, "marginal_rate", func() {
-		Example(37.8267)
-	})
-	Field(3, "consumed_rate", Float64, "consumed_rate", func() {
-		Example(37.8267)
-	})
-	Field(4, "duration", Period, "duration", func() {
-		//Example("2022-06-07T00:20:00+00:00")
-	})
-	Field(5, "marginal_source", String, "marginal_source", func() {
-		Example("EGRID_2019")
-	})
-	Field(6, "consumed_source", String, "consumed_source", func() {
-		Example("EGRID_2019")
-	})
-	Field(7, "generated_source", String, "generated_source", func() {
-		Example("EGRID_2019")
-	})
-
-var HourlyForecast = Type("HourlyForecast", func() {
-	Description("Hourly Emissions Forecast")
-	Field(1, "generated_rate", Float64, "generated_rate", func() {
-		Example(37.8267)
-	})
-	Field(2, "marginal_rate", Float64, "marginal_rate", func() {
-		Example(37.8267)
-	})
-	Field(3, "start_time", Float64, "start_time", func() {
-		Example()
-	})
-	Field(4, "FuelMix", FuelMix, "FuelMix", func() {
-		Example("coal_mw, nuclear_mw...")
-	})
-	Required("generated_rate", "marginal_rate", "start_time", "FuelMix")
+var HourlyCarbonReports = Type("HourlyCarbonReports", func ()  {
+	Description("Array of hourly carbon reports for an area")
+	Field(1, "HourlyReports", ArrayOf(CarbonForecast), "HourlyReports")
+	Required("HourlyReports")
 })
-*/
+var DailyCarbonReports = Type("HourlyCarbonReports", func ()  {
+	Description("Array of daily carbon reports for an area")
+	Field(1, "DailyReports", ArrayOf(CarbonForecast), "DailyReports")
+	Required("DailyReports")
+})
+var WeeklyCarbonReports = Type("HourlyCarbonReports", func ()  {
+	Description("Array of weekly carbon reports for an area")
+	Field(1, "WeeklyReports", ArrayOf(CarbonForecast), "WeeklyReports")
+	Required("DailyReports")
+})
+var MonthlyCarbonReports = Type("HourlyCarbonReports", func ()  {
+	Description("Array of monthly carbon reports for an area")
+	Field(1, "HourlyReports", ArrayOf(CarbonForecast), "MonhtlyReports")
+	Required("HourlyReports")
+})
 var FuelMix = Type("FuelMix", func() {
 	Description("Generated Fuel Mix")
 	Field(1, "Fuels", ArrayOf(Fuel), "Fuels")
-	//could add forecast horizon in mins/hours
+	//aggregate data per each fuel mix
+	//for all fuels not each fuel
+	Field(2, "aggregate_data", aggregateData, "aggregate_data")
 	Required("Fuels")
 })
 
@@ -250,22 +222,5 @@ var Period = Type("Period", func() {
 	Required("startTime", "endTime")
 })
 
-/**
-var Region = Type("Region", func() {
-	Description("region")
-	Field(1, "Region", String, "region", func() {
-		Example("MISO")
-	})
 
-	Required("Region")
-})
-
-var Event = Type("Event", func() {
-	Description("event_type")
-	Field(1, "Event", String, "event_type", func() {
-		Example("carbon_intensity")
-	})
-	Required("Event")
-})
-*/
 //observation structure to hold data from API that clickhouse will unerstand
