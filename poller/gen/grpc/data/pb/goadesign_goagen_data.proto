@@ -3,7 +3,7 @@
 // Data protocol buffer definition
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 syntax = "proto3";
 
@@ -15,80 +15,26 @@ option go_package = "/datapb";
 service Data {
 	// query api getting search data for carbon_intensity event
 	rpc CarbonEmissions (CarbonEmissionsRequest) returns (CarbonEmissionsResponse);
-	// query api using a search call for a fuel event
+	// query api using a search call for a fuel event from Carbonara API
 	rpc Fuels (FuelsRequest) returns (FuelsResponse);
-	// get the aggregate data for an event
-	rpc GetAggregateData (GetAggregateDataRequest) returns (GetAggregateDataResponse);
+	// get the aggregate data for an event from clickhouse
+	rpc AggregateData (AggregateDataRequest) returns (AggregateDataResponse);
 }
 
 message CarbonEmissionsRequest {
-	repeated string field = 1;
 }
 
 message CarbonEmissionsResponse {
-	// generated_rate
-	double generated_rate = 1;
-	// marginal_rate
-	double marginal_rate = 2;
-	// consumed_rate
-	double consumed_rate = 3;
-	// duration
-	Period duration = 4;
-	// marginal_source
-	string marginal_source = 5;
-	// consumed_source
-	string consumed_source = 6;
-	// generated_source
-	string generated_source = 7;
-	// emission_factor
-	string emission_factor = 8;
-}
-// Period of time from start to end of Forecast
-message Period {
-	// Start time
-	string start_time = 1;
-	// End time
-	string end_time = 2;
 }
 
 message FuelsRequest {
-	repeated string field = 1;
 }
 
 message FuelsResponse {
-	// fuels
-	FuelMix fuels = 1;
-	// duration
-	Period duration = 2;
-	// marginal_source
-	string marginal_source = 3;
-	// generated_source
-	string generated_source = 4;
-}
-// Generated Fuel Mix
-message FuelMix {
-	// Fuels
-	repeated Fuel fuels = 1;
-}
-// Generated Fuel Mix
-message Fuel {
-	// MW
-	double mw = 1;
 }
 
-message GetAggregateDataRequest {
-	string field = 1;
+message AggregateDataRequest {
 }
 
-message GetAggregateDataResponse {
-	// average
-	double average = 1;
-	// count
-	sint32 count = 2;
-	// max
-	double max = 3;
-	// min
-	double min = 4;
-	// sum
-	double sum = 5;
+message AggregateDataResponse {
 }

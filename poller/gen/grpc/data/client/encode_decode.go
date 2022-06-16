@@ -3,17 +3,16 @@
 // Data gRPC client encoders and decoders
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 package client
 
 import (
 	"context"
-	datapb "smartservice/gen/grpc/data/pb"
 
+	datapb "github.com/crossnokaye/carbon/gen/grpc/data/pb"
 	goagrpc "goa.design/goa/v3/grpc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 // BuildCarbonEmissionsFunc builds the remote method to invoke for "Data"
@@ -30,30 +29,6 @@ func BuildCarbonEmissionsFunc(grpccli datapb.DataClient, cliopts ...grpc.CallOpt
 	}
 }
 
-// EncodeCarbonEmissionsRequest encodes requests sent to Data carbon_emissions
-// endpoint.
-func EncodeCarbonEmissionsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
-	payload, ok := v.([]string)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Data", "carbon_emissions", "[]string", v)
-	}
-	return NewProtoCarbonEmissionsRequest(payload), nil
-}
-
-// DecodeCarbonEmissionsResponse decodes responses from the Data
-// carbon_emissions endpoint.
-func DecodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*datapb.CarbonEmissionsResponse)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Data", "carbon_emissions", "*datapb.CarbonEmissionsResponse", v)
-	}
-	if err := ValidateCarbonEmissionsResponse(message); err != nil {
-		return nil, err
-	}
-	res := NewCarbonEmissionsResult(message)
-	return res, nil
-}
-
 // BuildFuelsFunc builds the remote method to invoke for "Data" service "fuels"
 // endpoint.
 func BuildFuelsFunc(grpccli datapb.DataClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
@@ -68,59 +43,16 @@ func BuildFuelsFunc(grpccli datapb.DataClient, cliopts ...grpc.CallOption) goagr
 	}
 }
 
-// EncodeFuelsRequest encodes requests sent to Data fuels endpoint.
-func EncodeFuelsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
-	payload, ok := v.([]string)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Data", "fuels", "[]string", v)
-	}
-	return NewProtoFuelsRequest(payload), nil
-}
-
-// DecodeFuelsResponse decodes responses from the Data fuels endpoint.
-func DecodeFuelsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*datapb.FuelsResponse)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Data", "fuels", "*datapb.FuelsResponse", v)
-	}
-	if err := ValidateFuelsResponse(message); err != nil {
-		return nil, err
-	}
-	res := NewFuelsResult(message)
-	return res, nil
-}
-
-// BuildGetAggregateDataFunc builds the remote method to invoke for "Data"
-// service "get_aggregate_data" endpoint.
-func BuildGetAggregateDataFunc(grpccli datapb.DataClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
+// BuildAggregateDataFunc builds the remote method to invoke for "Data" service
+// "aggregate_data" endpoint.
+func BuildAggregateDataFunc(grpccli datapb.DataClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
 	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
 		for _, opt := range cliopts {
 			opts = append(opts, opt)
 		}
 		if reqpb != nil {
-			return grpccli.GetAggregateData(ctx, reqpb.(*datapb.GetAggregateDataRequest), opts...)
+			return grpccli.AggregateData(ctx, reqpb.(*datapb.AggregateDataRequest), opts...)
 		}
-		return grpccli.GetAggregateData(ctx, &datapb.GetAggregateDataRequest{}, opts...)
+		return grpccli.AggregateData(ctx, &datapb.AggregateDataRequest{}, opts...)
 	}
-}
-
-// EncodeGetAggregateDataRequest encodes requests sent to Data
-// get_aggregate_data endpoint.
-func EncodeGetAggregateDataRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
-	payload, ok := v.(string)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Data", "get_aggregate_data", "string", v)
-	}
-	return NewProtoGetAggregateDataRequest(payload), nil
-}
-
-// DecodeGetAggregateDataResponse decodes responses from the Data
-// get_aggregate_data endpoint.
-func DecodeGetAggregateDataResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*datapb.GetAggregateDataResponse)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Data", "get_aggregate_data", "*datapb.GetAggregateDataResponse", v)
-	}
-	res := NewGetAggregateDataResult(message)
-	return res, nil
 }

@@ -3,7 +3,7 @@
 // Data Service API gRPC client CLI support package
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 package cli
 
@@ -11,8 +11,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	datac "smartservice/gen/grpc/data/client"
 
+	datac "github.com/crossnokaye/carbon/gen/grpc/data/client"
 	goa "goa.design/goa/v3/pkg"
 	grpc "google.golang.org/grpc"
 )
@@ -22,18 +22,13 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `data (carbon-emissions|fuels|get-aggregate-data)
+	return `data (carbon-emissions|fuels|aggregate-data)
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` data carbon-emissions --message '{
-      "field": [
-         "Id error.",
-         "Consequatur quos similique."
-      ]
-   }'` + "\n" +
+	return os.Args[0] + ` data carbon-emissions` + "\n" +
 		""
 }
 
@@ -43,19 +38,16 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	var (
 		dataFlags = flag.NewFlagSet("data", flag.ContinueOnError)
 
-		dataCarbonEmissionsFlags       = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
-		dataCarbonEmissionsMessageFlag = dataCarbonEmissionsFlags.String("message", "", "")
+		dataCarbonEmissionsFlags = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
 
-		dataFuelsFlags       = flag.NewFlagSet("fuels", flag.ExitOnError)
-		dataFuelsMessageFlag = dataFuelsFlags.String("message", "", "")
+		dataFuelsFlags = flag.NewFlagSet("fuels", flag.ExitOnError)
 
-		dataGetAggregateDataFlags       = flag.NewFlagSet("get-aggregate-data", flag.ExitOnError)
-		dataGetAggregateDataMessageFlag = dataGetAggregateDataFlags.String("message", "", "")
+		dataAggregateDataFlags = flag.NewFlagSet("aggregate-data", flag.ExitOnError)
 	)
 	dataFlags.Usage = dataUsage
 	dataCarbonEmissionsFlags.Usage = dataCarbonEmissionsUsage
 	dataFuelsFlags.Usage = dataFuelsUsage
-	dataGetAggregateDataFlags.Usage = dataGetAggregateDataUsage
+	dataAggregateDataFlags.Usage = dataAggregateDataUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -97,8 +89,8 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			case "fuels":
 				epf = dataFuelsFlags
 
-			case "get-aggregate-data":
-				epf = dataGetAggregateDataFlags
+			case "aggregate-data":
+				epf = dataAggregateDataFlags
 
 			}
 
@@ -127,13 +119,13 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			switch epn {
 			case "carbon-emissions":
 				endpoint = c.CarbonEmissions()
-				data, err = datac.BuildCarbonEmissionsPayload(*dataCarbonEmissionsMessageFlag)
+				data = nil
 			case "fuels":
 				endpoint = c.Fuels()
-				data, err = datac.BuildFuelsPayload(*dataFuelsMessageFlag)
-			case "get-aggregate-data":
-				endpoint = c.GetAggregateData()
-				data, err = datac.BuildGetAggregateDataPayload(*dataGetAggregateDataMessageFlag)
+				data = nil
+			case "aggregate-data":
+				endpoint = c.AggregateData()
+				data = nil
 			}
 		}
 	}
@@ -152,54 +144,39 @@ Usage:
 
 COMMAND:
     carbon-emissions: query api getting search data for carbon_intensity event
-    fuels: query api using a search call for a fuel event
-    get-aggregate-data: get the aggregate data for an event
+    fuels: query api using a search call for a fuel event from Carbonara API
+    aggregate-data: get the aggregate data for an event from clickhouse
 
 Additional help:
     %[1]s data COMMAND --help
 `, os.Args[0])
 }
 func dataCarbonEmissionsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] data carbon-emissions -message JSON
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] data carbon-emissions
 
 query api getting search data for carbon_intensity event
-    -message JSON: 
 
 Example:
-    %[1]s data carbon-emissions --message '{
-      "field": [
-         "Id error.",
-         "Consequatur quos similique."
-      ]
-   }'
+    %[1]s data carbon-emissions
 `, os.Args[0])
 }
 
 func dataFuelsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] data fuels -message JSON
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] data fuels
 
-query api using a search call for a fuel event
-    -message JSON: 
+query api using a search call for a fuel event from Carbonara API
 
 Example:
-    %[1]s data fuels --message '{
-      "field": [
-         "Illo et sint.",
-         "Saepe libero."
-      ]
-   }'
+    %[1]s data fuels
 `, os.Args[0])
 }
 
-func dataGetAggregateDataUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] data get-aggregate-data -message JSON
+func dataAggregateDataUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] data aggregate-data
 
-get the aggregate data for an event
-    -message JSON: 
+get the aggregate data for an event from clickhouse
 
 Example:
-    %[1]s data get-aggregate-data --message '{
-      "field": "Eos et fugiat voluptatibus cupiditate."
-   }'
+    %[1]s data aggregate-data
 `, os.Args[0])
 }

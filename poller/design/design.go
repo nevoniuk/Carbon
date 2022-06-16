@@ -1,7 +1,6 @@
 package design
 
 import (
-	//"github.com/dimfeld/httppath"
 	. "goa.design/goa/v3/dsl"
 )
 
@@ -20,7 +19,6 @@ var _ = Service("Data", func() {
 		Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
-			//response to errors
 			Response("data_not_available", CodeDataLoss)
 			Response("missing-required-parameter", CodeNotFound)
 		})
@@ -31,7 +29,6 @@ var _ = Service("Data", func() {
 		Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
-			//response to errors
 			Response("data_not_available", CodeDataLoss)
 			Response("missing-required-parameter", CodeNotFound)
 		})
@@ -42,38 +39,11 @@ var _ = Service("Data", func() {
 		Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
-			//response to errors
 			Response("data_not_available", CodeDataLoss)
 			Response("missing-required-parameter", CodeNotFound)
 		})
 	})
-	/**
-	Method("list_emission_factors", func() {
-		Description("lists all emission factors used to calculate carbon intensity")
-		Payload(Region)
-		Result(ArrayOf(Emissionfactor))
-		Error("Forbidden", ErrorResult, "Forbidden")
-		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
-		GRPC(func() {
-			//response to errors
-			Response("data_not_available", CodeDataLoss)
-			Response("missing-required-parameter", CodeNotFound)
-		})
-	})
-
-	Method("get_nearest_ba", func() {
-		Description("retrieves the nearest ba within a region given a postal code")
-		Payload(Region)
-		Result()
-		Error("Forbidden", ErrorResult, "Forbidden")
-		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
-		GRPC(func() {
-			//response to errors
-			Response("Forbidden", CodeNotFound)
-			Response("missing-required-parameter", CodeNotFound)
-		})
-	})
-	*/
+	
 })
 
 var CarbonForecast = Type("CarbonForecast", func() {
@@ -101,15 +71,6 @@ var CarbonForecast = Type("CarbonForecast", func() {
 	})
 	Field(8, "emission_factor", String, "emission_factor", func() {
 		Example("EGRID_2019")
-	})
-	Field(9, "aggregate_data_generated", aggregateData, "aggregate_data_generated", func() {
-
-	})
-	Field(10, "aggregate_data_consumed", aggregateData, "aggregate_data_consumed", func() {
-
-	})
-	Field(11, "aggregate_data_marginal", aggregateData, "aggregate_data_marginal", func() {
-
 	})
 	Field(12, "report_duration", String, "report_duration", func() {
 		Example("hour, day, week, month")
@@ -177,20 +138,20 @@ var HourlyCarbonReports = Type("HourlyCarbonReports", func ()  {
 	Field(1, "HourlyReports", ArrayOf(CarbonForecast), "HourlyReports")
 	Required("HourlyReports")
 })
-var DailyCarbonReports = Type("HourlyCarbonReports", func ()  {
+var DailyCarbonReports = Type("DailyCarbonReports", func ()  {
 	Description("Array of daily carbon reports for an area")
 	Field(1, "DailyReports", ArrayOf(CarbonForecast), "DailyReports")
 	Required("DailyReports")
 })
-var WeeklyCarbonReports = Type("HourlyCarbonReports", func ()  {
+var WeeklyCarbonReports = Type("WeeklyCarbonReports", func ()  {
 	Description("Array of weekly carbon reports for an area")
 	Field(1, "WeeklyReports", ArrayOf(CarbonForecast), "WeeklyReports")
-	Required("DailyReports")
+	Required("WeeklyReports")
 })
-var MonthlyCarbonReports = Type("HourlyCarbonReports", func ()  {
+var MonthlyCarbonReports = Type("MonthlyCarbonReports", func ()  {
 	Description("Array of monthly carbon reports for an area")
-	Field(1, "HourlyReports", ArrayOf(CarbonForecast), "MonhtlyReports")
-	Required("HourlyReports")
+	Field(1, "MonthlyReports", ArrayOf(CarbonForecast), "MonthlyReports")
+	Required("MonthlyReports")
 })
 var FuelMix = Type("FuelMix", func() {
 	Description("Generated Fuel Mix")

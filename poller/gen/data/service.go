@@ -3,7 +3,7 @@
 // Data service
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 package data
 
@@ -16,11 +16,11 @@ import (
 // Service that provides forecasts to clickhouse from Carbonara API
 type Service interface {
 	// query api getting search data for carbon_intensity event
-	CarbonEmissions(context.Context, []string) (res *CarbonForecast, err error)
-	// query api using a search call for a fuel event
-	Fuels(context.Context, []string) (res *FuelsForecast, err error)
-	// get the aggregate data for an event
-	GetAggregateData(context.Context, string) (res *AggregateData, err error)
+	CarbonEmissions(context.Context) (err error)
+	// query api using a search call for a fuel event from Carbonara API
+	Fuels(context.Context) (err error)
+	// get the aggregate data for an event from clickhouse
+	AggregateData(context.Context) (err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -31,75 +31,7 @@ const ServiceName = "Data"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [3]string{"carbon_emissions", "fuels", "get_aggregate_data"}
-
-// AggregateData is the result type of the Data service get_aggregate_data
-// method.
-type AggregateData struct {
-	// average
-	Average float64
-	// count
-	Count int
-	// max
-	Max float64
-	// min
-	Min float64
-	// sum
-	Sum float64
-}
-
-// CarbonForecast is the result type of the Data service carbon_emissions
-// method.
-type CarbonForecast struct {
-	// generated_rate
-	GeneratedRate float64
-	// marginal_rate
-	MarginalRate float64
-	// consumed_rate
-	ConsumedRate float64
-	// duration
-	Duration *Period
-	// marginal_source
-	MarginalSource string
-	// consumed_source
-	ConsumedSource string
-	// generated_source
-	GeneratedSource string
-	// emission_factor
-	EmissionFactor string
-}
-
-// Generated Fuel Mix
-type Fuel struct {
-	// MW
-	Mw float64
-}
-
-// Generated Fuel Mix
-type FuelMix struct {
-	// Fuels
-	Fuels []*Fuel
-}
-
-// FuelsForecast is the result type of the Data service fuels method.
-type FuelsForecast struct {
-	// fuels
-	Fuels *FuelMix
-	// duration
-	Duration *Period
-	// marginal_source
-	MarginalSource string
-	// generated_source
-	GeneratedSource string
-}
-
-// Period of time from start to end of Forecast
-type Period struct {
-	// Start time
-	StartTime string
-	// End time
-	EndTime string
-}
+var MethodNames = [3]string{"carbon_emissions", "fuels", "aggregate_data"}
 
 // MakeDataNotAvailable builds a goa.ServiceError from an error.
 func MakeDataNotAvailable(err error) *goa.ServiceError {

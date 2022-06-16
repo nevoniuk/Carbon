@@ -3,16 +3,16 @@
 // Data gRPC server
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 package server
 
 import (
 	"context"
 	"errors"
-	data "smartservice/gen/data"
-	datapb "smartservice/gen/grpc/data/pb"
 
+	data "github.com/crossnokaye/carbon/gen/data"
+	datapb "github.com/crossnokaye/carbon/gen/grpc/data/pb"
 	goagrpc "goa.design/goa/v3/grpc"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc/codes"
@@ -20,9 +20,9 @@ import (
 
 // Server implements the datapb.DataServer interface.
 type Server struct {
-	CarbonEmissionsH  goagrpc.UnaryHandler
-	FuelsH            goagrpc.UnaryHandler
-	GetAggregateDataH goagrpc.UnaryHandler
+	CarbonEmissionsH goagrpc.UnaryHandler
+	FuelsH           goagrpc.UnaryHandler
+	AggregateDataH   goagrpc.UnaryHandler
 	datapb.UnimplementedDataServer
 }
 
@@ -35,9 +35,9 @@ type ErrorNamer interface {
 // New instantiates the server struct with the Data service endpoints.
 func New(e *data.Endpoints, uh goagrpc.UnaryHandler) *Server {
 	return &Server{
-		CarbonEmissionsH:  NewCarbonEmissionsHandler(e.CarbonEmissions, uh),
-		FuelsH:            NewFuelsHandler(e.Fuels, uh),
-		GetAggregateDataH: NewGetAggregateDataHandler(e.GetAggregateData, uh),
+		CarbonEmissionsH: NewCarbonEmissionsHandler(e.CarbonEmissions, uh),
+		FuelsH:           NewFuelsHandler(e.Fuels, uh),
+		AggregateDataH:   NewAggregateDataHandler(e.AggregateData, uh),
 	}
 }
 
@@ -45,7 +45,7 @@ func New(e *data.Endpoints, uh goagrpc.UnaryHandler) *Server {
 // service "carbon_emissions" endpoint.
 func NewCarbonEmissionsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, DecodeCarbonEmissionsRequest, EncodeCarbonEmissionsResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeCarbonEmissionsResponse)
 	}
 	return h
 }
@@ -75,7 +75,7 @@ func (s *Server) CarbonEmissions(ctx context.Context, message *datapb.CarbonEmis
 // "fuels" endpoint.
 func NewFuelsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, DecodeFuelsRequest, EncodeFuelsResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeFuelsResponse)
 	}
 	return h
 }
@@ -100,21 +100,21 @@ func (s *Server) Fuels(ctx context.Context, message *datapb.FuelsRequest) (*data
 	return resp.(*datapb.FuelsResponse), nil
 }
 
-// NewGetAggregateDataHandler creates a gRPC handler which serves the "Data"
-// service "get_aggregate_data" endpoint.
-func NewGetAggregateDataHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
+// NewAggregateDataHandler creates a gRPC handler which serves the "Data"
+// service "aggregate_data" endpoint.
+func NewAggregateDataHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, DecodeGetAggregateDataRequest, EncodeGetAggregateDataResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeAggregateDataResponse)
 	}
 	return h
 }
 
-// GetAggregateData implements the "GetAggregateData" method in
-// datapb.DataServer interface.
-func (s *Server) GetAggregateData(ctx context.Context, message *datapb.GetAggregateDataRequest) (*datapb.GetAggregateDataResponse, error) {
-	ctx = context.WithValue(ctx, goa.MethodKey, "get_aggregate_data")
+// AggregateData implements the "AggregateData" method in datapb.DataServer
+// interface.
+func (s *Server) AggregateData(ctx context.Context, message *datapb.AggregateDataRequest) (*datapb.AggregateDataResponse, error) {
+	ctx = context.WithValue(ctx, goa.MethodKey, "aggregate_data")
 	ctx = context.WithValue(ctx, goa.ServiceKey, "Data")
-	resp, err := s.GetAggregateDataH.Handle(ctx, message)
+	resp, err := s.AggregateDataH.Handle(ctx, message)
 	if err != nil {
 		var en ErrorNamer
 		if errors.As(err, &en) {
@@ -127,5 +127,5 @@ func (s *Server) GetAggregateData(ctx context.Context, message *datapb.GetAggreg
 		}
 		return nil, goagrpc.EncodeError(err)
 	}
-	return resp.(*datapb.GetAggregateDataResponse), nil
+	return resp.(*datapb.AggregateDataResponse), nil
 }

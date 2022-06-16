@@ -3,104 +3,33 @@
 // Data gRPC server encoders and decoders
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 package server
 
 import (
 	"context"
-	data "smartservice/gen/data"
-	datapb "smartservice/gen/grpc/data/pb"
 
-	goagrpc "goa.design/goa/v3/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
 // EncodeCarbonEmissionsResponse encodes responses from the "Data" service
 // "carbon_emissions" endpoint.
 func EncodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.(*data.CarbonForecast)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Data", "carbon_emissions", "*data.CarbonForecast", v)
-	}
-	resp := NewProtoCarbonEmissionsResponse(result)
+	resp := NewProtoCarbonEmissionsResponse()
 	return resp, nil
-}
-
-// DecodeCarbonEmissionsRequest decodes requests sent to "Data" service
-// "carbon_emissions" endpoint.
-func DecodeCarbonEmissionsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
-	var (
-		message *datapb.CarbonEmissionsRequest
-		ok      bool
-	)
-	{
-		if message, ok = v.(*datapb.CarbonEmissionsRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("Data", "carbon_emissions", "*datapb.CarbonEmissionsRequest", v)
-		}
-	}
-	var payload []string
-	{
-		payload = NewCarbonEmissionsPayload(message)
-	}
-	return payload, nil
 }
 
 // EncodeFuelsResponse encodes responses from the "Data" service "fuels"
 // endpoint.
 func EncodeFuelsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.(*data.FuelsForecast)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Data", "fuels", "*data.FuelsForecast", v)
-	}
-	resp := NewProtoFuelsResponse(result)
+	resp := NewProtoFuelsResponse()
 	return resp, nil
 }
 
-// DecodeFuelsRequest decodes requests sent to "Data" service "fuels" endpoint.
-func DecodeFuelsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
-	var (
-		message *datapb.FuelsRequest
-		ok      bool
-	)
-	{
-		if message, ok = v.(*datapb.FuelsRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("Data", "fuels", "*datapb.FuelsRequest", v)
-		}
-	}
-	var payload []string
-	{
-		payload = NewFuelsPayload(message)
-	}
-	return payload, nil
-}
-
-// EncodeGetAggregateDataResponse encodes responses from the "Data" service
-// "get_aggregate_data" endpoint.
-func EncodeGetAggregateDataResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.(*data.AggregateData)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Data", "get_aggregate_data", "*data.AggregateData", v)
-	}
-	resp := NewProtoGetAggregateDataResponse(result)
+// EncodeAggregateDataResponse encodes responses from the "Data" service
+// "aggregate_data" endpoint.
+func EncodeAggregateDataResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
+	resp := NewProtoAggregateDataResponse()
 	return resp, nil
-}
-
-// DecodeGetAggregateDataRequest decodes requests sent to "Data" service
-// "get_aggregate_data" endpoint.
-func DecodeGetAggregateDataRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
-	var (
-		message *datapb.GetAggregateDataRequest
-		ok      bool
-	)
-	{
-		if message, ok = v.(*datapb.GetAggregateDataRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("Data", "get_aggregate_data", "*datapb.GetAggregateDataRequest", v)
-		}
-	}
-	var payload string
-	{
-		payload = NewGetAggregateDataPayload(message)
-	}
-	return payload, nil
 }

@@ -3,7 +3,7 @@
 // Data endpoints
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 package data
 
@@ -15,17 +15,17 @@ import (
 
 // Endpoints wraps the "Data" service endpoints.
 type Endpoints struct {
-	CarbonEmissions  goa.Endpoint
-	Fuels            goa.Endpoint
-	GetAggregateData goa.Endpoint
+	CarbonEmissions goa.Endpoint
+	Fuels           goa.Endpoint
+	AggregateData   goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Data" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		CarbonEmissions:  NewCarbonEmissionsEndpoint(s),
-		Fuels:            NewFuelsEndpoint(s),
-		GetAggregateData: NewGetAggregateDataEndpoint(s),
+		CarbonEmissions: NewCarbonEmissionsEndpoint(s),
+		Fuels:           NewFuelsEndpoint(s),
+		AggregateData:   NewAggregateDataEndpoint(s),
 	}
 }
 
@@ -33,15 +33,14 @@ func NewEndpoints(s Service) *Endpoints {
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.CarbonEmissions = m(e.CarbonEmissions)
 	e.Fuels = m(e.Fuels)
-	e.GetAggregateData = m(e.GetAggregateData)
+	e.AggregateData = m(e.AggregateData)
 }
 
 // NewCarbonEmissionsEndpoint returns an endpoint function that calls the
 // method "carbon_emissions" of service "Data".
 func NewCarbonEmissionsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.([]string)
-		return s.CarbonEmissions(ctx, p)
+		return nil, s.CarbonEmissions(ctx)
 	}
 }
 
@@ -49,16 +48,14 @@ func NewCarbonEmissionsEndpoint(s Service) goa.Endpoint {
 // of service "Data".
 func NewFuelsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.([]string)
-		return s.Fuels(ctx, p)
+		return nil, s.Fuels(ctx)
 	}
 }
 
-// NewGetAggregateDataEndpoint returns an endpoint function that calls the
-// method "get_aggregate_data" of service "Data".
-func NewGetAggregateDataEndpoint(s Service) goa.Endpoint {
+// NewAggregateDataEndpoint returns an endpoint function that calls the method
+// "aggregate_data" of service "Data".
+func NewAggregateDataEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(string)
-		return s.GetAggregateData(ctx, p)
+		return nil, s.AggregateData(ctx)
 	}
 }

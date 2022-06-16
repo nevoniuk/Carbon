@@ -3,139 +3,31 @@
 // Data gRPC server types
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 package server
 
 import (
-	data "smartservice/gen/data"
-	datapb "smartservice/gen/grpc/data/pb"
+	datapb "github.com/crossnokaye/carbon/gen/grpc/data/pb"
 )
-
-// NewCarbonEmissionsPayload builds the payload of the "carbon_emissions"
-// endpoint of the "Data" service from the gRPC request type.
-func NewCarbonEmissionsPayload(message *datapb.CarbonEmissionsRequest) []string {
-	v := make([]string, len(message.Field))
-	for i, val := range message.Field {
-		v[i] = val
-	}
-	return v
-}
 
 // NewProtoCarbonEmissionsResponse builds the gRPC response type from the
 // result of the "carbon_emissions" endpoint of the "Data" service.
-func NewProtoCarbonEmissionsResponse(result *data.CarbonForecast) *datapb.CarbonEmissionsResponse {
-	message := &datapb.CarbonEmissionsResponse{
-		GeneratedRate:   result.GeneratedRate,
-		MarginalRate:    result.MarginalRate,
-		ConsumedRate:    result.ConsumedRate,
-		MarginalSource:  result.MarginalSource,
-		ConsumedSource:  result.ConsumedSource,
-		GeneratedSource: result.GeneratedSource,
-		EmissionFactor:  result.EmissionFactor,
-	}
-	if result.Duration != nil {
-		message.Duration = svcDataPeriodToDatapbPeriod(result.Duration)
-	}
+func NewProtoCarbonEmissionsResponse() *datapb.CarbonEmissionsResponse {
+	message := &datapb.CarbonEmissionsResponse{}
 	return message
-}
-
-// NewFuelsPayload builds the payload of the "fuels" endpoint of the "Data"
-// service from the gRPC request type.
-func NewFuelsPayload(message *datapb.FuelsRequest) []string {
-	v := make([]string, len(message.Field))
-	for i, val := range message.Field {
-		v[i] = val
-	}
-	return v
 }
 
 // NewProtoFuelsResponse builds the gRPC response type from the result of the
 // "fuels" endpoint of the "Data" service.
-func NewProtoFuelsResponse(result *data.FuelsForecast) *datapb.FuelsResponse {
-	message := &datapb.FuelsResponse{
-		MarginalSource:  result.MarginalSource,
-		GeneratedSource: result.GeneratedSource,
-	}
-	if result.Fuels != nil {
-		message.Fuels = svcDataFuelMixToDatapbFuelMix(result.Fuels)
-	}
-	if result.Duration != nil {
-		message.Duration = svcDataPeriodToDatapbPeriod(result.Duration)
-	}
+func NewProtoFuelsResponse() *datapb.FuelsResponse {
+	message := &datapb.FuelsResponse{}
 	return message
 }
 
-// NewGetAggregateDataPayload builds the payload of the "get_aggregate_data"
-// endpoint of the "Data" service from the gRPC request type.
-func NewGetAggregateDataPayload(message *datapb.GetAggregateDataRequest) string {
-	v := message.Field
-	return v
-}
-
-// NewProtoGetAggregateDataResponse builds the gRPC response type from the
-// result of the "get_aggregate_data" endpoint of the "Data" service.
-func NewProtoGetAggregateDataResponse(result *data.AggregateData) *datapb.GetAggregateDataResponse {
-	message := &datapb.GetAggregateDataResponse{
-		Average: result.Average,
-		Count:   int32(result.Count),
-		Max:     result.Max,
-		Min:     result.Min,
-		Sum:     result.Sum,
-	}
+// NewProtoAggregateDataResponse builds the gRPC response type from the result
+// of the "aggregate_data" endpoint of the "Data" service.
+func NewProtoAggregateDataResponse() *datapb.AggregateDataResponse {
+	message := &datapb.AggregateDataResponse{}
 	return message
-}
-
-// svcDataPeriodToDatapbPeriod builds a value of type *datapb.Period from a
-// value of type *data.Period.
-func svcDataPeriodToDatapbPeriod(v *data.Period) *datapb.Period {
-	res := &datapb.Period{
-		StartTime: v.StartTime,
-		EndTime:   v.EndTime,
-	}
-
-	return res
-}
-
-// protobufDatapbPeriodToDataPeriod builds a value of type *data.Period from a
-// value of type *datapb.Period.
-func protobufDatapbPeriodToDataPeriod(v *datapb.Period) *data.Period {
-	res := &data.Period{
-		StartTime: v.StartTime,
-		EndTime:   v.EndTime,
-	}
-
-	return res
-}
-
-// svcDataFuelMixToDatapbFuelMix builds a value of type *datapb.FuelMix from a
-// value of type *data.FuelMix.
-func svcDataFuelMixToDatapbFuelMix(v *data.FuelMix) *datapb.FuelMix {
-	res := &datapb.FuelMix{}
-	if v.Fuels != nil {
-		res.Fuels = make([]*datapb.Fuel, len(v.Fuels))
-		for i, val := range v.Fuels {
-			res.Fuels[i] = &datapb.Fuel{
-				Mw: val.Mw,
-			}
-		}
-	}
-
-	return res
-}
-
-// protobufDatapbFuelMixToDataFuelMix builds a value of type *data.FuelMix from
-// a value of type *datapb.FuelMix.
-func protobufDatapbFuelMixToDataFuelMix(v *datapb.FuelMix) *data.FuelMix {
-	res := &data.FuelMix{}
-	if v.Fuels != nil {
-		res.Fuels = make([]*data.Fuel, len(v.Fuels))
-		for i, val := range v.Fuels {
-			res.Fuels[i] = &data.Fuel{
-				Mw: val.Mw,
-			}
-		}
-	}
-
-	return res
 }

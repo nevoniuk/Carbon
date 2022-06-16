@@ -3,14 +3,14 @@
 // Data gRPC client
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 package client
 
 import (
 	"context"
-	datapb "smartservice/gen/grpc/data/pb"
 
+	datapb "github.com/crossnokaye/carbon/gen/grpc/data/pb"
 	goagrpc "goa.design/goa/v3/grpc"
 	goapb "goa.design/goa/v3/grpc/pb"
 	goa "goa.design/goa/v3/pkg"
@@ -37,8 +37,8 @@ func (c *Client) CarbonEmissions() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildCarbonEmissionsFunc(c.grpccli, c.opts...),
-			EncodeCarbonEmissionsRequest,
-			DecodeCarbonEmissionsResponse)
+			nil,
+			nil)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			resp := goagrpc.DecodeError(err)
@@ -58,8 +58,8 @@ func (c *Client) Fuels() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildFuelsFunc(c.grpccli, c.opts...),
-			EncodeFuelsRequest,
-			DecodeFuelsResponse)
+			nil,
+			nil)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			resp := goagrpc.DecodeError(err)
@@ -74,14 +74,14 @@ func (c *Client) Fuels() goa.Endpoint {
 	}
 }
 
-// GetAggregateData calls the "GetAggregateData" function in datapb.DataClient
+// AggregateData calls the "AggregateData" function in datapb.DataClient
 // interface.
-func (c *Client) GetAggregateData() goa.Endpoint {
+func (c *Client) AggregateData() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
-			BuildGetAggregateDataFunc(c.grpccli, c.opts...),
-			EncodeGetAggregateDataRequest,
-			DecodeGetAggregateDataResponse)
+			BuildAggregateDataFunc(c.grpccli, c.opts...),
+			nil,
+			nil)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			resp := goagrpc.DecodeError(err)

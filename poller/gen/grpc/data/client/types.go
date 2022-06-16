@@ -3,202 +3,31 @@
 // Data gRPC client types
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 package client
 
 import (
-	data "smartservice/gen/data"
-	datapb "smartservice/gen/grpc/data/pb"
-
-	goa "goa.design/goa/v3/pkg"
+	datapb "github.com/crossnokaye/carbon/gen/grpc/data/pb"
 )
 
 // NewProtoCarbonEmissionsRequest builds the gRPC request type from the payload
 // of the "carbon_emissions" endpoint of the "Data" service.
-func NewProtoCarbonEmissionsRequest(payload []string) *datapb.CarbonEmissionsRequest {
+func NewProtoCarbonEmissionsRequest() *datapb.CarbonEmissionsRequest {
 	message := &datapb.CarbonEmissionsRequest{}
-	message.Field = make([]string, len(payload))
-	for i, val := range payload {
-		message.Field[i] = val
-	}
 	return message
-}
-
-// NewCarbonEmissionsResult builds the result type of the "carbon_emissions"
-// endpoint of the "Data" service from the gRPC response type.
-func NewCarbonEmissionsResult(message *datapb.CarbonEmissionsResponse) *data.CarbonForecast {
-	result := &data.CarbonForecast{
-		GeneratedRate:   message.GeneratedRate,
-		MarginalRate:    message.MarginalRate,
-		ConsumedRate:    message.ConsumedRate,
-		MarginalSource:  message.MarginalSource,
-		ConsumedSource:  message.ConsumedSource,
-		GeneratedSource: message.GeneratedSource,
-		EmissionFactor:  message.EmissionFactor,
-	}
-	if message.Duration != nil {
-		result.Duration = protobufDatapbPeriodToDataPeriod(message.Duration)
-	}
-	return result
 }
 
 // NewProtoFuelsRequest builds the gRPC request type from the payload of the
 // "fuels" endpoint of the "Data" service.
-func NewProtoFuelsRequest(payload []string) *datapb.FuelsRequest {
+func NewProtoFuelsRequest() *datapb.FuelsRequest {
 	message := &datapb.FuelsRequest{}
-	message.Field = make([]string, len(payload))
-	for i, val := range payload {
-		message.Field[i] = val
-	}
 	return message
 }
 
-// NewFuelsResult builds the result type of the "fuels" endpoint of the "Data"
-// service from the gRPC response type.
-func NewFuelsResult(message *datapb.FuelsResponse) *data.FuelsForecast {
-	result := &data.FuelsForecast{
-		MarginalSource:  message.MarginalSource,
-		GeneratedSource: message.GeneratedSource,
-	}
-	if message.Fuels != nil {
-		result.Fuels = protobufDatapbFuelMixToDataFuelMix(message.Fuels)
-	}
-	if message.Duration != nil {
-		result.Duration = protobufDatapbPeriodToDataPeriod(message.Duration)
-	}
-	return result
-}
-
-// NewProtoGetAggregateDataRequest builds the gRPC request type from the
-// payload of the "get_aggregate_data" endpoint of the "Data" service.
-func NewProtoGetAggregateDataRequest(payload string) *datapb.GetAggregateDataRequest {
-	message := &datapb.GetAggregateDataRequest{}
-	message.Field = payload
+// NewProtoAggregateDataRequest builds the gRPC request type from the payload
+// of the "aggregate_data" endpoint of the "Data" service.
+func NewProtoAggregateDataRequest() *datapb.AggregateDataRequest {
+	message := &datapb.AggregateDataRequest{}
 	return message
-}
-
-// NewGetAggregateDataResult builds the result type of the "get_aggregate_data"
-// endpoint of the "Data" service from the gRPC response type.
-func NewGetAggregateDataResult(message *datapb.GetAggregateDataResponse) *data.AggregateData {
-	result := &data.AggregateData{
-		Average: message.Average,
-		Count:   int(message.Count),
-		Max:     message.Max,
-		Min:     message.Min,
-		Sum:     message.Sum,
-	}
-	return result
-}
-
-// ValidateCarbonEmissionsResponse runs the validations defined on
-// CarbonEmissionsResponse.
-func ValidateCarbonEmissionsResponse(message *datapb.CarbonEmissionsResponse) (err error) {
-	if message.Duration == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "message"))
-	}
-	if message.Duration != nil {
-		if err2 := ValidatePeriod(message.Duration); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
-	}
-	return
-}
-
-// ValidatePeriod runs the validations defined on Period.
-func ValidatePeriod(message *datapb.Period) (err error) {
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.startTime", message.StartTime, goa.FormatDateTime))
-
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.endTime", message.EndTime, goa.FormatDateTime))
-
-	return
-}
-
-// ValidateFuelsResponse runs the validations defined on FuelsResponse.
-func ValidateFuelsResponse(message *datapb.FuelsResponse) (err error) {
-	if message.Fuels == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("fuels", "message"))
-	}
-	if message.Duration == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "message"))
-	}
-	if message.Fuels != nil {
-		if err2 := ValidateFuelMix(message.Fuels); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
-	}
-	if message.Duration != nil {
-		if err2 := ValidatePeriod(message.Duration); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
-	}
-	return
-}
-
-// ValidateFuelMix runs the validations defined on FuelMix.
-func ValidateFuelMix(message *datapb.FuelMix) (err error) {
-	if message.Fuels == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("Fuels", "message"))
-	}
-	return
-}
-
-// ValidateFuel runs the validations defined on Fuel.
-func ValidateFuel(message *datapb.Fuel) (err error) {
-
-	return
-}
-
-// svcDataPeriodToDatapbPeriod builds a value of type *datapb.Period from a
-// value of type *data.Period.
-func svcDataPeriodToDatapbPeriod(v *data.Period) *datapb.Period {
-	res := &datapb.Period{
-		StartTime: v.StartTime,
-		EndTime:   v.EndTime,
-	}
-
-	return res
-}
-
-// protobufDatapbPeriodToDataPeriod builds a value of type *data.Period from a
-// value of type *datapb.Period.
-func protobufDatapbPeriodToDataPeriod(v *datapb.Period) *data.Period {
-	res := &data.Period{
-		StartTime: v.StartTime,
-		EndTime:   v.EndTime,
-	}
-
-	return res
-}
-
-// svcDataFuelMixToDatapbFuelMix builds a value of type *datapb.FuelMix from a
-// value of type *data.FuelMix.
-func svcDataFuelMixToDatapbFuelMix(v *data.FuelMix) *datapb.FuelMix {
-	res := &datapb.FuelMix{}
-	if v.Fuels != nil {
-		res.Fuels = make([]*datapb.Fuel, len(v.Fuels))
-		for i, val := range v.Fuels {
-			res.Fuels[i] = &datapb.Fuel{
-				Mw: val.Mw,
-			}
-		}
-	}
-
-	return res
-}
-
-// protobufDatapbFuelMixToDataFuelMix builds a value of type *data.FuelMix from
-// a value of type *datapb.FuelMix.
-func protobufDatapbFuelMixToDataFuelMix(v *datapb.FuelMix) *data.FuelMix {
-	res := &data.FuelMix{}
-	if v.Fuels != nil {
-		res.Fuels = make([]*data.Fuel, len(v.Fuels))
-		for i, val := range v.Fuels {
-			res.Fuels[i] = &data.Fuel{
-				Mw: val.Mw,
-			}
-		}
-	}
-
-	return res
 }

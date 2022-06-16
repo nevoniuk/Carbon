@@ -24,10 +24,10 @@ const _ = grpc.SupportPackageIsVersion7
 type DataClient interface {
 	// query api getting search data for carbon_intensity event
 	CarbonEmissions(ctx context.Context, in *CarbonEmissionsRequest, opts ...grpc.CallOption) (*CarbonEmissionsResponse, error)
-	// query api using a search call for a fuel event
+	// query api using a search call for a fuel event from Carbonara API
 	Fuels(ctx context.Context, in *FuelsRequest, opts ...grpc.CallOption) (*FuelsResponse, error)
-	// get the aggregate data for an event
-	GetAggregateData(ctx context.Context, in *GetAggregateDataRequest, opts ...grpc.CallOption) (*GetAggregateDataResponse, error)
+	// get the aggregate data for an event from clickhouse
+	AggregateData(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error)
 }
 
 type dataClient struct {
@@ -56,9 +56,9 @@ func (c *dataClient) Fuels(ctx context.Context, in *FuelsRequest, opts ...grpc.C
 	return out, nil
 }
 
-func (c *dataClient) GetAggregateData(ctx context.Context, in *GetAggregateDataRequest, opts ...grpc.CallOption) (*GetAggregateDataResponse, error) {
-	out := new(GetAggregateDataResponse)
-	err := c.cc.Invoke(ctx, "/data.Data/GetAggregateData", in, out, opts...)
+func (c *dataClient) AggregateData(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error) {
+	out := new(AggregateDataResponse)
+	err := c.cc.Invoke(ctx, "/data.Data/AggregateData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -71,10 +71,10 @@ func (c *dataClient) GetAggregateData(ctx context.Context, in *GetAggregateDataR
 type DataServer interface {
 	// query api getting search data for carbon_intensity event
 	CarbonEmissions(context.Context, *CarbonEmissionsRequest) (*CarbonEmissionsResponse, error)
-	// query api using a search call for a fuel event
+	// query api using a search call for a fuel event from Carbonara API
 	Fuels(context.Context, *FuelsRequest) (*FuelsResponse, error)
-	// get the aggregate data for an event
-	GetAggregateData(context.Context, *GetAggregateDataRequest) (*GetAggregateDataResponse, error)
+	// get the aggregate data for an event from clickhouse
+	AggregateData(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error)
 	mustEmbedUnimplementedDataServer()
 }
 
@@ -88,8 +88,8 @@ func (UnimplementedDataServer) CarbonEmissions(context.Context, *CarbonEmissions
 func (UnimplementedDataServer) Fuels(context.Context, *FuelsRequest) (*FuelsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Fuels not implemented")
 }
-func (UnimplementedDataServer) GetAggregateData(context.Context, *GetAggregateDataRequest) (*GetAggregateDataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAggregateData not implemented")
+func (UnimplementedDataServer) AggregateData(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AggregateData not implemented")
 }
 func (UnimplementedDataServer) mustEmbedUnimplementedDataServer() {}
 
@@ -140,20 +140,20 @@ func _Data_Fuels_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Data_GetAggregateData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAggregateDataRequest)
+func _Data_AggregateData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AggregateDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DataServer).GetAggregateData(ctx, in)
+		return srv.(DataServer).AggregateData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/data.Data/GetAggregateData",
+		FullMethod: "/data.Data/AggregateData",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataServer).GetAggregateData(ctx, req.(*GetAggregateDataRequest))
+		return srv.(DataServer).AggregateData(ctx, req.(*AggregateDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -174,8 +174,8 @@ var Data_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Data_Fuels_Handler,
 		},
 		{
-			MethodName: "GetAggregateData",
-			Handler:    _Data_GetAggregateData_Handler,
+			MethodName: "AggregateData",
+			Handler:    _Data_AggregateData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

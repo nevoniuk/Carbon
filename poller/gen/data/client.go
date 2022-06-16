@@ -3,7 +3,7 @@
 // Data client
 //
 // Command:
-// $ goa gen smartservice/design
+// $ goa gen github.com/crossnokaye/carbon/poller/design
 
 package data
 
@@ -15,17 +15,17 @@ import (
 
 // Client is the "Data" service client.
 type Client struct {
-	CarbonEmissionsEndpoint  goa.Endpoint
-	FuelsEndpoint            goa.Endpoint
-	GetAggregateDataEndpoint goa.Endpoint
+	CarbonEmissionsEndpoint goa.Endpoint
+	FuelsEndpoint           goa.Endpoint
+	AggregateDataEndpoint   goa.Endpoint
 }
 
 // NewClient initializes a "Data" service client given the endpoints.
-func NewClient(carbonEmissions, fuels, getAggregateData goa.Endpoint) *Client {
+func NewClient(carbonEmissions, fuels, aggregateData goa.Endpoint) *Client {
 	return &Client{
-		CarbonEmissionsEndpoint:  carbonEmissions,
-		FuelsEndpoint:            fuels,
-		GetAggregateDataEndpoint: getAggregateData,
+		CarbonEmissionsEndpoint: carbonEmissions,
+		FuelsEndpoint:           fuels,
+		AggregateDataEndpoint:   aggregateData,
 	}
 }
 
@@ -34,13 +34,9 @@ func NewClient(carbonEmissions, fuels, getAggregateData goa.Endpoint) *Client {
 //	- "data_not_available" (type *goa.ServiceError): The data is not available or server error
 //	- "missing-required-parameter" (type *goa.ServiceError): missing-required-parameter
 //	- error: internal error
-func (c *Client) CarbonEmissions(ctx context.Context, p []string) (res *CarbonForecast, err error) {
-	var ires interface{}
-	ires, err = c.CarbonEmissionsEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.(*CarbonForecast), nil
+func (c *Client) CarbonEmissions(ctx context.Context) (err error) {
+	_, err = c.CarbonEmissionsEndpoint(ctx, nil)
+	return
 }
 
 // Fuels calls the "fuels" endpoint of the "Data" service.
@@ -48,26 +44,17 @@ func (c *Client) CarbonEmissions(ctx context.Context, p []string) (res *CarbonFo
 //	- "data_not_available" (type *goa.ServiceError): The data is not available or server error
 //	- "missing-required-parameter" (type *goa.ServiceError): missing-required-parameter
 //	- error: internal error
-func (c *Client) Fuels(ctx context.Context, p []string) (res *FuelsForecast, err error) {
-	var ires interface{}
-	ires, err = c.FuelsEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.(*FuelsForecast), nil
+func (c *Client) Fuels(ctx context.Context) (err error) {
+	_, err = c.FuelsEndpoint(ctx, nil)
+	return
 }
 
-// GetAggregateData calls the "get_aggregate_data" endpoint of the "Data"
-// service.
-// GetAggregateData may return the following errors:
+// AggregateData calls the "aggregate_data" endpoint of the "Data" service.
+// AggregateData may return the following errors:
 //	- "data_not_available" (type *goa.ServiceError): The data is not available or server error
 //	- "missing-required-parameter" (type *goa.ServiceError): missing-required-parameter
 //	- error: internal error
-func (c *Client) GetAggregateData(ctx context.Context, p string) (res *AggregateData, err error) {
-	var ires interface{}
-	ires, err = c.GetAggregateDataEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.(*AggregateData), nil
+func (c *Client) AggregateData(ctx context.Context) (err error) {
+	_, err = c.AggregateDataEndpoint(ctx, nil)
+	return
 }
