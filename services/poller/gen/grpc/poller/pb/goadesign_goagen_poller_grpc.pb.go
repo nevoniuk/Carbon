@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.19.4
-// source: goadesign_goagen_data.proto
+// source: goadesign_goagen_poller.proto
 
-package datapb
+package pollerpb
 
 import (
 	context "context"
@@ -18,10 +18,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// DataClient is the client API for Data service.
+// PollerClient is the client API for Poller service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type DataClient interface {
+type PollerClient interface {
 	// query api getting search data for carbon_intensity event
 	CarbonEmissions(ctx context.Context, in *CarbonEmissionsRequest, opts ...grpc.CallOption) (*CarbonEmissionsResponse, error)
 	// query api using a search call for a fuel event from Carbonara API
@@ -30,154 +30,154 @@ type DataClient interface {
 	AggregateData(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error)
 }
 
-type dataClient struct {
+type pollerClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewDataClient(cc grpc.ClientConnInterface) DataClient {
-	return &dataClient{cc}
+func NewPollerClient(cc grpc.ClientConnInterface) PollerClient {
+	return &pollerClient{cc}
 }
 
-func (c *dataClient) CarbonEmissions(ctx context.Context, in *CarbonEmissionsRequest, opts ...grpc.CallOption) (*CarbonEmissionsResponse, error) {
+func (c *pollerClient) CarbonEmissions(ctx context.Context, in *CarbonEmissionsRequest, opts ...grpc.CallOption) (*CarbonEmissionsResponse, error) {
 	out := new(CarbonEmissionsResponse)
-	err := c.cc.Invoke(ctx, "/data.Data/CarbonEmissions", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/poller.Poller/CarbonEmissions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *dataClient) Fuels(ctx context.Context, in *FuelsRequest, opts ...grpc.CallOption) (*FuelsResponse, error) {
+func (c *pollerClient) Fuels(ctx context.Context, in *FuelsRequest, opts ...grpc.CallOption) (*FuelsResponse, error) {
 	out := new(FuelsResponse)
-	err := c.cc.Invoke(ctx, "/data.Data/Fuels", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/poller.Poller/Fuels", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *dataClient) AggregateData(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error) {
+func (c *pollerClient) AggregateData(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error) {
 	out := new(AggregateDataResponse)
-	err := c.cc.Invoke(ctx, "/data.Data/AggregateData", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/poller.Poller/AggregateData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// DataServer is the server API for Data service.
-// All implementations must embed UnimplementedDataServer
+// PollerServer is the server API for Poller service.
+// All implementations must embed UnimplementedPollerServer
 // for forward compatibility
-type DataServer interface {
+type PollerServer interface {
 	// query api getting search data for carbon_intensity event
 	CarbonEmissions(context.Context, *CarbonEmissionsRequest) (*CarbonEmissionsResponse, error)
 	// query api using a search call for a fuel event from Carbonara API
 	Fuels(context.Context, *FuelsRequest) (*FuelsResponse, error)
 	// get the aggregate data for an event from clickhouse
 	AggregateData(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error)
-	mustEmbedUnimplementedDataServer()
+	mustEmbedUnimplementedPollerServer()
 }
 
-// UnimplementedDataServer must be embedded to have forward compatible implementations.
-type UnimplementedDataServer struct {
+// UnimplementedPollerServer must be embedded to have forward compatible implementations.
+type UnimplementedPollerServer struct {
 }
 
-func (UnimplementedDataServer) CarbonEmissions(context.Context, *CarbonEmissionsRequest) (*CarbonEmissionsResponse, error) {
+func (UnimplementedPollerServer) CarbonEmissions(context.Context, *CarbonEmissionsRequest) (*CarbonEmissionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CarbonEmissions not implemented")
 }
-func (UnimplementedDataServer) Fuels(context.Context, *FuelsRequest) (*FuelsResponse, error) {
+func (UnimplementedPollerServer) Fuels(context.Context, *FuelsRequest) (*FuelsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Fuels not implemented")
 }
-func (UnimplementedDataServer) AggregateData(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error) {
+func (UnimplementedPollerServer) AggregateData(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AggregateData not implemented")
 }
-func (UnimplementedDataServer) mustEmbedUnimplementedDataServer() {}
+func (UnimplementedPollerServer) mustEmbedUnimplementedPollerServer() {}
 
-// UnsafeDataServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to DataServer will
+// UnsafePollerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to PollerServer will
 // result in compilation errors.
-type UnsafeDataServer interface {
-	mustEmbedUnimplementedDataServer()
+type UnsafePollerServer interface {
+	mustEmbedUnimplementedPollerServer()
 }
 
-func RegisterDataServer(s grpc.ServiceRegistrar, srv DataServer) {
-	s.RegisterService(&Data_ServiceDesc, srv)
+func RegisterPollerServer(s grpc.ServiceRegistrar, srv PollerServer) {
+	s.RegisterService(&Poller_ServiceDesc, srv)
 }
 
-func _Data_CarbonEmissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Poller_CarbonEmissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CarbonEmissionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DataServer).CarbonEmissions(ctx, in)
+		return srv.(PollerServer).CarbonEmissions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/data.Data/CarbonEmissions",
+		FullMethod: "/poller.Poller/CarbonEmissions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataServer).CarbonEmissions(ctx, req.(*CarbonEmissionsRequest))
+		return srv.(PollerServer).CarbonEmissions(ctx, req.(*CarbonEmissionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Data_Fuels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Poller_Fuels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FuelsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DataServer).Fuels(ctx, in)
+		return srv.(PollerServer).Fuels(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/data.Data/Fuels",
+		FullMethod: "/poller.Poller/Fuels",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataServer).Fuels(ctx, req.(*FuelsRequest))
+		return srv.(PollerServer).Fuels(ctx, req.(*FuelsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Data_AggregateData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Poller_AggregateData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AggregateDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DataServer).AggregateData(ctx, in)
+		return srv.(PollerServer).AggregateData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/data.Data/AggregateData",
+		FullMethod: "/poller.Poller/AggregateData",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DataServer).AggregateData(ctx, req.(*AggregateDataRequest))
+		return srv.(PollerServer).AggregateData(ctx, req.(*AggregateDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Data_ServiceDesc is the grpc.ServiceDesc for Data service.
+// Poller_ServiceDesc is the grpc.ServiceDesc for Poller service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Data_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "data.Data",
-	HandlerType: (*DataServer)(nil),
+var Poller_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "poller.Poller",
+	HandlerType: (*PollerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "CarbonEmissions",
-			Handler:    _Data_CarbonEmissions_Handler,
+			Handler:    _Poller_CarbonEmissions_Handler,
 		},
 		{
 			MethodName: "Fuels",
-			Handler:    _Data_Fuels_Handler,
+			Handler:    _Poller_Fuels_Handler,
 		},
 		{
 			MethodName: "AggregateData",
-			Handler:    _Data_AggregateData_Handler,
+			Handler:    _Poller_AggregateData_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "goadesign_goagen_data.proto",
+	Metadata: "goadesign_goagen_poller.proto",
 }

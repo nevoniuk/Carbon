@@ -1,18 +1,18 @@
 // Code generated with goa v3.7.6, DO NOT EDIT.
 //
-// Data protocol buffer definition
+// Poller protocol buffer definition
 //
 // Command:
 // $ goa gen github.com/crossnokaye/carbon/services/poller/design
 
 syntax = "proto3";
 
-package data;
+package poller;
 
-option go_package = "/datapb";
+option go_package = "/pollerpb";
 
 // Service that provides forecasts to clickhouse from Carbonara API
-service Data {
+service Poller {
 	// query api getting search data for carbon_intensity event
 	rpc CarbonEmissions (CarbonEmissionsRequest) returns (CarbonEmissionsResponse);
 	// query api using a search call for a fuel event from Carbonara API

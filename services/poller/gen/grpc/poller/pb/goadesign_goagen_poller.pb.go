@@ -1,6 +1,6 @@
 // Code generated with goa v3.7.6, DO NOT EDIT.
 //
-// Data protocol buffer definition
+// Poller protocol buffer definition
 //
 // Command:
 // $ goa gen github.com/crossnokaye/carbon/services/poller/design
@@ -9,9 +9,9 @@
 // versions:
 // 	protoc-gen-go v1.28.0
 // 	protoc        v3.19.4
-// source: goadesign_goagen_data.proto
+// source: goadesign_goagen_poller.proto
 
-package datapb
+package pollerpb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -36,7 +36,7 @@ type CarbonEmissionsRequest struct {
 func (x *CarbonEmissionsRequest) Reset() {
 	*x = CarbonEmissionsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_goadesign_goagen_data_proto_msgTypes[0]
+		mi := &file_goadesign_goagen_poller_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -49,7 +49,7 @@ func (x *CarbonEmissionsRequest) String() string {
 func (*CarbonEmissionsRequest) ProtoMessage() {}
 
 func (x *CarbonEmissionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_goadesign_goagen_data_proto_msgTypes[0]
+	mi := &file_goadesign_goagen_poller_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -62,7 +62,7 @@ func (x *CarbonEmissionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CarbonEmissionsRequest.ProtoReflect.Descriptor instead.
 func (*CarbonEmissionsRequest) Descriptor() ([]byte, []int) {
-	return file_goadesign_goagen_data_proto_rawDescGZIP(), []int{0}
+	return file_goadesign_goagen_poller_proto_rawDescGZIP(), []int{0}
 }
 
 type CarbonEmissionsResponse struct {
@@ -74,7 +74,7 @@ type CarbonEmissionsResponse struct {
 func (x *CarbonEmissionsResponse) Reset() {
 	*x = CarbonEmissionsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_goadesign_goagen_data_proto_msgTypes[1]
+		mi := &file_goadesign_goagen_poller_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -87,7 +87,7 @@ func (x *CarbonEmissionsResponse) String() string {
 func (*CarbonEmissionsResponse) ProtoMessage() {}
 
 func (x *CarbonEmissionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_goadesign_goagen_data_proto_msgTypes[1]
+	mi := &file_goadesign_goagen_poller_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -100,7 +100,7 @@ func (x *CarbonEmissionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CarbonEmissionsResponse.ProtoReflect.Descriptor instead.
 func (*CarbonEmissionsResponse) Descriptor() ([]byte, []int) {
-	return file_goadesign_goagen_data_proto_rawDescGZIP(), []int{1}
+	return file_goadesign_goagen_poller_proto_rawDescGZIP(), []int{1}
 }
 
 type FuelsRequest struct {
@@ -112,7 +112,7 @@ type FuelsRequest struct {
 func (x *FuelsRequest) Reset() {
 	*x = FuelsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_goadesign_goagen_data_proto_msgTypes[2]
+		mi := &file_goadesign_goagen_poller_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -125,7 +125,7 @@ func (x *FuelsRequest) String() string {
 func (*FuelsRequest) ProtoMessage() {}
 
 func (x *FuelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_goadesign_goagen_data_proto_msgTypes[2]
+	mi := &file_goadesign_goagen_poller_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -138,7 +138,7 @@ func (x *FuelsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FuelsRequest.ProtoReflect.Descriptor instead.
 func (*FuelsRequest) Descriptor() ([]byte, []int) {
-	return file_goadesign_goagen_data_proto_rawDescGZIP(), []int{2}
+	return file_goadesign_goagen_poller_proto_rawDescGZIP(), []int{2}
 }
 
 type FuelsResponse struct {
@@ -150,7 +150,7 @@ type FuelsResponse struct {
 func (x *FuelsResponse) Reset() {
 	*x = FuelsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_goadesign_goagen_data_proto_msgTypes[3]
+		mi := &file_goadesign_goagen_poller_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -163,7 +163,7 @@ func (x *FuelsResponse) String() string {
 func (*FuelsResponse) ProtoMessage() {}
 
 func (x *FuelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_goadesign_goagen_data_proto_msgTypes[3]
+	mi := &file_goadesign_goagen_poller_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -176,7 +176,7 @@ func (x *FuelsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FuelsResponse.ProtoReflect.Descriptor instead.
 func (*FuelsResponse) Descriptor() ([]byte, []int) {
-	return file_goadesign_goagen_data_proto_rawDescGZIP(), []int{3}
+	return file_goadesign_goagen_poller_proto_rawDescGZIP(), []int{3}
 }
 
 type AggregateDataRequest struct {
@@ -188,7 +188,7 @@ type AggregateDataRequest struct {
 func (x *AggregateDataRequest) Reset() {
 	*x = AggregateDataRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_goadesign_goagen_data_proto_msgTypes[4]
+		mi := &file_goadesign_goagen_poller_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -201,7 +201,7 @@ func (x *AggregateDataRequest) String() string {
 func (*AggregateDataRequest) ProtoMessage() {}
 
 func (x *AggregateDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_goadesign_goagen_data_proto_msgTypes[4]
+	mi := &file_goadesign_goagen_poller_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +214,7 @@ func (x *AggregateDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AggregateDataRequest.ProtoReflect.Descriptor instead.
 func (*AggregateDataRequest) Descriptor() ([]byte, []int) {
-	return file_goadesign_goagen_data_proto_rawDescGZIP(), []int{4}
+	return file_goadesign_goagen_poller_proto_rawDescGZIP(), []int{4}
 }
 
 type AggregateDataResponse struct {
@@ -226,7 +226,7 @@ type AggregateDataResponse struct {
 func (x *AggregateDataResponse) Reset() {
 	*x = AggregateDataResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_goadesign_goagen_data_proto_msgTypes[5]
+		mi := &file_goadesign_goagen_poller_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -239,7 +239,7 @@ func (x *AggregateDataResponse) String() string {
 func (*AggregateDataResponse) ProtoMessage() {}
 
 func (x *AggregateDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_goadesign_goagen_data_proto_msgTypes[5]
+	mi := &file_goadesign_goagen_poller_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -252,68 +252,69 @@ func (x *AggregateDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AggregateDataResponse.ProtoReflect.Descriptor instead.
 func (*AggregateDataResponse) Descriptor() ([]byte, []int) {
-	return file_goadesign_goagen_data_proto_rawDescGZIP(), []int{5}
+	return file_goadesign_goagen_poller_proto_rawDescGZIP(), []int{5}
 }
 
-var File_goadesign_goagen_data_proto protoreflect.FileDescriptor
+var File_goadesign_goagen_poller_proto protoreflect.FileDescriptor
 
-var file_goadesign_goagen_data_proto_rawDesc = []byte{
-	0x0a, 0x1b, 0x67, 0x6f, 0x61, 0x64, 0x65, 0x73, 0x69, 0x67, 0x6e, 0x5f, 0x67, 0x6f, 0x61, 0x67,
-	0x65, 0x6e, 0x5f, 0x64, 0x61, 0x74, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x04, 0x64,
-	0x61, 0x74, 0x61, 0x22, 0x18, 0x0a, 0x16, 0x43, 0x61, 0x72, 0x62, 0x6f, 0x6e, 0x45, 0x6d, 0x69,
-	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x19, 0x0a,
-	0x17, 0x43, 0x61, 0x72, 0x62, 0x6f, 0x6e, 0x45, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x0e, 0x0a, 0x0c, 0x46, 0x75, 0x65, 0x6c,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x0f, 0x0a, 0x0d, 0x46, 0x75, 0x65, 0x6c,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x16, 0x0a, 0x14, 0x41, 0x67, 0x67,
-	0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x22, 0x17, 0x0a, 0x15, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x44, 0x61,
-	0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xd2, 0x01, 0x0a, 0x04, 0x44,
-	0x61, 0x74, 0x61, 0x12, 0x4e, 0x0a, 0x0f, 0x43, 0x61, 0x72, 0x62, 0x6f, 0x6e, 0x45, 0x6d, 0x69,
-	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x1c, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x2e, 0x43, 0x61,
-	0x72, 0x62, 0x6f, 0x6e, 0x45, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x2e, 0x43, 0x61, 0x72, 0x62,
-	0x6f, 0x6e, 0x45, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x12, 0x30, 0x0a, 0x05, 0x46, 0x75, 0x65, 0x6c, 0x73, 0x12, 0x12, 0x2e, 0x64,
-	0x61, 0x74, 0x61, 0x2e, 0x46, 0x75, 0x65, 0x6c, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x13, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x2e, 0x46, 0x75, 0x65, 0x6c, 0x73, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x48, 0x0a, 0x0d, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61,
-	0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x2e, 0x41, 0x67,
+var file_goadesign_goagen_poller_proto_rawDesc = []byte{
+	0x0a, 0x1d, 0x67, 0x6f, 0x61, 0x64, 0x65, 0x73, 0x69, 0x67, 0x6e, 0x5f, 0x67, 0x6f, 0x61, 0x67,
+	0x65, 0x6e, 0x5f, 0x70, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
+	0x06, 0x70, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x22, 0x18, 0x0a, 0x16, 0x43, 0x61, 0x72, 0x62, 0x6f,
+	0x6e, 0x45, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x22, 0x19, 0x0a, 0x17, 0x43, 0x61, 0x72, 0x62, 0x6f, 0x6e, 0x45, 0x6d, 0x69, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x0e, 0x0a, 0x0c,
+	0x46, 0x75, 0x65, 0x6c, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x0f, 0x0a, 0x0d,
+	0x46, 0x75, 0x65, 0x6c, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x16, 0x0a,
+	0x14, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x17, 0x0a, 0x15, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61,
+	0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xe0,
+	0x01, 0x0a, 0x06, 0x50, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x12, 0x52, 0x0a, 0x0f, 0x43, 0x61, 0x72,
+	0x62, 0x6f, 0x6e, 0x45, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x1e, 0x2e, 0x70,
+	0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x2e, 0x43, 0x61, 0x72, 0x62, 0x6f, 0x6e, 0x45, 0x6d, 0x69, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1f, 0x2e, 0x70,
+	0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x2e, 0x43, 0x61, 0x72, 0x62, 0x6f, 0x6e, 0x45, 0x6d, 0x69, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x34, 0x0a,
+	0x05, 0x46, 0x75, 0x65, 0x6c, 0x73, 0x12, 0x14, 0x2e, 0x70, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x2e,
+	0x46, 0x75, 0x65, 0x6c, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x70,
+	0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x2e, 0x46, 0x75, 0x65, 0x6c, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x4c, 0x0a, 0x0d, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65,
+	0x44, 0x61, 0x74, 0x61, 0x12, 0x1c, 0x2e, 0x70, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x2e, 0x41, 0x67,
 	0x67, 0x72, 0x65, 0x67, 0x61, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x2e, 0x41, 0x67, 0x67, 0x72, 0x65, 0x67,
-	0x61, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42,
-	0x09, 0x5a, 0x07, 0x2f, 0x64, 0x61, 0x74, 0x61, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x70, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x2e, 0x41, 0x67, 0x67, 0x72,
+	0x65, 0x67, 0x61, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x42, 0x0b, 0x5a, 0x09, 0x2f, 0x70, 0x6f, 0x6c, 0x6c, 0x65, 0x72, 0x70, 0x62, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
-	file_goadesign_goagen_data_proto_rawDescOnce sync.Once
-	file_goadesign_goagen_data_proto_rawDescData = file_goadesign_goagen_data_proto_rawDesc
+	file_goadesign_goagen_poller_proto_rawDescOnce sync.Once
+	file_goadesign_goagen_poller_proto_rawDescData = file_goadesign_goagen_poller_proto_rawDesc
 )
 
-func file_goadesign_goagen_data_proto_rawDescGZIP() []byte {
-	file_goadesign_goagen_data_proto_rawDescOnce.Do(func() {
-		file_goadesign_goagen_data_proto_rawDescData = protoimpl.X.CompressGZIP(file_goadesign_goagen_data_proto_rawDescData)
+func file_goadesign_goagen_poller_proto_rawDescGZIP() []byte {
+	file_goadesign_goagen_poller_proto_rawDescOnce.Do(func() {
+		file_goadesign_goagen_poller_proto_rawDescData = protoimpl.X.CompressGZIP(file_goadesign_goagen_poller_proto_rawDescData)
 	})
-	return file_goadesign_goagen_data_proto_rawDescData
+	return file_goadesign_goagen_poller_proto_rawDescData
 }
 
-var file_goadesign_goagen_data_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-var file_goadesign_goagen_data_proto_goTypes = []interface{}{
-	(*CarbonEmissionsRequest)(nil),  // 0: data.CarbonEmissionsRequest
-	(*CarbonEmissionsResponse)(nil), // 1: data.CarbonEmissionsResponse
-	(*FuelsRequest)(nil),            // 2: data.FuelsRequest
-	(*FuelsResponse)(nil),           // 3: data.FuelsResponse
-	(*AggregateDataRequest)(nil),    // 4: data.AggregateDataRequest
-	(*AggregateDataResponse)(nil),   // 5: data.AggregateDataResponse
+var file_goadesign_goagen_poller_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_goadesign_goagen_poller_proto_goTypes = []interface{}{
+	(*CarbonEmissionsRequest)(nil),  // 0: poller.CarbonEmissionsRequest
+	(*CarbonEmissionsResponse)(nil), // 1: poller.CarbonEmissionsResponse
+	(*FuelsRequest)(nil),            // 2: poller.FuelsRequest
+	(*FuelsResponse)(nil),           // 3: poller.FuelsResponse
+	(*AggregateDataRequest)(nil),    // 4: poller.AggregateDataRequest
+	(*AggregateDataResponse)(nil),   // 5: poller.AggregateDataResponse
 }
-var file_goadesign_goagen_data_proto_depIdxs = []int32{
-	0, // 0: data.Data.CarbonEmissions:input_type -> data.CarbonEmissionsRequest
-	2, // 1: data.Data.Fuels:input_type -> data.FuelsRequest
-	4, // 2: data.Data.AggregateData:input_type -> data.AggregateDataRequest
-	1, // 3: data.Data.CarbonEmissions:output_type -> data.CarbonEmissionsResponse
-	3, // 4: data.Data.Fuels:output_type -> data.FuelsResponse
-	5, // 5: data.Data.AggregateData:output_type -> data.AggregateDataResponse
+var file_goadesign_goagen_poller_proto_depIdxs = []int32{
+	0, // 0: poller.Poller.CarbonEmissions:input_type -> poller.CarbonEmissionsRequest
+	2, // 1: poller.Poller.Fuels:input_type -> poller.FuelsRequest
+	4, // 2: poller.Poller.AggregateData:input_type -> poller.AggregateDataRequest
+	1, // 3: poller.Poller.CarbonEmissions:output_type -> poller.CarbonEmissionsResponse
+	3, // 4: poller.Poller.Fuels:output_type -> poller.FuelsResponse
+	5, // 5: poller.Poller.AggregateData:output_type -> poller.AggregateDataResponse
 	3, // [3:6] is the sub-list for method output_type
 	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -321,13 +322,13 @@ var file_goadesign_goagen_data_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_goadesign_goagen_data_proto_init() }
-func file_goadesign_goagen_data_proto_init() {
-	if File_goadesign_goagen_data_proto != nil {
+func init() { file_goadesign_goagen_poller_proto_init() }
+func file_goadesign_goagen_poller_proto_init() {
+	if File_goadesign_goagen_poller_proto != nil {
 		return
 	}
 	if !protoimpl.UnsafeEnabled {
-		file_goadesign_goagen_data_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_goadesign_goagen_poller_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CarbonEmissionsRequest); i {
 			case 0:
 				return &v.state
@@ -339,7 +340,7 @@ func file_goadesign_goagen_data_proto_init() {
 				return nil
 			}
 		}
-		file_goadesign_goagen_data_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_goadesign_goagen_poller_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CarbonEmissionsResponse); i {
 			case 0:
 				return &v.state
@@ -351,7 +352,7 @@ func file_goadesign_goagen_data_proto_init() {
 				return nil
 			}
 		}
-		file_goadesign_goagen_data_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_goadesign_goagen_poller_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*FuelsRequest); i {
 			case 0:
 				return &v.state
@@ -363,7 +364,7 @@ func file_goadesign_goagen_data_proto_init() {
 				return nil
 			}
 		}
-		file_goadesign_goagen_data_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+		file_goadesign_goagen_poller_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*FuelsResponse); i {
 			case 0:
 				return &v.state
@@ -375,7 +376,7 @@ func file_goadesign_goagen_data_proto_init() {
 				return nil
 			}
 		}
-		file_goadesign_goagen_data_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+		file_goadesign_goagen_poller_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AggregateDataRequest); i {
 			case 0:
 				return &v.state
@@ -387,7 +388,7 @@ func file_goadesign_goagen_data_proto_init() {
 				return nil
 			}
 		}
-		file_goadesign_goagen_data_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+		file_goadesign_goagen_poller_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AggregateDataResponse); i {
 			case 0:
 				return &v.state
@@ -404,18 +405,18 @@ func file_goadesign_goagen_data_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_goadesign_goagen_data_proto_rawDesc,
+			RawDescriptor: file_goadesign_goagen_poller_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_goadesign_goagen_data_proto_goTypes,
-		DependencyIndexes: file_goadesign_goagen_data_proto_depIdxs,
-		MessageInfos:      file_goadesign_goagen_data_proto_msgTypes,
+		GoTypes:           file_goadesign_goagen_poller_proto_goTypes,
+		DependencyIndexes: file_goadesign_goagen_poller_proto_depIdxs,
+		MessageInfos:      file_goadesign_goagen_poller_proto_msgTypes,
 	}.Build()
-	File_goadesign_goagen_data_proto = out.File
-	file_goadesign_goagen_data_proto_rawDesc = nil
-	file_goadesign_goagen_data_proto_goTypes = nil
-	file_goadesign_goagen_data_proto_depIdxs = nil
+	File_goadesign_goagen_poller_proto = out.File
+	file_goadesign_goagen_poller_proto_rawDesc = nil
+	file_goadesign_goagen_poller_proto_goTypes = nil
+	file_goadesign_goagen_poller_proto_depIdxs = nil
 }

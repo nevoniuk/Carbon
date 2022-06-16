@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	cli "github.com/crossnokaye/carbon/gen/grpc/cli/data_service_api"
+	cli "github.com/crossnokaye/carbon/gen/grpc/cli/poller"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

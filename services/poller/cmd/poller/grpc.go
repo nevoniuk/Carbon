@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"sync"
 
-	data "github.com/crossnokaye/carbon/gen/data"
-	datapb "github.com/crossnokaye/carbon/gen/grpc/data/pb"
-	datasvr "github.com/crossnokaye/carbon/gen/grpc/data/server"
+	pollerpb "github.com/crossnokaye/carbon/gen/grpc/poller/pb"
+	pollersvr "github.com/crossnokaye/carbon/gen/grpc/poller/server"
+	poller "github.com/crossnokaye/carbon/gen/poller"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpcmdlwr "goa.design/goa/v3/grpc/middleware"
 	"goa.design/goa/v3/middleware"
@@ -19,7 +19,7 @@ import (
 
 // handleGRPCServer starts configures and starts a gRPC server on the given
 // URL. It shuts down the server if any error is received in the error channel.
-func handleGRPCServer(ctx context.Context, u *url.URL, dataEndpoints *data.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
+func handleGRPCServer(ctx context.Context, u *url.URL, pollerEndpoints *poller.Endpoints, wg *sync.WaitGroup, errc chan error, logger *log.Logger, debug bool) {
 
 	// Setup goa log adapter.
 	var (
@@ -34,10 +34,10 @@ func handleGRPCServer(ctx context.Context, u *url.URL, dataEndpoints *data.Endpo
 	// the service input and output data structures to gRPC requests and
 	// responses.
 	var (
-		dataServer *datasvr.Server
+		pollerServer *pollersvr.Server
 	)
 	{
-		dataServer = datasvr.New(dataEndpoints, nil)
+		pollerServer = pollersvr.New(pollerEndpoints, nil)
 	}
 
 	// Initialize gRPC server with the middleware.
@@ -49,7 +49,7 @@ func handleGRPCServer(ctx context.Context, u *url.URL, dataEndpoints *data.Endpo
 	)
 
 	// Register the servers.
-	datapb.RegisterDataServer(srv, dataServer)
+	pollerpb.RegisterPollerServer(srv, pollerServer)
 
 	for svc, info := range srv.GetServiceInfo() {
 		for _, m := range info.Methods {

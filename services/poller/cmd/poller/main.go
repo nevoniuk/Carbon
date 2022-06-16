@@ -12,8 +12,8 @@ import (
 	"sync"
 	"syscall"
 
-	dataserviceapi "github.com/crossnokaye/carbon"
-	data "github.com/crossnokaye/carbon/gen/data"
+	pollerapi "github.com/crossnokaye/carbon"
+	poller "github.com/crossnokaye/carbon/gen/poller"
 )
 
 func main() {
@@ -33,24 +33,24 @@ func main() {
 		logger *log.Logger
 	)
 	{
-		logger = log.New(os.Stderr, "[dataserviceapi] ", log.Ltime)
+		logger = log.New(os.Stderr, "[pollerapi] ", log.Ltime)
 	}
 
 	// Initialize the services.
 	var (
-		dataSvc data.Service
+		pollerSvc poller.Service
 	)
 	{
-		dataSvc = dataserviceapi.NewData(logger)
+		pollerSvc = pollerapi.NewPoller(logger)
 	}
 
 	// Wrap the services in endpoints that can be invoked from other services
 	// potentially running in different processes.
 	var (
-		dataEndpoints *data.Endpoints
+		pollerEndpoints *poller.Endpoints
 	)
 	{
-		dataEndpoints = data.NewEndpoints(dataSvc)
+		pollerEndpoints = poller.NewEndpoints(pollerSvc)
 	}
 
 	// Create channel used by both the signal handler and server goroutines
@@ -95,7 +95,7 @@ func main() {
 			} else if u.Port() == "" {
 				u.Host = net.JoinHostPort(u.Host, "8080")
 			}
-			handleGRPCServer(ctx, u, dataEndpoints, &wg, errc, logger, *dbgF)
+			handleGRPCServer(ctx, u, pollerEndpoints, &wg, errc, logger, *dbgF)
 		}
 
 	default:

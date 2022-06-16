@@ -4,14 +4,14 @@ import (
 	. "goa.design/goa/v3/dsl"
 )
 
-var _ = API("Data Service API", func() {
-	Title("The Poller Service API")
-	Description("The Smart Service will query the Singularity Carbonara API daily and store in Clickhouse")
+var _ = API("Poller", func() {
+	Title("Poller")
+	Description("The Poller Service will query the Singularity Carbonara API daily and store in Clickhouse")
 })
 
 //always use == instead of = for clickhouse queries
 //Fuel design may not be needed so not finished
-var _ = Service("Data", func() {
+var _ = Service("Poller", func() {
 	Description("Service that provides forecasts to clickhouse from Carbonara API")
 
 	Method("carbon_emissions", func() {
