@@ -3,7 +3,7 @@
 // Data Service API gRPC client CLI support package
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/poller/design
+// $ goa gen github.com/crossnokaye/carbon/services/poller/design
 
 package cli
 
@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"os"
 
-	datac "github.com/crossnokaye/carbon/gen/grpc/data/client"
+	datac "github.com/crossnokaye/carbon/services/poller/gen/grpc/data/client"
 	goa "goa.design/goa/v3/pkg"
 	grpc "google.golang.org/grpc"
 )

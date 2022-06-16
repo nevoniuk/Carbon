@@ -5,12 +5,12 @@ import (
 )
 
 var _ = API("Data Service API", func() {
-	Title("The Smart Service API")
+	Title("The Poller Service API")
 	Description("The Smart Service will query the Singularity Carbonara API daily and store in Clickhouse")
 })
 
 //always use == instead of = for clickhouse queries
-
+//Fuel design may not be needed so not finished
 var _ = Service("Data", func() {
 	Description("Service that provides forecasts to clickhouse from Carbonara API")
 
@@ -182,6 +182,3 @@ var Period = Type("Period", func() {
 	})
 	Required("startTime", "endTime")
 })
-
-
-//observation structure to hold data from API that clickhouse will unerstand

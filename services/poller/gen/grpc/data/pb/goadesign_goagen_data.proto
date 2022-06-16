@@ -3,7 +3,7 @@
 // Data protocol buffer definition
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/poller/design
+// $ goa gen github.com/crossnokaye/carbon/services/poller/design
 
 syntax = "proto3";
 

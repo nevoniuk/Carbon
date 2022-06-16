@@ -3,12 +3,12 @@
 // Data gRPC server types
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/poller/design
+// $ goa gen github.com/crossnokaye/carbon/services/poller/design
 
 package server
 
 import (
-	datapb "github.com/crossnokaye/carbon/gen/grpc/data/pb"
+	datapb "github.com/crossnokaye/carbon/services/poller/gen/grpc/data/pb"
 )
 
 // NewProtoCarbonEmissionsResponse builds the gRPC response type from the

@@ -3,14 +3,14 @@
 // Data gRPC client encoders and decoders
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/poller/design
+// $ goa gen github.com/crossnokaye/carbon/services/poller/design
 
 package client
 
 import (
 	"context"
 
-	datapb "github.com/crossnokaye/carbon/gen/grpc/data/pb"
+	datapb "github.com/crossnokaye/carbon/services/poller/gen/grpc/data/pb"
 	goagrpc "goa.design/goa/v3/grpc"
 	"google.golang.org/grpc"
 )

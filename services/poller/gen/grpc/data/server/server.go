@@ -3,7 +3,7 @@
 // Data gRPC server
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/poller/design
+// $ goa gen github.com/crossnokaye/carbon/services/poller/design
 
 package server
 
@@ -11,8 +11,8 @@ import (
 	"context"
 	"errors"
 
-	data "github.com/crossnokaye/carbon/gen/data"
-	datapb "github.com/crossnokaye/carbon/gen/grpc/data/pb"
+	data "github.com/crossnokaye/carbon/services/poller/gen/data"
+	datapb "github.com/crossnokaye/carbon/services/poller/gen/grpc/data/pb"
 	goagrpc "goa.design/goa/v3/grpc"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc/codes"

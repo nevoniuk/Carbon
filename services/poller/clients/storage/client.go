@@ -9,7 +9,7 @@ import (
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 
 	//"github.com/crossnokaye/rates/clients/clickhouse"
-	genpoller "github.com/crossnokaye/carbon/poller/gen/data"
+	genpoller "github.com/crossnokaye/carbon/services/poller/gen/data"
 )
 
 type (

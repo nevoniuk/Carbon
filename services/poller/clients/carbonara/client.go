@@ -13,7 +13,7 @@ import (
 	"time"
 
 	//"os"
-	genpoller "github.com/crossnokaye/carbon/poller/gen/data"
+	genpoller "github.com/crossnokaye/carbon/services/poller/gen/data"
 
 	"goa.design/clue/log"
 )

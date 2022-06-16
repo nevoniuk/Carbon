@@ -3,12 +3,12 @@
 // Data gRPC client types
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/poller/design
+// $ goa gen github.com/crossnokaye/carbon/services/poller/design
 
 package client
 
 import (
-	datapb "github.com/crossnokaye/carbon/gen/grpc/data/pb"
+	datapb "github.com/crossnokaye/carbon/services/poller/gen/grpc/data/pb"
 )
 
 // NewProtoCarbonEmissionsRequest builds the gRPC request type from the payload
