@@ -72,15 +72,15 @@ var CarbonForecast = Type("CarbonForecast", func() {
 	Field(8, "emission_factor", String, "emission_factor", func() {
 		Example("EGRID_2019")
 	})
-	Field(12, "report_duration", String, "report_duration", func() {
+	Field(9, "report_type", String, "report_type", func() {
 		Example("hour, day, week, month")
 	})
-	Field(13, "region", String, "region", func() {
+	Field(10, "region", String, "region", func() {
 		Example("MISO, ISO...")
 	})
 	Required("generated_rate", "marginal_rate", "consumed_rate",
 		"duration", "marginal_source", "consumed_source", "generated_source", "emission_factor",
-		 "aggregate_data_generated","aggregate_data_consumed", "aggregate_data_marginal", "report_duration", "region")
+		  "report_type", "region")
 })
 
 var FuelsForecast = Type("FuelsForecast", func() {
@@ -96,11 +96,11 @@ var FuelsForecast = Type("FuelsForecast", func() {
 	Field(4, "generated_source", String, "generated_source", func() {
 		Example("EGRID_2019")
 	})
-	Field(5, "report_duration", String, "report_duration", func() {
+	Field(5, "report_type", String, "report_type", func() {
 		Example("hour, day, week, month")
 	})
 
-	Required("fuels", "duration", "marginal_source", "generated_source", "report_duration")
+	Required("fuels", "duration", "marginal_source", "generated_source", "report_type")
 })
 
 var aggregateData = Type("aggregateData", func() {
@@ -118,11 +118,14 @@ var aggregateData = Type("aggregateData", func() {
 	Field(4, "count", Float64, "count", func() {
 		Example(37.8267)
 	})
-	Field(5, "period", Period, "period", func() {
+	Field(5, "duration", Period, "duration", func() {
+		//Example(37.8267)
+	})
+	Field(6, "report_type", Period, "report_type", func() {
 		//Example(37.8267)
 	})
 
-	Required("count", "max", "min", "sum", "period")
+	Required("count", "max", "min", "sum", "duration", "report_type")
 })
 
 var CarbonResponse = Type("CarbonResponse", func() {
