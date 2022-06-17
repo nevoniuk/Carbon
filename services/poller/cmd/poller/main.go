@@ -12,8 +12,8 @@ import (
 	"sync"
 	"syscall"
 
-	pollerapi "github.com/crossnokaye/carbon"
-	poller "github.com/crossnokaye/carbon/gen/poller"
+	pollerapi "github.com/crossnokaye/carbon/services/poller"
+	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
 func main() {

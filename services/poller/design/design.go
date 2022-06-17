@@ -16,6 +16,7 @@ var _ = Service("Poller", func() {
 
 	Method("carbon_emissions", func() {
 		Description("query api getting search data for carbon_intensity event")
+		Result(ArrayOf(CarbonForecast))
 		Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
@@ -26,6 +27,7 @@ var _ = Service("Poller", func() {
 
 	Method("fuels", func() {
 		Description("query api using a search call for a fuel event from Carbonara API")
+		Result(ArrayOf(FuelsForecast))
 		Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
@@ -36,6 +38,7 @@ var _ = Service("Poller", func() {
 
 	Method("aggregate_data", func() {
 		Description("get the aggregate data for an event from clickhouse")
+		Result(ArrayOf(aggregateData))
 		Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
@@ -72,15 +75,11 @@ var CarbonForecast = Type("CarbonForecast", func() {
 	Field(8, "emission_factor", String, "emission_factor", func() {
 		Example("EGRID_2019")
 	})
-	Field(9, "report_type", String, "report_type", func() {
-		Example("hour, day, week, month")
-	})
-	Field(10, "region", String, "region", func() {
+	Field(9, "region", String, "region", func() {
 		Example("MISO, ISO...")
 	})
 	Required("generated_rate", "marginal_rate", "consumed_rate",
-		"duration", "marginal_source", "consumed_source", "generated_source", "emission_factor",
-		  "report_type", "region")
+		"duration", "marginal_source", "consumed_source", "generated_source", "emission_factor", "region")
 })
 
 var FuelsForecast = Type("FuelsForecast", func() {
@@ -105,27 +104,29 @@ var FuelsForecast = Type("FuelsForecast", func() {
 
 var aggregateData = Type("aggregateData", func() {
 	Description("aggregate data")
-
-	Field(1, "min", Float64, "min", func() {
+	Field(1, "average", Float64, "average", func() {
 		Example(37.8267)
 	})
-	Field(2, "max", Float64, "max", func() {
+	Field(2, "min", Float64, "min", func() {
 		Example(37.8267)
 	})
-	Field(3, "sum", Float64, "sum", func() {
+	Field(3, "max", Float64, "max", func() {
 		Example(37.8267)
 	})
-	Field(4, "count", Float64, "count", func() {
+	Field(4, "sum", Float64, "sum", func() {
 		Example(37.8267)
 	})
-	Field(5, "duration", Period, "duration", func() {
+	Field(5, "count", Float64, "count", func() {
+		Example(37.8267)
+	})
+	Field(6, "duration", Period, "duration", func() {
 		//Example(37.8267)
 	})
-	Field(6, "report_type", Period, "report_type", func() {
-		//Example(37.8267)
+	Field(7, "report_type", String, "report_type", func() {
+		Example("hourly")
 	})
 
-	Required("count", "max", "min", "sum", "duration", "report_type")
+	Required("average", "count", "max", "min", "sum", "duration", "report_type")
 })
 
 var CarbonResponse = Type("CarbonResponse", func() {

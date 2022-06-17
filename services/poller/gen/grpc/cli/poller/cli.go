@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"os"
 
-	pollerc "github.com/crossnokaye/carbon/gen/grpc/poller/client"
+	pollerc "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/client"
 	goa "goa.design/goa/v3/pkg"
 	grpc "google.golang.org/grpc"
 )
@@ -124,7 +124,7 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 				endpoint = c.Fuels()
 				data = nil
 			case "aggregate-data":
-				endpoint = c.AggregateData()
+				endpoint = c.AggregateDataEndpoint()
 				data = nil
 			}
 		}

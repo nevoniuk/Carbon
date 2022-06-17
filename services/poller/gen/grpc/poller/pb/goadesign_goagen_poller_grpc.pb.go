@@ -27,7 +27,7 @@ type PollerClient interface {
 	// query api using a search call for a fuel event from Carbonara API
 	Fuels(ctx context.Context, in *FuelsRequest, opts ...grpc.CallOption) (*FuelsResponse, error)
 	// get the aggregate data for an event from clickhouse
-	AggregateData(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error)
+	AggregateDataEndpoint(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error)
 }
 
 type pollerClient struct {
@@ -56,9 +56,9 @@ func (c *pollerClient) Fuels(ctx context.Context, in *FuelsRequest, opts ...grpc
 	return out, nil
 }
 
-func (c *pollerClient) AggregateData(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error) {
+func (c *pollerClient) AggregateDataEndpoint(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error) {
 	out := new(AggregateDataResponse)
-	err := c.cc.Invoke(ctx, "/poller.Poller/AggregateData", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/poller.Poller/AggregateDataEndpoint", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ type PollerServer interface {
 	// query api using a search call for a fuel event from Carbonara API
 	Fuels(context.Context, *FuelsRequest) (*FuelsResponse, error)
 	// get the aggregate data for an event from clickhouse
-	AggregateData(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error)
+	AggregateDataEndpoint(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error)
 	mustEmbedUnimplementedPollerServer()
 }
 
@@ -88,8 +88,8 @@ func (UnimplementedPollerServer) CarbonEmissions(context.Context, *CarbonEmissio
 func (UnimplementedPollerServer) Fuels(context.Context, *FuelsRequest) (*FuelsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Fuels not implemented")
 }
-func (UnimplementedPollerServer) AggregateData(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AggregateData not implemented")
+func (UnimplementedPollerServer) AggregateDataEndpoint(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AggregateDataEndpoint not implemented")
 }
 func (UnimplementedPollerServer) mustEmbedUnimplementedPollerServer() {}
 
@@ -140,20 +140,20 @@ func _Poller_Fuels_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Poller_AggregateData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Poller_AggregateDataEndpoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AggregateDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PollerServer).AggregateData(ctx, in)
+		return srv.(PollerServer).AggregateDataEndpoint(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/poller.Poller/AggregateData",
+		FullMethod: "/poller.Poller/AggregateDataEndpoint",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PollerServer).AggregateData(ctx, req.(*AggregateDataRequest))
+		return srv.(PollerServer).AggregateDataEndpoint(ctx, req.(*AggregateDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -174,8 +174,8 @@ var Poller_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Poller_Fuels_Handler,
 		},
 		{
-			MethodName: "AggregateData",
-			Handler:    _Poller_AggregateData_Handler,
+			MethodName: "AggregateDataEndpoint",
+			Handler:    _Poller_AggregateDataEndpoint_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

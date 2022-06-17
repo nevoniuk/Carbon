@@ -8,26 +8,173 @@
 package server
 
 import (
-	pollerpb "github.com/crossnokaye/carbon/gen/grpc/poller/pb"
+	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
+	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
 // NewProtoCarbonEmissionsResponse builds the gRPC response type from the
 // result of the "carbon_emissions" endpoint of the "Poller" service.
-func NewProtoCarbonEmissionsResponse() *pollerpb.CarbonEmissionsResponse {
+func NewProtoCarbonEmissionsResponse(result []*poller.CarbonForecast) *pollerpb.CarbonEmissionsResponse {
 	message := &pollerpb.CarbonEmissionsResponse{}
+	message.Field = make([]*pollerpb.CarbonForecast, len(result))
+	for i, val := range result {
+		message.Field[i] = &pollerpb.CarbonForecast{
+			GeneratedRate:   val.GeneratedRate,
+			MarginalRate:    val.MarginalRate,
+			ConsumedRate:    val.ConsumedRate,
+			MarginalSource:  val.MarginalSource,
+			ConsumedSource:  val.ConsumedSource,
+			GeneratedSource: val.GeneratedSource,
+			EmissionFactor:  val.EmissionFactor,
+			Region:          val.Region,
+		}
+		if val.Duration != nil {
+			message.Field[i].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
+		}
+	}
 	return message
 }
 
 // NewProtoFuelsResponse builds the gRPC response type from the result of the
 // "fuels" endpoint of the "Poller" service.
-func NewProtoFuelsResponse() *pollerpb.FuelsResponse {
+func NewProtoFuelsResponse(result []*poller.FuelsForecast) *pollerpb.FuelsResponse {
 	message := &pollerpb.FuelsResponse{}
+	message.Field = make([]*pollerpb.FuelsForecast, len(result))
+	for i, val := range result {
+		message.Field[i] = &pollerpb.FuelsForecast{
+			MarginalSource:  val.MarginalSource,
+			GeneratedSource: val.GeneratedSource,
+			ReportType:      val.ReportType,
+		}
+		if val.Fuels != nil {
+			message.Field[i].Fuels = svcPollerFuelMixToPollerpbFuelMix(val.Fuels)
+		}
+		if val.Duration != nil {
+			message.Field[i].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
+		}
+	}
 	return message
 }
 
 // NewProtoAggregateDataResponse builds the gRPC response type from the result
 // of the "aggregate_data" endpoint of the "Poller" service.
-func NewProtoAggregateDataResponse() *pollerpb.AggregateDataResponse {
+func NewProtoAggregateDataResponse(result []*poller.AggregateData) *pollerpb.AggregateDataResponse {
 	message := &pollerpb.AggregateDataResponse{}
+	message.Field = make([]*pollerpb.AggregateData, len(result))
+	for i, val := range result {
+		message.Field[i] = &pollerpb.AggregateData{
+			Average:    val.Average,
+			Min:        val.Min,
+			Max:        val.Max,
+			Sum:        val.Sum,
+			Count:      val.Count,
+			ReportType: val.ReportType,
+		}
+		if val.Duration != nil {
+			message.Field[i].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
+		}
+	}
 	return message
+}
+
+// svcPollerPeriodToPollerpbPeriod builds a value of type *pollerpb.Period from
+// a value of type *poller.Period.
+func svcPollerPeriodToPollerpbPeriod(v *poller.Period) *pollerpb.Period {
+	res := &pollerpb.Period{
+		StartTime: v.StartTime,
+		EndTime:   v.EndTime,
+	}
+
+	return res
+}
+
+// protobufPollerpbPeriodToPollerPeriod builds a value of type *poller.Period
+// from a value of type *pollerpb.Period.
+func protobufPollerpbPeriodToPollerPeriod(v *pollerpb.Period) *poller.Period {
+	res := &poller.Period{
+		StartTime: v.StartTime,
+		EndTime:   v.EndTime,
+	}
+
+	return res
+}
+
+// svcPollerFuelMixToPollerpbFuelMix builds a value of type *pollerpb.FuelMix
+// from a value of type *poller.FuelMix.
+func svcPollerFuelMixToPollerpbFuelMix(v *poller.FuelMix) *pollerpb.FuelMix {
+	res := &pollerpb.FuelMix{}
+	if v.Fuels != nil {
+		res.Fuels = make([]*pollerpb.Fuel, len(v.Fuels))
+		for i, val := range v.Fuels {
+			res.Fuels[i] = &pollerpb.Fuel{
+				Mw: val.Mw,
+			}
+		}
+	}
+	if v.AggregateData != nil {
+		res.AggregateData = svcPollerAggregateDataToPollerpbAggregateData(v.AggregateData)
+	}
+
+	return res
+}
+
+// svcPollerAggregateDataToPollerpbAggregateData builds a value of type
+// *pollerpb.AggregateData from a value of type *poller.AggregateData.
+func svcPollerAggregateDataToPollerpbAggregateData(v *poller.AggregateData) *pollerpb.AggregateData {
+	if v == nil {
+		return nil
+	}
+	res := &pollerpb.AggregateData{
+		Average:    v.Average,
+		Min:        v.Min,
+		Max:        v.Max,
+		Sum:        v.Sum,
+		Count:      v.Count,
+		ReportType: v.ReportType,
+	}
+	if v.Duration != nil {
+		res.Duration = svcPollerPeriodToPollerpbPeriod(v.Duration)
+	}
+
+	return res
+}
+
+// protobufPollerpbFuelMixToPollerFuelMix builds a value of type
+// *poller.FuelMix from a value of type *pollerpb.FuelMix.
+func protobufPollerpbFuelMixToPollerFuelMix(v *pollerpb.FuelMix) *poller.FuelMix {
+	res := &poller.FuelMix{}
+	if v.Fuels != nil {
+		res.Fuels = make([]*poller.Fuel, len(v.Fuels))
+		for i, val := range v.Fuels {
+			res.Fuels[i] = &poller.Fuel{
+				Mw: val.Mw,
+			}
+		}
+	}
+	if v.AggregateData != nil {
+		res.AggregateData = protobufPollerpbAggregateDataToPollerAggregateData(v.AggregateData)
+	}
+
+	return res
+}
+
+// protobufPollerpbAggregateDataToPollerAggregateData builds a value of type
+// *poller.AggregateData from a value of type *pollerpb.AggregateData.
+func protobufPollerpbAggregateDataToPollerAggregateData(v *pollerpb.AggregateData) *poller.AggregateData {
+	if v == nil {
+		return nil
+	}
+	res := &poller.AggregateData{
+		Average:    v.Average,
+		Min:        v.Min,
+		Max:        v.Max,
+		Sum:        v.Sum,
+		Count:      v.Count,
+		ReportType: v.ReportType,
+	}
+	if v.Duration != nil {
+		res.Duration = protobufPollerpbPeriodToPollerPeriod(v.Duration)
+	}
+
+	return res
 }

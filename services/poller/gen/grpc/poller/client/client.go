@@ -10,7 +10,7 @@ package client
 import (
 	"context"
 
-	pollerpb "github.com/crossnokaye/carbon/gen/grpc/poller/pb"
+	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
 	goagrpc "goa.design/goa/v3/grpc"
 	goapb "goa.design/goa/v3/grpc/pb"
 	goa "goa.design/goa/v3/pkg"
@@ -38,7 +38,7 @@ func (c *Client) CarbonEmissions() goa.Endpoint {
 		inv := goagrpc.NewInvoker(
 			BuildCarbonEmissionsFunc(c.grpccli, c.opts...),
 			nil,
-			nil)
+			DecodeCarbonEmissionsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			resp := goagrpc.DecodeError(err)
@@ -59,7 +59,7 @@ func (c *Client) Fuels() goa.Endpoint {
 		inv := goagrpc.NewInvoker(
 			BuildFuelsFunc(c.grpccli, c.opts...),
 			nil,
-			nil)
+			DecodeFuelsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			resp := goagrpc.DecodeError(err)
@@ -74,14 +74,14 @@ func (c *Client) Fuels() goa.Endpoint {
 	}
 }
 
-// AggregateData calls the "AggregateData" function in pollerpb.PollerClient
-// interface.
-func (c *Client) AggregateData() goa.Endpoint {
+// AggregateDataEndpoint calls the "AggregateDataEndpoint" function in
+// pollerpb.PollerClient interface.
+func (c *Client) AggregateDataEndpoint() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
-			BuildAggregateDataFunc(c.grpccli, c.opts...),
+			BuildAggregateDataEndpointFunc(c.grpccli, c.opts...),
 			nil,
-			nil)
+			DecodeAggregateDataEndpointResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			resp := goagrpc.DecodeError(err)

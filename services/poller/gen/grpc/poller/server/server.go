@@ -11,8 +11,8 @@ import (
 	"context"
 	"errors"
 
-	pollerpb "github.com/crossnokaye/carbon/gen/grpc/poller/pb"
-	poller "github.com/crossnokaye/carbon/gen/poller"
+	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
+	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	goagrpc "goa.design/goa/v3/grpc"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc/codes"
@@ -20,9 +20,9 @@ import (
 
 // Server implements the pollerpb.PollerServer interface.
 type Server struct {
-	CarbonEmissionsH goagrpc.UnaryHandler
-	FuelsH           goagrpc.UnaryHandler
-	AggregateDataH   goagrpc.UnaryHandler
+	CarbonEmissionsH       goagrpc.UnaryHandler
+	FuelsH                 goagrpc.UnaryHandler
+	AggregateDataEndpointH goagrpc.UnaryHandler
 	pollerpb.UnimplementedPollerServer
 }
 
@@ -35,9 +35,9 @@ type ErrorNamer interface {
 // New instantiates the server struct with the Poller service endpoints.
 func New(e *poller.Endpoints, uh goagrpc.UnaryHandler) *Server {
 	return &Server{
-		CarbonEmissionsH: NewCarbonEmissionsHandler(e.CarbonEmissions, uh),
-		FuelsH:           NewFuelsHandler(e.Fuels, uh),
-		AggregateDataH:   NewAggregateDataHandler(e.AggregateData, uh),
+		CarbonEmissionsH:       NewCarbonEmissionsHandler(e.CarbonEmissions, uh),
+		FuelsH:                 NewFuelsHandler(e.Fuels, uh),
+		AggregateDataEndpointH: NewAggregateDataEndpointHandler(e.AggregateDataEndpoint, uh),
 	}
 }
 
@@ -100,21 +100,21 @@ func (s *Server) Fuels(ctx context.Context, message *pollerpb.FuelsRequest) (*po
 	return resp.(*pollerpb.FuelsResponse), nil
 }
 
-// NewAggregateDataHandler creates a gRPC handler which serves the "Poller"
-// service "aggregate_data" endpoint.
-func NewAggregateDataHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
+// NewAggregateDataEndpointHandler creates a gRPC handler which serves the
+// "Poller" service "aggregate_data" endpoint.
+func NewAggregateDataEndpointHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeAggregateDataResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeAggregateDataEndpointResponse)
 	}
 	return h
 }
 
-// AggregateData implements the "AggregateData" method in pollerpb.PollerServer
-// interface.
-func (s *Server) AggregateData(ctx context.Context, message *pollerpb.AggregateDataRequest) (*pollerpb.AggregateDataResponse, error) {
+// AggregateDataEndpoint implements the "AggregateDataEndpoint" method in
+// pollerpb.PollerServer interface.
+func (s *Server) AggregateDataEndpoint(ctx context.Context, message *pollerpb.AggregateDataRequest) (*pollerpb.AggregateDataResponse, error) {
 	ctx = context.WithValue(ctx, goa.MethodKey, "aggregate_data")
 	ctx = context.WithValue(ctx, goa.ServiceKey, "Poller")
-	resp, err := s.AggregateDataH.Handle(ctx, message)
+	resp, err := s.AggregateDataEndpointH.Handle(ctx, message)
 	if err != nil {
 		var en ErrorNamer
 		if errors.As(err, &en) {

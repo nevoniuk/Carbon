@@ -9,7 +9,7 @@ import (
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 
 	//"github.com/crossnokaye/rates/clients/clickhouse"
-	genpoller "github.com/crossnokaye/carbon/services/poller/gen/data"
+	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
 type (
@@ -19,63 +19,49 @@ type (
 		// Init development database
 		Init(context.Context, bool) error
 		// Retrieve last date there is available data in clickhouse
-		CheckDB(ctx context.Context, region string) (genpoller.Period, error)
+		CheckDB(context.Context, string) (Time.time, error)
 		// Save report for carbon intensity event only
-		SaveCarbonReports(ctx context.Context, reports []*CarbonResponse)
+		SaveCarbonReports(context.Context, []*genpoller.CarbonResponse)
 
-		GetCarbonReports(ctx context.Context, string, genpoller.Period, string) (reports []*CarbonResponse)
+		GetCarbonReports(context.Context, string, genpoller.Period, string) ([]*genpoller.CarbonResponse)
 
 		//SaveFuelReports(ctx context.Context, reports []*FuelsForecast)
 
-		Ping(ctx context.Context) error
+		Ping(context.Context) error
 		
 		//query data then update tables with aggregate information
-		get_aggregate_data(ctx context.Context, string, genpoller.Period, string)
+		get_aggregate_data(context.Context, string, genpoller.Period, string)
 
-		save_aggregate_data(ctx context.Context, genpoller.AggregateData)
+		SaveAggregateData(context.Context, genpoller.AggregateData)
 	}
 
-	const(
-		regionstartdates := map[string]string{"AESO": "2020-05-15T16:00:00+00:00",
-		"BPA": "2018-01-01T08:00:00+00:00",
-		"CAISO": "2018-04-10T07:00:00+00:00",
-		"ERCO": "2018-07-02T05:05:00+00:00",
-		"IESO": "2017-12-31T05:00:00+00:00",
-		"ISONE": "2015-01-01T05:00:00+00:00",
-		"MISO": "2018-01-01T05:00:00+00:00",
-		"NYSIO": "2017-12-01T05:05:00+00:00",
-		"NYISO.NYCW": "2019-01-01T00:00:00+00:00",
-		"NYISO.NYLI": "2019-01-01T00:00:00+00:00",
-		"NYISO.NYUP": "2019-01-01T00:00:00+00:00",
-		"PJM": "2017-07-01T04:05:00+00:00",
-		"SPP": "2017-12-31T00:00:00+00:00",
-		"EIA": "2019-01-01T05:00:00+00:00"
-	}
-	)
 )
+func New(chcon clickhouse.Conn) Client {
+	return &client{chcon}
+}
 
 func (c *client) Ping(ctx context.Context) error {
 	return c.chcon.Ping(ctx)
 }
 
-func (svc *Service) CheckDB(ctx context.Context, region string) (timeInterval genpoller.Period) {
-	startDate = regionstartdates[region]
-	//var date time.Time.UTC()
+//meant to return a "start" time for query to begin
+//returns a time if previous reports are found, otherwise nil
+func (c *client) CheckDB(ctx context.Context, region string) (Time.time) {
+	var start time.Time
+	//select the max start because the reports are ordered by start times
+	//only look for hourly reports(first level of reports)
+	//TODO: not sure about the group by clause
 	if err := c.chcon.QueryRow(ctx, `
 			SELECT
-					start, max(end),
+					MAX(start)
 			FROM carbon_reports
-
+			WHERE duration = $1
 			GROUP BY
 			     start, duration
-			`).Scan(&timeInterval{StartTime, EndTime}); err != nil {
-				return time.Time, err
+			`, "hourly").Scan(&start); err != nil {
+				return time.Time, err //time would be null
 			}
-	if timeInterval == nil {
-		timeInterval = timeInterval{startDate, time.Now()}
-	}
-	return timeInterval
-	//if result is null then set to startdate above
+	return start
 }
 
 
@@ -166,8 +152,8 @@ func (c *client) SaveCarbonReports(ctx context.Context, reports []*CarbonRespons
 	return stmt.Send()
 }
 
-func (svc *Service) get_aggregate_data(ctx context.Context, durationtype string,
-	 timeInterval genpoller.Period, region string) ([]*genpoller.AggregateData) {
+func (c *client) get_aggregate_data(ctx context.Context, durationtype string,
+	 start time.Time, end time.Time, region string) ([]*genpoller.AggregateData) {
 	var aggdata []*genpoller.AggregateData
 	var finalaggdata []*genpoller.AggregateData
 	
@@ -196,16 +182,19 @@ func (svc *Service) get_aggregate_data(ctx context.Context, durationtype string,
 		min: min,
 		max: max,
 		sum: sum,
-		count: count
+		count: count,
 	}
 }
+//hourly reports
+func (c *client) get_aggregate_reports(ctx context.Context, []genpoller.CarbonResponse)
 
-func (c *client) save_aggregate_data([]*genpoller.AggregateData) {
+func (c *client) SaveAggregateReports(ctx context.Context, aggData []*genpoller.AggregateData (error)) {
 	//save aggregate data in new table
+	
 }
-
+/**
 func (c *client) GetCarbonReports(ctx context.Context, durationtype string,
-	timeInterval genpoller.Period, region string) {
+	timeInterval genpoller.Period, region string) ([]*genpoller.CarbonForecast) {
 		var reports []*genpoller.CarbonForecast
 	rows, err := c.chcon.Query(ctx, `
 		SELECT
@@ -233,7 +222,7 @@ func (c *client) GetCarbonReports(ctx context.Context, durationtype string,
 
 
 }
-
+*/
 
 
 

@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"sync"
 
-	pollerpb "github.com/crossnokaye/carbon/gen/grpc/poller/pb"
-	pollersvr "github.com/crossnokaye/carbon/gen/grpc/poller/server"
-	poller "github.com/crossnokaye/carbon/gen/poller"
+	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
+	pollersvr "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/server"
+	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpcmdlwr "goa.design/goa/v3/grpc/middleware"
 	"goa.design/goa/v3/middleware"

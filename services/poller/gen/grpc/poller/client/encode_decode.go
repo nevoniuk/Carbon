@@ -10,9 +10,10 @@ package client
 import (
 	"context"
 
-	pollerpb "github.com/crossnokaye/carbon/gen/grpc/poller/pb"
+	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
 	goagrpc "goa.design/goa/v3/grpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 // BuildCarbonEmissionsFunc builds the remote method to invoke for "Poller"
@@ -29,6 +30,20 @@ func BuildCarbonEmissionsFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.Cal
 	}
 }
 
+// DecodeCarbonEmissionsResponse decodes responses from the Poller
+// carbon_emissions endpoint.
+func DecodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*pollerpb.CarbonEmissionsResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "*pollerpb.CarbonEmissionsResponse", v)
+	}
+	if err := ValidateCarbonEmissionsResponse(message); err != nil {
+		return nil, err
+	}
+	res := NewCarbonEmissionsResult(message)
+	return res, nil
+}
+
 // BuildFuelsFunc builds the remote method to invoke for "Poller" service
 // "fuels" endpoint.
 func BuildFuelsFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
@@ -43,16 +58,43 @@ func BuildFuelsFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) g
 	}
 }
 
-// BuildAggregateDataFunc builds the remote method to invoke for "Poller"
-// service "aggregate_data" endpoint.
-func BuildAggregateDataFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
+// DecodeFuelsResponse decodes responses from the Poller fuels endpoint.
+func DecodeFuelsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*pollerpb.FuelsResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("Poller", "fuels", "*pollerpb.FuelsResponse", v)
+	}
+	if err := ValidateFuelsResponse(message); err != nil {
+		return nil, err
+	}
+	res := NewFuelsResult(message)
+	return res, nil
+}
+
+// BuildAggregateDataEndpointFunc builds the remote method to invoke for
+// "Poller" service "aggregate_data" endpoint.
+func BuildAggregateDataEndpointFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
 	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
 		for _, opt := range cliopts {
 			opts = append(opts, opt)
 		}
 		if reqpb != nil {
-			return grpccli.AggregateData(ctx, reqpb.(*pollerpb.AggregateDataRequest), opts...)
+			return grpccli.AggregateDataEndpoint(ctx, reqpb.(*pollerpb.AggregateDataRequest), opts...)
 		}
-		return grpccli.AggregateData(ctx, &pollerpb.AggregateDataRequest{}, opts...)
+		return grpccli.AggregateDataEndpoint(ctx, &pollerpb.AggregateDataRequest{}, opts...)
 	}
+}
+
+// DecodeAggregateDataEndpointResponse decodes responses from the Poller
+// aggregate_data endpoint.
+func DecodeAggregateDataEndpointResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*pollerpb.AggregateDataResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "*pollerpb.AggregateDataResponse", v)
+	}
+	if err := ValidateAggregateDataResponse(message); err != nil {
+		return nil, err
+	}
+	res := NewAggregateDataResult(message)
+	return res, nil
 }

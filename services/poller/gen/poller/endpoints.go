@@ -15,17 +15,17 @@ import (
 
 // Endpoints wraps the "Poller" service endpoints.
 type Endpoints struct {
-	CarbonEmissions goa.Endpoint
-	Fuels           goa.Endpoint
-	AggregateData   goa.Endpoint
+	CarbonEmissions       goa.Endpoint
+	Fuels                 goa.Endpoint
+	AggregateDataEndpoint goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Poller" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		CarbonEmissions: NewCarbonEmissionsEndpoint(s),
-		Fuels:           NewFuelsEndpoint(s),
-		AggregateData:   NewAggregateDataEndpoint(s),
+		CarbonEmissions:       NewCarbonEmissionsEndpoint(s),
+		Fuels:                 NewFuelsEndpoint(s),
+		AggregateDataEndpoint: NewAggregateDataEndpointEndpoint(s),
 	}
 }
 
@@ -33,14 +33,14 @@ func NewEndpoints(s Service) *Endpoints {
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.CarbonEmissions = m(e.CarbonEmissions)
 	e.Fuels = m(e.Fuels)
-	e.AggregateData = m(e.AggregateData)
+	e.AggregateDataEndpoint = m(e.AggregateDataEndpoint)
 }
 
 // NewCarbonEmissionsEndpoint returns an endpoint function that calls the
 // method "carbon_emissions" of service "Poller".
 func NewCarbonEmissionsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.CarbonEmissions(ctx)
+		return s.CarbonEmissions(ctx)
 	}
 }
 
@@ -48,14 +48,14 @@ func NewCarbonEmissionsEndpoint(s Service) goa.Endpoint {
 // of service "Poller".
 func NewFuelsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.Fuels(ctx)
+		return s.Fuels(ctx)
 	}
 }
 
-// NewAggregateDataEndpoint returns an endpoint function that calls the method
-// "aggregate_data" of service "Poller".
-func NewAggregateDataEndpoint(s Service) goa.Endpoint {
+// NewAggregateDataEndpointEndpoint returns an endpoint function that calls the
+// method "aggregate_data" of service "Poller".
+func NewAggregateDataEndpointEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.AggregateData(ctx)
+		return s.AggregateDataEndpoint(ctx)
 	}
 }
