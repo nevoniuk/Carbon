@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+GIT_ROOT=$(git rev-parse --show-toplevel)
+pushd ${GIT_ROOT}
+
+source ./scripts/utils/common.sh
+
+echo ============================
+echo === WIPE LOCAL DATABASES ===
+echo ============================
+
+is_m1_mac && export CLICKHOUSE_DOCKER_IMAGE="altinity/clickhouse-server:21.8.12.29.altinitydev.arm"
+
+echo "#### Wipe Volumes"
+docker-compose down --volumes
+docker-compose up -d clickhouse
+
+popd

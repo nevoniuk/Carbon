@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -e
+
+GIT_ROOT=$(git rev-parse --show-toplevel)
+pushd ${GIT_ROOT}
+
+sudo apt-get install -y protobuf-compiler
+./scripts/setup
+./scripts/test
+
+popd

@@ -41,6 +41,7 @@ func main() {
 		pollerSvc poller.Service
 	)
 	{
+		//create clients here
 		pollerSvc = pollerapi.NewPoller(logger)
 	}
 

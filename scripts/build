@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -e
+
+GIT_ROOT=$(git rev-parse --show-toplevel)
+GIT_COMMIT=$(git rev-list -1 HEAD)
+pushd ${GIT_ROOT}
+
+echo "Rebuilding services..."
+
+mkdir -p bin
+
+for svc in poller calc; do
+  go build -o bin/${svc} -ldflags "-X github.com/crossnokaye/carbon/health.GitCommit=$GIT_COMMIT" github.com/crossnokaye/carbon/services/${svc}/cmd/${svc}
+done
+
+popd
