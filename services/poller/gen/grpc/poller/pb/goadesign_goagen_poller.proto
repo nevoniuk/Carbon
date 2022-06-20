@@ -23,6 +23,10 @@ message CarbonEmissionsRequest {
 }
 
 message CarbonEmissionsResponse {
+	repeated ArrayOfCarbonForecast field = 1;
+}
+
+message ArrayOfCarbonForecast {
 	repeated CarbonForecast field = 1;
 }
 // Emissions Forecast

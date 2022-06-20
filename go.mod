@@ -10,10 +10,17 @@ require (
 )
 
 require (
+	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/dimfeld/httppath v0.0.0-20170720192232-ee938bf73598 // indirect
+	github.com/dimfeld/httptreemux/v5 v5.4.0 // indirect
+	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
+	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.2 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/manveru/faker v0.0.0-20171103152722-9fbc68a78c4d // indirect
@@ -23,8 +30,16 @@ require (
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/zach-klippenstein/goregen v0.0.0-20160303162051-795b5e3961ea // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.32.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.32.0 // indirect
 	go.opentelemetry.io/otel v1.7.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.7.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.7.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.7.0 // indirect
+	go.opentelemetry.io/otel/metric v0.30.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.7.0 // indirect
 	go.opentelemetry.io/otel/trace v1.7.0 // indirect
+	go.opentelemetry.io/proto/otlp v0.16.0 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
 	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect

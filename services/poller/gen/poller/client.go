@@ -29,13 +29,13 @@ func NewClient(carbonEmissions, aggregateDataEndpoint goa.Endpoint) *Client {
 
 // CarbonEmissions calls the "carbon_emissions" endpoint of the "Poller"
 // service.
-func (c *Client) CarbonEmissions(ctx context.Context) (res []*CarbonForecast, err error) {
+func (c *Client) CarbonEmissions(ctx context.Context) (res [][]*CarbonForecast, err error) {
 	var ires interface{}
 	ires, err = c.CarbonEmissionsEndpoint(ctx, nil)
 	if err != nil {
 		return
 	}
-	return ires.([]*CarbonForecast), nil
+	return ires.([][]*CarbonForecast), nil
 }
 
 // AggregateDataEndpoint calls the "aggregate_data" endpoint of the "Poller"

@@ -22,21 +22,24 @@ func NewProtoCarbonEmissionsRequest() *pollerpb.CarbonEmissionsRequest {
 
 // NewCarbonEmissionsResult builds the result type of the "carbon_emissions"
 // endpoint of the "Poller" service from the gRPC response type.
-func NewCarbonEmissionsResult(message *pollerpb.CarbonEmissionsResponse) []*poller.CarbonForecast {
-	result := make([]*poller.CarbonForecast, len(message.Field))
+func NewCarbonEmissionsResult(message *pollerpb.CarbonEmissionsResponse) [][]*poller.CarbonForecast {
+	result := make([][]*poller.CarbonForecast, len(message.Field))
 	for i, val := range message.Field {
-		result[i] = &poller.CarbonForecast{
-			GeneratedRate:   val.GeneratedRate,
-			MarginalRate:    val.MarginalRate,
-			ConsumedRate:    val.ConsumedRate,
-			MarginalSource:  val.MarginalSource,
-			ConsumedSource:  val.ConsumedSource,
-			GeneratedSource: val.GeneratedSource,
-			EmissionFactor:  val.EmissionFactor,
-			Region:          val.Region,
-		}
-		if val.Duration != nil {
-			result[i].Duration = protobufPollerpbPeriodToPollerPeriod(val.Duration)
+		result[i] = make([]*poller.CarbonForecast, len(val.Field))
+		for j, val := range val.Field {
+			result[i][j] = &poller.CarbonForecast{
+				GeneratedRate:   val.GeneratedRate,
+				MarginalRate:    val.MarginalRate,
+				ConsumedRate:    val.ConsumedRate,
+				MarginalSource:  val.MarginalSource,
+				ConsumedSource:  val.ConsumedSource,
+				GeneratedSource: val.GeneratedSource,
+				EmissionFactor:  val.EmissionFactor,
+				Region:          val.Region,
+			}
+			if val.Duration != nil {
+				result[i][j].Duration = protobufPollerpbPeriodToPollerPeriod(val.Duration)
+			}
 		}
 	}
 	return result
@@ -72,6 +75,19 @@ func NewAggregateDataResult(message *pollerpb.AggregateDataResponse) []*poller.A
 // ValidateCarbonEmissionsResponse runs the validations defined on
 // CarbonEmissionsResponse.
 func ValidateCarbonEmissionsResponse(message *pollerpb.CarbonEmissionsResponse) (err error) {
+	for _, e := range message.Field {
+		if e != nil {
+			if err2 := ValidateArrayOfCarbonForecast(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateArrayOfCarbonForecast runs the validations defined on
+// ArrayOfCarbonForecast.
+func ValidateArrayOfCarbonForecast(message *pollerpb.ArrayOfCarbonForecast) (err error) {
 	for _, e := range message.Field {
 		if e != nil {
 			if err2 := ValidateCarbonForecast(e); err2 != nil {

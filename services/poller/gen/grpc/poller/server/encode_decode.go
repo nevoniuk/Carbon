@@ -18,9 +18,9 @@ import (
 // EncodeCarbonEmissionsResponse encodes responses from the "Poller" service
 // "carbon_emissions" endpoint.
 func EncodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.([]*poller.CarbonForecast)
+	result, ok := v.([][]*poller.CarbonForecast)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "[]*poller.CarbonForecast", v)
+		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "[][]*poller.CarbonForecast", v)
 	}
 	resp := NewProtoCarbonEmissionsResponse(result)
 	return resp, nil

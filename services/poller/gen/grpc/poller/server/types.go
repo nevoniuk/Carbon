@@ -14,22 +14,26 @@ import (
 
 // NewProtoCarbonEmissionsResponse builds the gRPC response type from the
 // result of the "carbon_emissions" endpoint of the "Poller" service.
-func NewProtoCarbonEmissionsResponse(result []*poller.CarbonForecast) *pollerpb.CarbonEmissionsResponse {
+func NewProtoCarbonEmissionsResponse(result [][]*poller.CarbonForecast) *pollerpb.CarbonEmissionsResponse {
 	message := &pollerpb.CarbonEmissionsResponse{}
-	message.Field = make([]*pollerpb.CarbonForecast, len(result))
+	message.Field = make([]*pollerpb.ArrayOfCarbonForecast, len(result))
 	for i, val := range result {
-		message.Field[i] = &pollerpb.CarbonForecast{
-			GeneratedRate:   val.GeneratedRate,
-			MarginalRate:    val.MarginalRate,
-			ConsumedRate:    val.ConsumedRate,
-			MarginalSource:  val.MarginalSource,
-			ConsumedSource:  val.ConsumedSource,
-			GeneratedSource: val.GeneratedSource,
-			EmissionFactor:  val.EmissionFactor,
-			Region:          val.Region,
-		}
-		if val.Duration != nil {
-			message.Field[i].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
+		message.Field[i] = &pollerpb.ArrayOfCarbonForecast{}
+		message.Field[i].Field = make([]*pollerpb.CarbonForecast, len(val))
+		for j, val := range val {
+			message.Field[i].Field[j] = &pollerpb.CarbonForecast{
+				GeneratedRate:   val.GeneratedRate,
+				MarginalRate:    val.MarginalRate,
+				ConsumedRate:    val.ConsumedRate,
+				MarginalSource:  val.MarginalSource,
+				ConsumedSource:  val.ConsumedSource,
+				GeneratedSource: val.GeneratedSource,
+				EmissionFactor:  val.EmissionFactor,
+				Region:          val.Region,
+			}
+			if val.Duration != nil {
+				message.Field[i].Field[j].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
+			}
 		}
 	}
 	return message

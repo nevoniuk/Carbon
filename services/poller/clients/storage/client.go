@@ -5,10 +5,9 @@ import (
 	"fmt"
 	//"go/constant"
 	"time"
-
-	"github.com/ClickHouse/clickhouse-go/v2"
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 
+	"github.com/crossnokaye/carbon/clients/clickhouse"
 	//"github.com/crossnokaye/rates/clients/clickhouse"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
@@ -20,19 +19,19 @@ type (
 		// Init development database
 		Init(context.Context, bool) error
 		// Retrieve last date there is available data in clickhouse
-		CheckDB(context.Context, string) (time.Time)
+		CheckDB(context.Context, string) (time.Time, error)
 		// Save report for carbon intensity event only
 		SaveCarbonReports(context.Context, []*genpoller.CarbonForecast) (error)
 
 		//GetCarbonReports(context.Context, string, genpoller.Period, string) ([]*genpoller.CarbonForecast)
 
 		//SaveFuelReports(ctx context.Context, reports []*FuelsForecast)
-
+		
 		Ping(context.Context) error
 		
 		//query data then update tables with aggregate information(generated data only)
 		//carbon data only
-		get_aggregate_data(context.Context, []*genpoller.Period, string, string) ([]*genpoller.AggregateData)
+		GetAggregateReports(context.Context, []*genpoller.Period, string, string) ([]*genpoller.AggregateData, error)
 
 		SaveAggregateReports(context.Context, []*genpoller.AggregateData) (error)
 	}
@@ -51,12 +50,13 @@ func (c *client) Ping(ctx context.Context) error {
 
 //meant to return a "start" time for query to begin
 //returns a time if previous reports are found, otherwise nil
-func (c *client) CheckDB(ctx context.Context, region string) (time.Time) {
+func (c *client) CheckDB(ctx context.Context, region string) (time.Time, error) {
 	var start time.Time
 	//select the max start because the reports are ordered by start times
 	//only look for hourly reports(first level of reports)
 	//TODO: not sure about the group by clause
-	if err := c.chcon.QueryRow(ctx, `
+	var err error
+	if err = c.chcon.QueryRow(ctx, `
 			SELECT
 					MAX(start)
 			FROM carbon_reports
@@ -64,9 +64,9 @@ func (c *client) CheckDB(ctx context.Context, region string) (time.Time) {
 			GROUP BY
 			     start, duration
 			`, "hourly").Scan(&start); err != nil {
-				return start//time would be null
+				return start, err//time would be null
 			}
-	return start
+	return start, err
 }
 
 
@@ -176,8 +176,8 @@ func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.Car
 	return res.Send()
 }
 
-func (c *client) get_aggregate_data(ctx context.Context,
-	 periods []*genpoller.Period, region string, duration string) ([]*genpoller.AggregateData) {
+func (c *client) GetAggregateReports(ctx context.Context,
+	 periods []*genpoller.Period, region string, duration string) ([]*genpoller.AggregateData, error) {
 	
 	var finalaggdata []*genpoller.AggregateData
 	/**
@@ -213,7 +213,7 @@ func (c *client) get_aggregate_data(ctx context.Context,
 	finalaggdata = append(finalaggdata, aggdata)
 	}
 	*/
-	return finalaggdata
+	return finalaggdata, nil
 }
 
 func (c *client) SaveAggregateReports(ctx context.Context, aggData []*genpoller.AggregateData) (error) {

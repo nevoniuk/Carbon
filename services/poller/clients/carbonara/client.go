@@ -2,6 +2,7 @@ package carbonara
 
 import (
 	"context"
+	//"bytes"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -19,10 +20,9 @@ import (
 type (
 
 	Client interface {
-		
-		httpGetRequestCall(context.Context, *http.Request) (*http.Response, error)
-		getemissions(ctx context.Context, region string,
-			startime time.Time, endtime time.Time) ([]*genpoller.CarbonForecast, error)
+		//Init()
+		//HttpGetRequestCall(context.Context, *http.Request) (*http.Response, error)
+		GetEmissions(context.Context, string, time.Time, time.Time) ([]*genpoller.CarbonForecast, error)
 	}
 
 	client struct {
@@ -67,12 +67,16 @@ const (
 	cs_url     = "https://api.singularity.energy/v1/"
 )
 
+func (c *client) Init() {
+	fmt.Printf("initialized")
+}
+
 func New(c *http.Client) Client {
 	c.Timeout = 10 * time.Second
 	return &client{c}
 }
 
-func (c *client) httpGetRequestCall(ctx context.Context, req *http.Request) (*http.Response, error) {
+func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*http.Response, error) {
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		retries := 0
@@ -96,9 +100,9 @@ func (c *client) httpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 }
 
 
-func (c *client) getemissions(ctx context.Context, region string,
-	 startime time.Time, endtime time.Time) ([]*genpoller.CarbonForecast, error) {
+func (c *client) GetEmissions(ctx context.Context, region string, startime time.Time, endtime time.Time) ([]*genpoller.CarbonForecast, error) {
 	//ignore starttime and endtime for now
+
 	start := "2022-01-06T15:00:00-00:00" //for testing
 	end := "2022-05-06T15:00:00-00:00" //testing
 	carbonUrl := strings.Join([]string{cs_url, "region_events/search?", "region=", region, "?event_type=carbon_intensity&start=",
@@ -110,7 +114,7 @@ func (c *client) getemissions(ctx context.Context, region string,
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("X-Api-Key", "52f0a90b3a2747dcb651f508b63e002c")
-	carbonresp, err := c.httpGetRequestCall(ctx, req)
+	carbonresp, err := c.HttpGetRequestCall(ctx, req)
 	defer carbonresp.Body.Close()
 
 	carbonData := carbonreport{}
@@ -123,7 +127,6 @@ func (c *client) getemissions(ctx context.Context, region string,
 	//carbonDataweekly := getweeklycarbonreport(ctx, carbonDatadaily)
 	//carbonDatamonthly := getmonthlycarbonreport(ctx, carbonDataweekly)
 	//return &genpoller.CarbonResponse{carbonDatahourly, carbonDatadaily, carbonDataweekly, carbonDatamonthly}, err
-
 	return gethourlyreports(ctx, carbonData), nil
 }
 
