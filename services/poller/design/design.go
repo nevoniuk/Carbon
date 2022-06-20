@@ -17,33 +17,33 @@ var _ = Service("Poller", func() {
 	Method("carbon_emissions", func() {
 		Description("query api getting search data for carbon_intensity event")
 		Result(ArrayOf(CarbonForecast))
-		Error("data_not_available", ErrorResult, "The data is not available or server error")
-		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
+		//Error("data_not_available", ErrorResult, "The data is not available or server error")
+		//Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
-			Response("data_not_available", CodeDataLoss)
-			Response("missing-required-parameter", CodeNotFound)
+			//Response("data_not_available", CodeDataLoss)
+			//Response("missing-required-parameter", CodeNotFound)
 		})
 	})
-
+/**
 	Method("fuels", func() {
 		Description("query api using a search call for a fuel event from Carbonara API")
 		Result(ArrayOf(FuelsForecast))
-		Error("data_not_available", ErrorResult, "The data is not available or server error")
-		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
+		//Error("data_not_available", ErrorResult, "The data is not available or server error")
+		//Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
-			Response("data_not_available", CodeDataLoss)
-			Response("missing-required-parameter", CodeNotFound)
+			//Response("data_not_available", CodeDataLoss)
+			//Response("missing-required-parameter", CodeNotFound)
 		})
 	})
-
+*/
 	Method("aggregate_data", func() {
 		Description("get the aggregate data for an event from clickhouse")
 		Result(ArrayOf(aggregateData))
-		Error("data_not_available", ErrorResult, "The data is not available or server error")
+		//Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
-			Response("data_not_available", CodeDataLoss)
-			Response("missing-required-parameter", CodeNotFound)
+			//Response("data_not_available", CodeDataLoss)
+			//Response("missing-required-parameter", CodeNotFound)
 		})
 	})
 	
@@ -116,7 +116,7 @@ var aggregateData = Type("aggregateData", func() {
 	Field(4, "sum", Float64, "sum", func() {
 		Example(37.8267)
 	})
-	Field(5, "count", Float64, "count", func() {
+	Field(5, "count", Int, "count", func() {
 		Example(37.8267)
 	})
 	Field(6, "duration", Period, "duration", func() {

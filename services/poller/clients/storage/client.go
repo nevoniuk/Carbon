@@ -3,9 +3,10 @@ package storage
 import (
 	"context"
 	"fmt"
-	"go/constant"
+	//"go/constant"
 	"time"
 
+	"github.com/ClickHouse/clickhouse-go/v2"
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 
 	//"github.com/crossnokaye/rates/clients/clickhouse"
@@ -19,22 +20,26 @@ type (
 		// Init development database
 		Init(context.Context, bool) error
 		// Retrieve last date there is available data in clickhouse
-		CheckDB(context.Context, string) (Time.time, error)
+		CheckDB(context.Context, string) (time.Time)
 		// Save report for carbon intensity event only
-		SaveCarbonReports(context.Context, []*genpoller.CarbonResponse)
+		SaveCarbonReports(context.Context, []*genpoller.CarbonForecast) (error)
 
-		GetCarbonReports(context.Context, string, genpoller.Period, string) ([]*genpoller.CarbonResponse)
+		//GetCarbonReports(context.Context, string, genpoller.Period, string) ([]*genpoller.CarbonForecast)
 
 		//SaveFuelReports(ctx context.Context, reports []*FuelsForecast)
 
 		Ping(context.Context) error
 		
-		//query data then update tables with aggregate information
-		get_aggregate_data(context.Context, string, genpoller.Period, string)
+		//query data then update tables with aggregate information(generated data only)
+		//carbon data only
+		get_aggregate_data(context.Context, []*genpoller.Period, string, string) ([]*genpoller.AggregateData)
 
-		SaveAggregateData(context.Context, genpoller.AggregateData)
+		SaveAggregateReports(context.Context, []*genpoller.AggregateData) (error)
 	}
 
+	client struct {
+		chcon clickhouse.Conn
+	}
 )
 func New(chcon clickhouse.Conn) Client {
 	return &client{chcon}
@@ -46,7 +51,7 @@ func (c *client) Ping(ctx context.Context) error {
 
 //meant to return a "start" time for query to begin
 //returns a time if previous reports are found, otherwise nil
-func (c *client) CheckDB(ctx context.Context, region string) (Time.time) {
+func (c *client) CheckDB(ctx context.Context, region string) (time.Time) {
 	var start time.Time
 	//select the max start because the reports are ordered by start times
 	//only look for hourly reports(first level of reports)
@@ -59,7 +64,7 @@ func (c *client) CheckDB(ctx context.Context, region string) (Time.time) {
 			GROUP BY
 			     start, duration
 			`, "hourly").Scan(&start); err != nil {
-				return time.Time, err //time would be null
+				return start//time would be null
 			}
 	return start
 }
@@ -89,15 +94,33 @@ func (c *client) Init(ctx context.Context, test bool) error {
 					generatedsource String,
 					marginalsource String,
 					consumedsource String,
-					emissionfactor String,
-
-					max Float64,
-					min Float64,
-					sum Float64
+					emissionfactor String
 				) Engine =  MergeTree()
 				ORDER BY (start, duration)
 			`) 
-	return err
+	if err != nil {
+		return err
+	}
+
+	err = c.chcon.Exec(ctx, `
+			CREATE TABLE IF NOT EXISTS aggregate_reports (
+					duration String,
+					start DateTime,
+					end DateTime,
+					average Float64,
+					min Float64,
+					max Float64,
+					sum Float64,
+					count Float64
+				) Engine =  MergeTree()
+				ORDER BY (duration, start)
+			`) 
+	if err != nil {
+		return err
+	}
+
+	return nil
+	
 			/*
 			err = c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS fuel_report (
@@ -132,65 +155,80 @@ func (c *client) Init(ctx context.Context, test bool) error {
 			*/
 }
 
-func (c *client) SaveCarbonReports(ctx context.Context, reports []*CarbonResponse) {
+func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.CarbonForecast) (error) {
 	res, err := c.chcon.PrepareBatch(ctx, `Insert INTO carbon_reports (duration, start,
 		 end, generatedrate, marginalrate, consumedrate, generatedsource, marginalsource, consumedsource,
 		  emissionfactor) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`)
 	if err != nil {
 		return err
 	}
-	for _, reporttype := range reports {
-		for _, report := range reporttype {
-			//append all data in carbon forecast report
-			if err := stmt.Append(report.duration); err != nil {
+
+	for _, report := range reports {
+		
+		if err := res.Append(report.Duration, report.Duration.StartTime,
+			 report.Duration.EndTime, report.GeneratedRate, report.MarginalRate,
+			  report.ConsumedRate, report.GeneratedSource, report.MarginalSource, report.ConsumedSource); err != nil {
 				return err
 			}
-		}
 	}
 	
 
-	return stmt.Send()
+	return res.Send()
 }
 
-func (c *client) get_aggregate_data(ctx context.Context, durationtype string,
-	 start time.Time, end time.Time, region string) ([]*genpoller.AggregateData) {
-	var aggdata []*genpoller.AggregateData
+func (c *client) get_aggregate_data(ctx context.Context,
+	 periods []*genpoller.Period, region string, duration string) ([]*genpoller.AggregateData) {
+	
 	var finalaggdata []*genpoller.AggregateData
+	/**
+	var aggdata *genpoller.AggregateData
 	
 	//should return aggregate date for hour reports, daily reports etc...
 	var min float64
 	var max float64
 	var sum float64
 	var count int
-
-	rows, err := c.chcon.Query(ctx, `
-		SELECT
-				MIN(generatedrate)
-				MAX(generatedrate)
-				COUNT(generatedrate)
-				SUM(generatedrate)
-		FROM
-				carbon_reports
-		WHERE   
-				region = $1 AND duration = $2
-		GROUP BY
-				duration
-		ORDER BY
-				duration
-	`, region, durationtype).Scan(&min, &max, &count, &sum)
-	return &finalaggdata{
-		min: min,
-		max: max,
-		sum: sum,
-		count: count,
-	}
-}
-//hourly reports
-func (c *client) get_aggregate_reports(ctx context.Context, []genpoller.CarbonResponse)
-
-func (c *client) SaveAggregateReports(ctx context.Context, aggData []*genpoller.AggregateData (error)) {
-	//save aggregate data in new table
+	var average float64
 	
+	for _, period := range periods {
+		rows, err := c.chcon.Query(ctx, `
+			SELECT
+				start,
+				end,
+				region,
+				MIN(generatedrate),
+				MAX(generatedrate),
+				COUNT(generatedrate),
+				SUM(generatedrate),
+				AVG(generatedrate)
+			FROM
+				aggregate_reports
+			WHERE   
+				start >= $1 AND end <= $2 AND region = $3
+			GROUP BY
+				duration
+			ORDER BY
+				duration`, period.StartTime, period.EndTime, region).Scan(&min, &max, &count, &sum, &average)
+	aggdata = &genpoller.AggregateData{average, min, max, sum, count, period, duration}
+	finalaggdata = append(finalaggdata, aggdata)
+	}
+	*/
+	return finalaggdata
+}
+
+func (c *client) SaveAggregateReports(ctx context.Context, aggData []*genpoller.AggregateData) (error) {
+	//save aggregate data in new table
+	batch, err := c.chcon.PrepareBatch(ctx, `INSERT INTO aggregate_reports (duration, start, end, average, min, max, sum, count) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`)
+	if err != nil {
+		return err
+	}
+	for _, p := range aggData {
+		if err := batch.Append(p.ReportType, p.Duration.StartTime, p.Duration.EndTime,
+			 p.Average, p.Min, p.Max, p.Sum, p.Count); err != nil {
+			return err
+		}
+	}
+	return batch.Send()
 }
 /**
 func (c *client) GetCarbonReports(ctx context.Context, durationtype string,

@@ -22,7 +22,7 @@ type pollersrvc struct {
 	readDates []time.Time
 }
 var timeFormat = "2006-01-02T15:04:05-07:00"
-    var dateFormat = "2006-01-02"
+var dateFormat = "2006-01-02"
 var regionstartdates map[string]string
 var regions []string
 var reportdurations []string
@@ -84,7 +84,7 @@ func (s *pollersrvc) ensurepastdata(ctx context.Context, dbc storage.Client) (st
 
 
 // query api getting search data for carbon_intensity event
-func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []time.Time) ([][]*genpoller.CarbonForecast, error) {
+func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []time.Time, csc carbonara.Client) ([][]*genpoller.CarbonForecast, error) {
 	var reports [][]*genpoller.CarbonForecast
 	end, err := time.Parse(timeFormat, time.Now().GoString())
 	if err != nil {
@@ -92,6 +92,7 @@ func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []time.Time) ([]
 	}
 	for i, region := range regions {
 		start := dates[i]
+		s.csc
 		carbonres, err := s.csc.getemissions(ctx, region, start, end)
         if err != nil { //handle errors when a region is not available??
             //instead of returning have a way marking that a region is not available
@@ -111,34 +112,98 @@ func (s *pollersrvc) Fuels(ctx context.Context, dates []time.Time) (err error) {
 
 // get the aggregate data for an event from clickhouse
 func (s *pollersrvc) AggregateData(ctx context.Context, carbonreports [][]*genpoller.CarbonForecast,
-	 fuelsreports [][]*genpoller.FuelsForecast) (err error) {
-		timeNow, err := time.Parse(timeFormat, time.Now().GoString())
+	 fuelsreports [][]*genpoller.FuelsForecast, dates []time.Time) (err error) {
+		//timeNow, err := time.Parse(timeFormat, time.Now().GoString())
 		if err != nil {
 			return err
 		}
 	if carbonreports != nil {
 		for i, region := range regions {
 			var days []*genpoller.Period
-			var weeks []*genpoller.Period
 			var months []*genpoller.Period
-			weeks = 
-			start = dates[i]
-			for j, reporttype := range reportdurations {
-				aggregateres, err := s.dbc.get_aggregate_data(ctx, reporttype[j], start, end, region)
+			var years []*genpoller.Period
+			days, months, years = getdates(ctx, dates[i], carbonreports[i])
+			if days != nil {
+				aggregateres, err := s.dbc.get_aggregate_data(ctx, days, region, reportdurations[1])
 				s.dbc.SaveAggregateData(ctx, aggregateres)
 			}
+			if months != nil {
+				aggregateres, err := s.dbc.get_aggregate_data(ctx, months, region, reportdurations[2])
+				s.dbc.SaveAggregateData(ctx, aggregateres)
+			}
+
+			if years != nil {
+				aggregateres, err := s.dbc.get_aggregate_data(ctx, years, region, reportdurations[3])
+				s.dbc.SaveAggregateData(ctx, aggregateres)
+			}
+			
+			
 		}
 	}
 	
 	return nil
 }
-func getdailydates(hourstartTimes []time.Time{}, carbonreports) ([]*genpoller.Period) {
-	return nil
+//TODO make function return periods for daily, weekly and monthly reports
+func getdates(ctx context.Context, initialstart time.Time, hourlyreports []*genpoller.CarbonForecast) ([]*genpoller.Period, []*genpoller.Period, []*genpoller.Period) {
+	//var datescounter := 0
+	var dailyDates []*genpoller.Period
+	var monthlyDates []*genpoller.Period
+	var yearlyDates []*genpoller.Period
+	var daystart time.Time
+	var dayend time.Time
+	var monthstart time.Time
+	var monthend time.Time
+	var yearstart time.Time
+	var yearend time.Time
+
+
+	var newreport = true
+
+	//TODO dont know if function below returns the right values
+	var daycounter = time.Time.Day(initialstart)
+	var monthcounter = time.Time.Month(initialstart)
+	var yearcounter = time.Time.Year(initialstart)
+
+	daystart = initialstart
+	for _, event := range hourlyreports {
+		var time, err = time.Parse(timeFormat, event.Duration.StartTime)
+		if err != nil {
+			fmt.Errorf("parsing error")
+		}
+	
+		var year = time.Year()
+		var month = time.Month()
+		var day = time.Day()
+		
+
+		if (month >= monthcounter && year >= yearcounter) || (month <= monthcounter && year >= yearcounter) {
+			if day > daycounter || (day < daycounter && month == monthcounter) {
+				daycounter = day
+				newreport = true 
+			}
+		}
+
+		if newreport == true {
+			newreport = false
+			if month != monthcounter {
+				monthcounter = month
+				monthlyDates = append(monthlyDates, &genpoller.Period{monthstart, monthend})
+				monthstart = time
+			}
+			if year != yearcounter {
+				yearcounter = year
+				yearlyDates = append(yearlyDates, &genpoller.Period{yearstart, yearend})
+				yearstart = time
+			}
+			dailyDates = append(dailyDates, &genpoller.Period{daystart, dayend})
+			daystart = time
+		}
+		dayend = time
+		monthend = time
+		yearend = time
+
+	}
+	return dailyDates, monthlyDates, yearlyDates
 }
-func getweeklydates(dailystartTimes []time.Time{}, carbonreports) ([]*genpoller.Period) {
-	return nil
-}
-func getmonthlydates(monthlystartTimes []time.Time{}, carbonreports) ([]*genpoller.Period) {
-	return nil
-} 
+
 //helper functions
