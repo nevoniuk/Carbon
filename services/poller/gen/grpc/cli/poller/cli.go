@@ -22,7 +22,7 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `poller (carbon-emissions|fuels|aggregate-data)
+	return `poller (carbon-emissions|aggregate-data)
 `
 }
 
@@ -40,13 +40,10 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 
 		pollerCarbonEmissionsFlags = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
 
-		pollerFuelsFlags = flag.NewFlagSet("fuels", flag.ExitOnError)
-
 		pollerAggregateDataFlags = flag.NewFlagSet("aggregate-data", flag.ExitOnError)
 	)
 	pollerFlags.Usage = pollerUsage
 	pollerCarbonEmissionsFlags.Usage = pollerCarbonEmissionsUsage
-	pollerFuelsFlags.Usage = pollerFuelsUsage
 	pollerAggregateDataFlags.Usage = pollerAggregateDataUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
@@ -86,9 +83,6 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			case "carbon-emissions":
 				epf = pollerCarbonEmissionsFlags
 
-			case "fuels":
-				epf = pollerFuelsFlags
-
 			case "aggregate-data":
 				epf = pollerAggregateDataFlags
 
@@ -120,9 +114,6 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			case "carbon-emissions":
 				endpoint = c.CarbonEmissions()
 				data = nil
-			case "fuels":
-				endpoint = c.Fuels()
-				data = nil
 			case "aggregate-data":
 				endpoint = c.AggregateDataEndpoint()
 				data = nil
@@ -144,7 +135,6 @@ Usage:
 
 COMMAND:
     carbon-emissions: query api getting search data for carbon_intensity event
-    fuels: query api using a search call for a fuel event from Carbonara API
     aggregate-data: get the aggregate data for an event from clickhouse
 
 Additional help:
@@ -158,16 +148,6 @@ query api getting search data for carbon_intensity event
 
 Example:
     %[1]s poller carbon-emissions
-`, os.Args[0])
-}
-
-func pollerFuelsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller fuels
-
-query api using a search call for a fuel event from Carbonara API
-
-Example:
-    %[1]s poller fuels
 `, os.Args[0])
 }
 

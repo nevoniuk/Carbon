@@ -12,7 +12,6 @@ import (
 
 	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
 	goagrpc "goa.design/goa/v3/grpc"
-	goapb "goa.design/goa/v3/grpc/pb"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc"
 )
@@ -41,34 +40,7 @@ func (c *Client) CarbonEmissions() goa.Endpoint {
 			DecodeCarbonEmissionsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
-			resp := goagrpc.DecodeError(err)
-			switch message := resp.(type) {
-			case *goapb.ErrorResponse:
-				return nil, goagrpc.NewServiceError(message)
-			default:
-				return nil, goa.Fault(err.Error())
-			}
-		}
-		return res, nil
-	}
-}
-
-// Fuels calls the "Fuels" function in pollerpb.PollerClient interface.
-func (c *Client) Fuels() goa.Endpoint {
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		inv := goagrpc.NewInvoker(
-			BuildFuelsFunc(c.grpccli, c.opts...),
-			nil,
-			DecodeFuelsResponse)
-		res, err := inv.Invoke(ctx, v)
-		if err != nil {
-			resp := goagrpc.DecodeError(err)
-			switch message := resp.(type) {
-			case *goapb.ErrorResponse:
-				return nil, goagrpc.NewServiceError(message)
-			default:
-				return nil, goa.Fault(err.Error())
-			}
+			return nil, goa.Fault(err.Error())
 		}
 		return res, nil
 	}
@@ -84,13 +56,7 @@ func (c *Client) AggregateDataEndpoint() goa.Endpoint {
 			DecodeAggregateDataEndpointResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
-			resp := goagrpc.DecodeError(err)
-			switch message := resp.(type) {
-			case *goapb.ErrorResponse:
-				return nil, goagrpc.NewServiceError(message)
-			default:
-				return nil, goa.Fault(err.Error())
-			}
+			return nil, goa.Fault(err.Error())
 		}
 		return res, nil
 	}

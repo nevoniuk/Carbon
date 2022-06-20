@@ -17,8 +17,6 @@ import (
 type Service interface {
 	// query api getting search data for carbon_intensity event
 	CarbonEmissions(context.Context) (res []*CarbonForecast, err error)
-	// query api using a search call for a fuel event from Carbonara API
-	Fuels(context.Context) (res []*FuelsForecast, err error)
 	// get the aggregate data for an event from clickhouse
 	AggregateDataEndpoint(context.Context) (res []*AggregateData, err error)
 }
@@ -31,7 +29,7 @@ const ServiceName = "Poller"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [3]string{"carbon_emissions", "fuels", "aggregate_data"}
+var MethodNames = [2]string{"carbon_emissions", "aggregate_data"}
 
 // aggregate data
 type AggregateData struct {
@@ -44,7 +42,7 @@ type AggregateData struct {
 	// sum
 	Sum float64
 	// count
-	Count float64
+	Count int
 	// duration
 	Duration *Period
 	// report_type
@@ -73,49 +71,12 @@ type CarbonForecast struct {
 	Region string
 }
 
-// Generated Fuel Mix
-type Fuel struct {
-	// MW
-	Mw float64
-}
-
-// Generated Fuel Mix
-type FuelMix struct {
-	// Fuels
-	Fuels []*Fuel
-	// aggregate_data
-	AggregateData *AggregateData
-}
-
-// Emissions Forecast
-type FuelsForecast struct {
-	// fuels
-	Fuels *FuelMix
-	// duration
-	Duration *Period
-	// marginal_source
-	MarginalSource string
-	// generated_source
-	GeneratedSource string
-	// report_type
-	ReportType string
-}
-
 // Period of time from start to end of Forecast
 type Period struct {
 	// Start time
 	StartTime string
 	// End time
 	EndTime string
-}
-
-// MakeDataNotAvailable builds a goa.ServiceError from an error.
-func MakeDataNotAvailable(err error) *goa.ServiceError {
-	return &goa.ServiceError{
-		Name:    "data_not_available",
-		ID:      goa.NewErrorID(),
-		Message: err.Error(),
-	}
 }
 
 // MakeMissingRequiredParameter builds a goa.ServiceError from an error.

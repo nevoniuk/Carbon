@@ -44,33 +44,6 @@ func DecodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr
 	return res, nil
 }
 
-// BuildFuelsFunc builds the remote method to invoke for "Poller" service
-// "fuels" endpoint.
-func BuildFuelsFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
-	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
-		for _, opt := range cliopts {
-			opts = append(opts, opt)
-		}
-		if reqpb != nil {
-			return grpccli.Fuels(ctx, reqpb.(*pollerpb.FuelsRequest), opts...)
-		}
-		return grpccli.Fuels(ctx, &pollerpb.FuelsRequest{}, opts...)
-	}
-}
-
-// DecodeFuelsResponse decodes responses from the Poller fuels endpoint.
-func DecodeFuelsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*pollerpb.FuelsResponse)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "fuels", "*pollerpb.FuelsResponse", v)
-	}
-	if err := ValidateFuelsResponse(message); err != nil {
-		return nil, err
-	}
-	res := NewFuelsResult(message)
-	return res, nil
-}
-
 // BuildAggregateDataEndpointFunc builds the remote method to invoke for
 // "Poller" service "aggregate_data" endpoint.
 func BuildAggregateDataEndpointFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {

@@ -9,19 +9,16 @@ package server
 
 import (
 	"context"
-	"errors"
 
 	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
 	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	goagrpc "goa.design/goa/v3/grpc"
 	goa "goa.design/goa/v3/pkg"
-	"google.golang.org/grpc/codes"
 )
 
 // Server implements the pollerpb.PollerServer interface.
 type Server struct {
 	CarbonEmissionsH       goagrpc.UnaryHandler
-	FuelsH                 goagrpc.UnaryHandler
 	AggregateDataEndpointH goagrpc.UnaryHandler
 	pollerpb.UnimplementedPollerServer
 }
@@ -36,7 +33,6 @@ type ErrorNamer interface {
 func New(e *poller.Endpoints, uh goagrpc.UnaryHandler) *Server {
 	return &Server{
 		CarbonEmissionsH:       NewCarbonEmissionsHandler(e.CarbonEmissions, uh),
-		FuelsH:                 NewFuelsHandler(e.Fuels, uh),
 		AggregateDataEndpointH: NewAggregateDataEndpointHandler(e.AggregateDataEndpoint, uh),
 	}
 }
@@ -57,47 +53,9 @@ func (s *Server) CarbonEmissions(ctx context.Context, message *pollerpb.CarbonEm
 	ctx = context.WithValue(ctx, goa.ServiceKey, "Poller")
 	resp, err := s.CarbonEmissionsH.Handle(ctx, message)
 	if err != nil {
-		var en ErrorNamer
-		if errors.As(err, &en) {
-			switch en.ErrorName() {
-			case "data_not_available":
-				return nil, goagrpc.NewStatusError(codes.DataLoss, err, goagrpc.NewErrorResponse(err))
-			case "missing-required-parameter":
-				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
-			}
-		}
 		return nil, goagrpc.EncodeError(err)
 	}
 	return resp.(*pollerpb.CarbonEmissionsResponse), nil
-}
-
-// NewFuelsHandler creates a gRPC handler which serves the "Poller" service
-// "fuels" endpoint.
-func NewFuelsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
-	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeFuelsResponse)
-	}
-	return h
-}
-
-// Fuels implements the "Fuels" method in pollerpb.PollerServer interface.
-func (s *Server) Fuels(ctx context.Context, message *pollerpb.FuelsRequest) (*pollerpb.FuelsResponse, error) {
-	ctx = context.WithValue(ctx, goa.MethodKey, "fuels")
-	ctx = context.WithValue(ctx, goa.ServiceKey, "Poller")
-	resp, err := s.FuelsH.Handle(ctx, message)
-	if err != nil {
-		var en ErrorNamer
-		if errors.As(err, &en) {
-			switch en.ErrorName() {
-			case "data_not_available":
-				return nil, goagrpc.NewStatusError(codes.DataLoss, err, goagrpc.NewErrorResponse(err))
-			case "missing-required-parameter":
-				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
-			}
-		}
-		return nil, goagrpc.EncodeError(err)
-	}
-	return resp.(*pollerpb.FuelsResponse), nil
 }
 
 // NewAggregateDataEndpointHandler creates a gRPC handler which serves the
@@ -116,15 +74,6 @@ func (s *Server) AggregateDataEndpoint(ctx context.Context, message *pollerpb.Ag
 	ctx = context.WithValue(ctx, goa.ServiceKey, "Poller")
 	resp, err := s.AggregateDataEndpointH.Handle(ctx, message)
 	if err != nil {
-		var en ErrorNamer
-		if errors.As(err, &en) {
-			switch en.ErrorName() {
-			case "data_not_available":
-				return nil, goagrpc.NewStatusError(codes.DataLoss, err, goagrpc.NewErrorResponse(err))
-			case "missing-required-parameter":
-				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
-			}
-		}
 		return nil, goagrpc.EncodeError(err)
 	}
 	return resp.(*pollerpb.AggregateDataResponse), nil

@@ -26,17 +26,6 @@ func EncodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr
 	return resp, nil
 }
 
-// EncodeFuelsResponse encodes responses from the "Poller" service "fuels"
-// endpoint.
-func EncodeFuelsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.([]*poller.FuelsForecast)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "fuels", "[]*poller.FuelsForecast", v)
-	}
-	resp := NewProtoFuelsResponse(result)
-	return resp, nil
-}
-
 // EncodeAggregateDataEndpointResponse encodes responses from the "Poller"
 // service "aggregate_data" endpoint.
 func EncodeAggregateDataEndpointResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {

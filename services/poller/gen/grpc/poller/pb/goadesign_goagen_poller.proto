@@ -15,8 +15,6 @@ option go_package = "/pollerpb";
 service Poller {
 	// query api getting search data for carbon_intensity event
 	rpc CarbonEmissions (CarbonEmissionsRequest) returns (CarbonEmissionsResponse);
-	// query api using a search call for a fuel event from Carbonara API
-	rpc Fuels (FuelsRequest) returns (FuelsResponse);
 	// get the aggregate data for an event from clickhouse
 	rpc AggregateDataEndpoint (AggregateDataRequest) returns (AggregateDataResponse);
 }
@@ -56,36 +54,11 @@ message Period {
 	string end_time = 2;
 }
 
-message FuelsRequest {
+message AggregateDataRequest {
 }
 
-message FuelsResponse {
-	repeated FuelsForecast field = 1;
-}
-// Emissions Forecast
-message FuelsForecast {
-	// fuels
-	FuelMix fuels = 1;
-	// duration
-	Period duration = 2;
-	// marginal_source
-	string marginal_source = 3;
-	// generated_source
-	string generated_source = 4;
-	// report_type
-	string report_type = 5;
-}
-// Generated Fuel Mix
-message FuelMix {
-	// Fuels
-	repeated Fuel fuels = 1;
-	// aggregate_data
-	AggregateData aggregate_data = 2;
-}
-// Generated Fuel Mix
-message Fuel {
-	// MW
-	double mw = 1;
+message AggregateDataResponse {
+	repeated AggregateData field = 1;
 }
 // aggregate data
 message AggregateData {
@@ -98,16 +71,9 @@ message AggregateData {
 	// sum
 	double sum = 4;
 	// count
-	double count = 5;
+	sint32 count = 5;
 	// duration
 	Period duration = 6;
 	// report_type
 	string report_type = 7;
-}
-
-message AggregateDataRequest {
-}
-
-message AggregateDataResponse {
-	repeated AggregateData field = 1;
 }

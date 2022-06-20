@@ -42,33 +42,6 @@ func NewCarbonEmissionsResult(message *pollerpb.CarbonEmissionsResponse) []*poll
 	return result
 }
 
-// NewProtoFuelsRequest builds the gRPC request type from the payload of the
-// "fuels" endpoint of the "Poller" service.
-func NewProtoFuelsRequest() *pollerpb.FuelsRequest {
-	message := &pollerpb.FuelsRequest{}
-	return message
-}
-
-// NewFuelsResult builds the result type of the "fuels" endpoint of the
-// "Poller" service from the gRPC response type.
-func NewFuelsResult(message *pollerpb.FuelsResponse) []*poller.FuelsForecast {
-	result := make([]*poller.FuelsForecast, len(message.Field))
-	for i, val := range message.Field {
-		result[i] = &poller.FuelsForecast{
-			MarginalSource:  val.MarginalSource,
-			GeneratedSource: val.GeneratedSource,
-			ReportType:      val.ReportType,
-		}
-		if val.Fuels != nil {
-			result[i].Fuels = protobufPollerpbFuelMixToPollerFuelMix(val.Fuels)
-		}
-		if val.Duration != nil {
-			result[i].Duration = protobufPollerpbPeriodToPollerPeriod(val.Duration)
-		}
-	}
-	return result
-}
-
 // NewProtoAggregateDataRequest builds the gRPC request type from the payload
 // of the "aggregate_data" endpoint of the "Poller" service.
 func NewProtoAggregateDataRequest() *pollerpb.AggregateDataRequest {
@@ -86,7 +59,7 @@ func NewAggregateDataResult(message *pollerpb.AggregateDataResponse) []*poller.A
 			Min:        val.Min,
 			Max:        val.Max,
 			Sum:        val.Sum,
-			Count:      val.Count,
+			Count:      int(val.Count),
 			ReportType: val.ReportType,
 		}
 		if val.Duration != nil {
@@ -131,55 +104,16 @@ func ValidatePeriod(message *pollerpb.Period) (err error) {
 	return
 }
 
-// ValidateFuelsResponse runs the validations defined on FuelsResponse.
-func ValidateFuelsResponse(message *pollerpb.FuelsResponse) (err error) {
+// ValidateAggregateDataResponse runs the validations defined on
+// AggregateDataResponse.
+func ValidateAggregateDataResponse(message *pollerpb.AggregateDataResponse) (err error) {
 	for _, e := range message.Field {
 		if e != nil {
-			if err2 := ValidateFuelsForecast(e); err2 != nil {
+			if err2 := ValidateAggregateData(e); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
 	}
-	return
-}
-
-// ValidateFuelsForecast runs the validations defined on FuelsForecast.
-func ValidateFuelsForecast(message *pollerpb.FuelsForecast) (err error) {
-	if message.Fuels == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("fuels", "message"))
-	}
-	if message.Duration == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "message"))
-	}
-	if message.Fuels != nil {
-		if err2 := ValidateFuelMix(message.Fuels); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
-	}
-	if message.Duration != nil {
-		if err2 := ValidatePeriod(message.Duration); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
-	}
-	return
-}
-
-// ValidateFuelMix runs the validations defined on FuelMix.
-func ValidateFuelMix(message *pollerpb.FuelMix) (err error) {
-	if message.Fuels == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("Fuels", "message"))
-	}
-	if message.AggregateData != nil {
-		if err2 := ValidateAggregateData(message.AggregateData); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
-	}
-	return
-}
-
-// ValidateFuel runs the validations defined on Fuel.
-func ValidateFuel(message *pollerpb.Fuel) (err error) {
-
 	return
 }
 
@@ -191,19 +125,6 @@ func ValidateAggregateData(message *pollerpb.AggregateData) (err error) {
 	if message.Duration != nil {
 		if err2 := ValidatePeriod(message.Duration); err2 != nil {
 			err = goa.MergeErrors(err, err2)
-		}
-	}
-	return
-}
-
-// ValidateAggregateDataResponse runs the validations defined on
-// AggregateDataResponse.
-func ValidateAggregateDataResponse(message *pollerpb.AggregateDataResponse) (err error) {
-	for _, e := range message.Field {
-		if e != nil {
-			if err2 := ValidateAggregateData(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
 		}
 	}
 	return
@@ -226,86 +147,6 @@ func protobufPollerpbPeriodToPollerPeriod(v *pollerpb.Period) *poller.Period {
 	res := &poller.Period{
 		StartTime: v.StartTime,
 		EndTime:   v.EndTime,
-	}
-
-	return res
-}
-
-// svcPollerFuelMixToPollerpbFuelMix builds a value of type *pollerpb.FuelMix
-// from a value of type *poller.FuelMix.
-func svcPollerFuelMixToPollerpbFuelMix(v *poller.FuelMix) *pollerpb.FuelMix {
-	res := &pollerpb.FuelMix{}
-	if v.Fuels != nil {
-		res.Fuels = make([]*pollerpb.Fuel, len(v.Fuels))
-		for i, val := range v.Fuels {
-			res.Fuels[i] = &pollerpb.Fuel{
-				Mw: val.Mw,
-			}
-		}
-	}
-	if v.AggregateData != nil {
-		res.AggregateData = svcPollerAggregateDataToPollerpbAggregateData(v.AggregateData)
-	}
-
-	return res
-}
-
-// svcPollerAggregateDataToPollerpbAggregateData builds a value of type
-// *pollerpb.AggregateData from a value of type *poller.AggregateData.
-func svcPollerAggregateDataToPollerpbAggregateData(v *poller.AggregateData) *pollerpb.AggregateData {
-	if v == nil {
-		return nil
-	}
-	res := &pollerpb.AggregateData{
-		Average:    v.Average,
-		Min:        v.Min,
-		Max:        v.Max,
-		Sum:        v.Sum,
-		Count:      v.Count,
-		ReportType: v.ReportType,
-	}
-	if v.Duration != nil {
-		res.Duration = svcPollerPeriodToPollerpbPeriod(v.Duration)
-	}
-
-	return res
-}
-
-// protobufPollerpbFuelMixToPollerFuelMix builds a value of type
-// *poller.FuelMix from a value of type *pollerpb.FuelMix.
-func protobufPollerpbFuelMixToPollerFuelMix(v *pollerpb.FuelMix) *poller.FuelMix {
-	res := &poller.FuelMix{}
-	if v.Fuels != nil {
-		res.Fuels = make([]*poller.Fuel, len(v.Fuels))
-		for i, val := range v.Fuels {
-			res.Fuels[i] = &poller.Fuel{
-				Mw: val.Mw,
-			}
-		}
-	}
-	if v.AggregateData != nil {
-		res.AggregateData = protobufPollerpbAggregateDataToPollerAggregateData(v.AggregateData)
-	}
-
-	return res
-}
-
-// protobufPollerpbAggregateDataToPollerAggregateData builds a value of type
-// *poller.AggregateData from a value of type *pollerpb.AggregateData.
-func protobufPollerpbAggregateDataToPollerAggregateData(v *pollerpb.AggregateData) *poller.AggregateData {
-	if v == nil {
-		return nil
-	}
-	res := &poller.AggregateData{
-		Average:    v.Average,
-		Min:        v.Min,
-		Max:        v.Max,
-		Sum:        v.Sum,
-		Count:      v.Count,
-		ReportType: v.ReportType,
-	}
-	if v.Duration != nil {
-		res.Duration = protobufPollerpbPeriodToPollerPeriod(v.Duration)
 	}
 
 	return res
