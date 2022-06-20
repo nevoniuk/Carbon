@@ -16,7 +16,7 @@ var _ = Service("Poller", func() {
 
 	Method("carbon_emissions", func() {
 		Description("query api getting search data for carbon_intensity event")
-		Result(ArrayOf(CarbonForecast))
+		Result(ArrayOf(ArrayOf(CarbonForecast)))
 		//Error("data_not_available", ErrorResult, "The data is not available or server error")
 		//Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
