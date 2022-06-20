@@ -117,7 +117,7 @@ var aggregateData = Type("aggregateData", func() {
 		Example(37.8267)
 	})
 	Field(5, "count", Int, "count", func() {
-		Example(37.8267)
+		Example(50)
 	})
 	Field(6, "duration", Period, "duration", func() {
 		//Example(37.8267)
