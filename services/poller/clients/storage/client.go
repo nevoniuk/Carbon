@@ -17,6 +17,7 @@ type (
 
 	Client interface {
 		// Init development database
+		Name() string
 		Init(context.Context, bool) error
 		// Retrieve last date there is available data in clickhouse
 		CheckDB(context.Context, string) (time.Time, error)
@@ -40,6 +41,12 @@ type (
 		chcon clickhouse.Conn
 	}
 )
+
+func (c *client) Name() string {
+	var name = "clickhouse"
+	return name
+}
+
 func New(chcon clickhouse.Conn) Client {
 	return &client{chcon}
 }

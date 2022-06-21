@@ -12,18 +12,21 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
+	
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	//"goa.design/clue/health"
+	"goa.design/clue/health"
 	"goa.design/clue/log"
-	//"goa.design/clue/metrics"
+	//the log package provides a context based logging API
+	"goa.design/clue/metrics"
+	//metrics is for exposing a promethes compatible metrics HTTP endpoint
+	//the trace package conforms to the opentelemetry specification to trace requests
 	"goa.design/clue/trace"
 	goagrpcmiddleware "goa.design/goa/v3/grpc/middleware"
 	//goahttp "goa.design/goa/v3/http"
 	//goahttpmiddleware "goa.design/goa/v3/http/middleware"
 	"google.golang.org/grpc"
-	//"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/crossnokaye/carbon/clients/clickhouse"
@@ -42,25 +45,40 @@ func main() {
 	var (
 		grpcaddr  = flag.String("grpc-addr", "0.0.0.0:12201", "gRPC listen address")
 		httpaddr  = flag.String("http-addr", "0.0.0.0:12202", "HTTP listen address")
+		agentaddr = flag.String("agent-addr", ":4317", "Grafana agent listen address")
+
 
 		chaddr = flag.String("ch-addr", os.Getenv("CLICKHOUSE_ADDR"), "ClickHouse host address")
 		chuser = flag.String("ch-user", os.Getenv("CLICKHOUSE_USER"), "ClickHouse user")
 		chpwd  = flag.String("ch-pwd", os.Getenv("CLICKHOUSE_PASSWORD"), "ClickHouse password")
 		chssl  = flag.Bool("ch-ssl", os.Getenv("CLICKHOUSE_SSL") != "", "ClickHouse connection SSL")
 
-		//debug = flag.Bool("debug", false, "Enable debug logs")
+		debug = flag.Bool("debug", false, "Enable debug logs")
 		//test  = flag.Bool("test", os.Getenv("TEST_ENV") != "", "Enable test mode")
 	)
 	flag.Parse()
 
-	// Setup logger. Replace logger with your own log package of choice.
 	format := log.FormatJSON
 	if log.IsTerminal() {
 		format = log.FormatTerminal
 	}
-	ctx := log.Context(context.Background(), log.WithFormat(format))
-	ctx = log.With(ctx, log.KV{K: "svc", V: genpoller.ServiceName})
+	ctx := log.With(log.Context(context.Background(), log.WithFormat(format)), log.KV{K: "svc", V: genpoller.ServiceName})
+	if *debug {
+		ctx = log.Context(ctx, log.WithDebug())
+		log.Debugf(ctx, "debug logs enabled")
+	}
 
+	// Setup tracing
+	conn, err := grpc.DialContext(ctx, *agentaddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Errorf(ctx, err, "failed to connect to Grafana agent")
+		os.Exit(1)
+	}
+	if ctx, err = trace.Context(ctx, genpoller.ServiceName, trace.WithGRPCExporter(conn)); err != nil {
+		log.Errorf(ctx, err, "failed to initialize tracing")
+		os.Exit(1)
+	}
 	//intiialize the clients
 
 	// Initialize the services.
@@ -98,12 +116,14 @@ func main() {
 		log.Errorf(ctx, err, "could not initialize clickhouse")
 	}
 
-	
+	//setup the service
 	pollerSvc := pollerapi.NewPoller(ctx, csc, dbc)
 	endpoints := genpoller.NewEndpoints(pollerSvc)
 
 	// Wrap the services in endpoints that can be invoked from other services
 	// potentially running in different processes.
+
+	//initialize context for tracing
 
 	//create transport
 	server := gengrpc.New(endpoints, nil)
@@ -115,7 +135,15 @@ func main() {
 			goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
 			
 			//metrics.UnaryServerInterceptor(ctx),
-		))
+		),
+		grpcmiddleware.WithStreamServerChain(
+			goagrpcmiddleware.StreamRequestID(),
+			log.StreamServerInterceptor(ctx),
+			goagrpcmiddleware.StreamServerLogContext(log.AsGoaMiddlewareLogger),
+			metrics.StreamServerInterceptor(ctx),
+			trace.StreamServerInterceptor(ctx),
+		),
+	)
 	genpb.RegisterPollerServer(grpcsvr, server)
 	reflection.Register(grpcsvr)
 	for svc, info := range grpcsvr.GetServiceInfo() {
@@ -124,27 +152,10 @@ func main() {
 		}
 	}
 
-	//HTTP transport
-
-	//mux := goahttp.NewMuxer()
-	//httpserver := genhttp.New(endpoints, mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, nil, nil)
-	//genhttp.Mount(mux, httpserver)
-	//handler := trace.HTTP(ctx)(mux)
-//	handler = metrics.HTTP(ctx)(handler)
-	//handler = goahttpmiddleware.LogContext(log.AsGoaMiddlewareLogger)(handler)
-	//handler = log.HTTP(ctx)(handler)
-	//handler = goahttpmiddleware.RequestID()(handler)
-	//for _, m := range httpserver.Mounts {
-	//	log.Print(ctx, log.KV{K: "method", V: m.Method}, log.KV{K: "endpoint", V: m.Verb + " " + m.Pattern})
-	//}
-
-	// Mount health check & metrics on separate handler to avoid logging etc.
-//	check := health.Handler(health.NewChecker(stc))
-//	http.Handle("/healthz", check)
-//	http.Handle("/livez", check)
-//	http.Handle("/metrics", metrics.Handler(ctx).(http.HandlerFunc))
-	//http.Handle("/", handler)
-
+	check := health.Handler(health.NewChecker(dbc))
+	http.Handle("/healthz", check)
+	http.Handle("/livez", check)
+	http.Handle("/metrics", metrics.Handler(ctx))
 	httpsvr := &http.Server{Addr: *httpaddr}
 
 
