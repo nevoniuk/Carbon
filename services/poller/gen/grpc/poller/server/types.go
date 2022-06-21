@@ -12,6 +12,16 @@ import (
 	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
+// NewCarbonEmissionsPayload builds the payload of the "carbon_emissions"
+// endpoint of the "Poller" service from the gRPC request type.
+func NewCarbonEmissionsPayload(message *pollerpb.CarbonEmissionsRequest) []string {
+	v := make([]string, len(message.Field))
+	for i, val := range message.Field {
+		v[i] = val
+	}
+	return v
+}
+
 // NewProtoCarbonEmissionsResponse builds the gRPC response type from the
 // result of the "carbon_emissions" endpoint of the "Poller" service.
 func NewProtoCarbonEmissionsResponse(result [][]*poller.CarbonForecast) *pollerpb.CarbonEmissionsResponse {

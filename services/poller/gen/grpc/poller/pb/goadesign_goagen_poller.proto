@@ -20,6 +20,7 @@ service Poller {
 }
 
 message CarbonEmissionsRequest {
+	repeated string field = 1;
 }
 
 message CarbonEmissionsResponse {

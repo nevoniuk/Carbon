@@ -15,6 +15,7 @@ var _ = Service("Poller", func() {
 	Description("Service that provides forecasts to clickhouse from Carbonara API")
 
 	Method("carbon_emissions", func() {
+		Payload(ArrayOf(String))
 		Description("query api getting search data for carbon_intensity event")
 		Result(ArrayOf(ArrayOf(CarbonForecast)))
 		//Error("data_not_available", ErrorResult, "The data is not available or server error")

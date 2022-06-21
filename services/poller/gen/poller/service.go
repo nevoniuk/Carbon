@@ -16,7 +16,7 @@ import (
 // Service that provides forecasts to clickhouse from Carbonara API
 type Service interface {
 	// query api getting search data for carbon_intensity event
-	CarbonEmissions(context.Context) (res [][]*CarbonForecast, err error)
+	CarbonEmissions(context.Context, []string) (res [][]*CarbonForecast, err error)
 	// get the aggregate data for an event from clickhouse
 	AggregateDataEndpoint(context.Context) (res []*AggregateData, err error)
 }

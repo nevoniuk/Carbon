@@ -30,6 +30,16 @@ func BuildCarbonEmissionsFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.Cal
 	}
 }
 
+// EncodeCarbonEmissionsRequest encodes requests sent to Poller
+// carbon_emissions endpoint.
+func EncodeCarbonEmissionsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
+	payload, ok := v.([]string)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "[]string", v)
+	}
+	return NewProtoCarbonEmissionsRequest(payload), nil
+}
+
 // DecodeCarbonEmissionsResponse decodes responses from the Poller
 // carbon_emissions endpoint.
 func DecodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {

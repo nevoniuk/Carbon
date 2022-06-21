@@ -36,7 +36,7 @@ func (c *Client) CarbonEmissions() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildCarbonEmissionsFunc(c.grpccli, c.opts...),
-			nil,
+			EncodeCarbonEmissionsRequest,
 			DecodeCarbonEmissionsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {

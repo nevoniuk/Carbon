@@ -20,9 +20,7 @@ import (
 type (
 
 	Client interface {
-		//Init()
-		//HttpGetRequestCall(context.Context, *http.Request) (*http.Response, error)
-		GetEmissions(context.Context, string, time.Time, time.Time) ([]*genpoller.CarbonForecast, error)
+		GetEmissions(context.Context, string, string, string) ([]*genpoller.CarbonForecast, error)
 	}
 
 	client struct {
@@ -100,23 +98,25 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 }
 
 
-func (c *client) GetEmissions(ctx context.Context, region string, startime time.Time, endtime time.Time) ([]*genpoller.CarbonForecast, error) {
+func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string) ([]*genpoller.CarbonForecast, error) {
 	//ignore starttime and endtime for now
-
+	fmt.Println("here")
 	start := "2022-01-06T15:00:00-00:00" //for testing
 	end := "2022-05-06T15:00:00-00:00" //testing
 	carbonUrl := strings.Join([]string{cs_url, "region_events/search?", "region=", region, "?event_type=carbon_intensity&start=",
 		start, "&end=", end}, "/") //for testing
+	fmt.Printf(carbonUrl)
 	//TODO: add io reader instead of nil
 	req, err := http.NewRequest(http.MethodGet, carbonUrl, nil)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("here")
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("X-Api-Key", "52f0a90b3a2747dcb651f508b63e002c")
 	carbonresp, err := c.HttpGetRequestCall(ctx, req)
 	defer carbonresp.Body.Close()
-
+	fmt.Println("here")
 	carbonData := carbonreport{}
 	err = json.NewDecoder(carbonresp.Body).Decode(&carbonData)
 	if err != nil {
@@ -135,14 +135,6 @@ func gethourlyreports(ctx context.Context, minutereports carbonreport) ([]*genpo
 	//get averages of all minute report for a given hour
 	newreport := true
 	addtoreport := false
-
-	hourcounter := 0
-	minutecounter := -1
-	daycounter := -1
-	monthcounter := -1
-	yearcounter := -1
-
-	
 	
 	//keep track of which reports have consumed, gen, and marg data
 	var consumedcounter float64 = 0
@@ -152,12 +144,18 @@ func gethourlyreports(ctx context.Context, minutereports carbonreport) ([]*genpo
 	var hourlyreports []*genpoller.CarbonForecast
 	var hourlyreport *genpoller.CarbonForecast
 
+	var t, err = time.Parse(timeFormat, minutereports.reports[0].date_taken)
+	fmt.Println(t)
+	if err != nil {
+		fmt.Printf("error %p", t)
+	}
+	
 	year, month, day, hours, minutes := parseDateTime(ctx, minutereports.reports[0].date_taken)
-	yearcounter = year
-	monthcounter = month
-	daycounter = day
-	minutecounter = minutes
-	hourcounter = hours
+	var yearcounter = year
+	var monthcounter = month
+	var daycounter = day
+	var minutecounter = minutes
+	var hourcounter = hours
 
 	//for the first report only
 	hourlyreport.Duration.StartTime = minutereports.reports[0].date_taken

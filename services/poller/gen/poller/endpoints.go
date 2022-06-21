@@ -37,7 +37,8 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 // method "carbon_emissions" of service "Poller".
 func NewCarbonEmissionsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return s.CarbonEmissions(ctx)
+		p := req.([]string)
+		return s.CarbonEmissions(ctx, p)
 	}
 }
 

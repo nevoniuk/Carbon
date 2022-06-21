@@ -10,6 +10,7 @@ package server
 import (
 	"context"
 
+	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
 	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	goagrpc "goa.design/goa/v3/grpc"
 	"google.golang.org/grpc/metadata"
@@ -24,6 +25,25 @@ func EncodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr
 	}
 	resp := NewProtoCarbonEmissionsResponse(result)
 	return resp, nil
+}
+
+// DecodeCarbonEmissionsRequest decodes requests sent to "Poller" service
+// "carbon_emissions" endpoint.
+func DecodeCarbonEmissionsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		message *pollerpb.CarbonEmissionsRequest
+		ok      bool
+	)
+	{
+		if message, ok = v.(*pollerpb.CarbonEmissionsRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "*pollerpb.CarbonEmissionsRequest", v)
+		}
+	}
+	var payload []string
+	{
+		payload = NewCarbonEmissionsPayload(message)
+	}
+	return payload, nil
 }
 
 // EncodeAggregateDataEndpointResponse encodes responses from the "Poller"

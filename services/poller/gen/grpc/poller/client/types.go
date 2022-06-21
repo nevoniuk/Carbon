@@ -15,8 +15,12 @@ import (
 
 // NewProtoCarbonEmissionsRequest builds the gRPC request type from the payload
 // of the "carbon_emissions" endpoint of the "Poller" service.
-func NewProtoCarbonEmissionsRequest() *pollerpb.CarbonEmissionsRequest {
+func NewProtoCarbonEmissionsRequest(payload []string) *pollerpb.CarbonEmissionsRequest {
 	message := &pollerpb.CarbonEmissionsRequest{}
+	message.Field = make([]string, len(payload))
+	for i, val := range payload {
+		message.Field[i] = val
+	}
 	return message
 }
 

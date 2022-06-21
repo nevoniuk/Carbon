@@ -18,9 +18,10 @@ type (
 	Client interface {
 		// Init development database
 		Name() string
+
 		Init(context.Context, bool) error
 		// Retrieve last date there is available data in clickhouse
-		CheckDB(context.Context, string) (time.Time, error)
+		CheckDB(context.Context, string) (string, error)
 		// Save report for carbon intensity event only
 		SaveCarbonReports(context.Context, []*genpoller.CarbonForecast) (error)
 
@@ -42,6 +43,9 @@ type (
 	}
 )
 
+var timeFormat = "2006-01-02T15:04:05-07:00"
+var dateFormat = "2006-01-02"
+
 func (c *client) Name() string {
 	var name = "clickhouse"
 	return name
@@ -57,12 +61,10 @@ func (c *client) Ping(ctx context.Context) error {
 
 //meant to return a "start" time for query to begin
 //returns a time if previous reports are found, otherwise nil
-func (c *client) CheckDB(ctx context.Context, region string) (time.Time, error) {
+func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 	var start time.Time
-	//select the max start because the reports are ordered by start times
-	//only look for hourly reports(first level of reports)
-	//TODO: not sure about the group by clause
 	var err error
+	//need to convert time written to string
 	if err = c.chcon.QueryRow(ctx, `
 			SELECT
 					MAX(start)
@@ -71,9 +73,14 @@ func (c *client) CheckDB(ctx context.Context, region string) (time.Time, error) 
 			GROUP BY
 			     start, duration
 			`, "hourly").Scan(&start); err != nil {
-				return start, err//time would be null
+				fmt.Errorf("error reading time in CheckDB\n")
+				return convertTimeString(ctx, start), err//time would be null
 			}
-	return start, err
+	return convertTimeString(ctx, start), err
+}
+
+func convertTimeString(ctx context.Context, t time.Time) (string) {
+	return t.Format("2006-01-02T15:04:05-07:00")
 }
 
 
@@ -171,15 +178,24 @@ func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.Car
 	}
 
 	for _, report := range reports {
+		var startTime, err1 = time.Parse(timeFormat, report.Duration.StartTime)
+		if err1 != nil {
+			fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly")
+			continue
+		}
 		
-		if err := res.Append(report.Duration, report.Duration.StartTime,
-			 report.Duration.EndTime, report.GeneratedRate, report.MarginalRate,
+		var endTime, err2 = time.Parse(timeFormat, report.Duration.EndTime)
+		if err2 != nil {
+			fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly")
+			continue
+		}
+		if err := res.Append(report.Duration, startTime,
+			 endTime, report.GeneratedRate, report.MarginalRate,
 			  report.ConsumedRate, report.GeneratedSource, report.MarginalSource, report.ConsumedSource); err != nil {
 				return err
 			}
 	}
 	
-
 	return res.Send()
 }
 

@@ -28,7 +28,14 @@ func UsageCommands() string {
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` poller carbon-emissions` + "\n" +
+	return os.Args[0] + ` poller carbon-emissions --message '{
+      "field": [
+         "Molestias eveniet doloribus quia ea.",
+         "Minus dolores.",
+         "Adipisci non rerum nisi quisquam.",
+         "Aliquam pariatur sit iure debitis."
+      ]
+   }'` + "\n" +
 		""
 }
 
@@ -38,7 +45,8 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	var (
 		pollerFlags = flag.NewFlagSet("poller", flag.ContinueOnError)
 
-		pollerCarbonEmissionsFlags = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
+		pollerCarbonEmissionsFlags       = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
+		pollerCarbonEmissionsMessageFlag = pollerCarbonEmissionsFlags.String("message", "", "")
 
 		pollerAggregateDataFlags = flag.NewFlagSet("aggregate-data", flag.ExitOnError)
 	)
@@ -113,7 +121,7 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			switch epn {
 			case "carbon-emissions":
 				endpoint = c.CarbonEmissions()
-				data = nil
+				data, err = pollerc.BuildCarbonEmissionsPayload(*pollerCarbonEmissionsMessageFlag)
 			case "aggregate-data":
 				endpoint = c.AggregateDataEndpoint()
 				data = nil
@@ -142,12 +150,20 @@ Additional help:
 `, os.Args[0])
 }
 func pollerCarbonEmissionsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller carbon-emissions
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller carbon-emissions -message JSON
 
 query api getting search data for carbon_intensity event
+    -message JSON: 
 
 Example:
-    %[1]s poller carbon-emissions
+    %[1]s poller carbon-emissions --message '{
+      "field": [
+         "Molestias eveniet doloribus quia ea.",
+         "Minus dolores.",
+         "Adipisci non rerum nisi quisquam.",
+         "Aliquam pariatur sit iure debitis."
+      ]
+   }'
 `, os.Args[0])
 }
 

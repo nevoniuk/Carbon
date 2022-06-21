@@ -41,7 +41,7 @@ func New(e *poller.Endpoints, uh goagrpc.UnaryHandler) *Server {
 // service "carbon_emissions" endpoint.
 func NewCarbonEmissionsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeCarbonEmissionsResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeCarbonEmissionsRequest, EncodeCarbonEmissionsResponse)
 	}
 	return h
 }
