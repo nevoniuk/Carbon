@@ -35,23 +35,10 @@ type (
 				generated_rate float64 `json:"generated_rate"`
 				marginal_rate  float64 `json:"marginal_rate"`
 				consumed_rate  float64 `json:"consumed_rate"`
-				meta struct {
-					consumed_emissions_source   string `json:"consumed_emissions_source"`
-					consumed_rate_calculated_at string `json:"consumed_rate_calculated_at"`
-					consumed_source             string `json:"consumed_source"`
-					generated_emissions_source  string `json:"generated_emissions_source"`
-					inserted_at                 string `json:"inserted_at"`
-					marginal_emissions_source   string `json:"marginal_emissions_source"`
-					raw_start_date              string `json:"raw_start_date"`
-					source                      string `json:"source"`
-					unit                        string `json:"unit"`
-					updated_at                  string `json:"updated_at"`
-					emission_factor             string `json:"emission_factor"`
-				} `json:"meta"`
-				start_date string `json:"start_date"`
-				region     string `json:"region"`
-			}
-		} `json: "data"`
+			}`json: "data"`
+			//start_date string `json:"start_date"`
+			//region     string `json:"region"`
+		}`json: "data"`
 	}
 	
 )
