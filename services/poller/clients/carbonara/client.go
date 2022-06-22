@@ -5,7 +5,7 @@ import (
 	//"bytes"
 	"encoding/json"
 	"net/http"
-	"strconv"
+	//"strconv"
 
 	//"strconv"
 	"fmt"
@@ -29,18 +29,20 @@ type (
 	}
 
 	//some numbers and events are estimated**
-	outermoststruct struct {
-		carbonreports []struct {
-			data struct {
-				generated_rate float64 `json:"generated_rate"`
-				marginal_rate  float64 `json:"marginal_rate"`
-				consumed_rate  float64 `json:"consumed_rate"`
-			}`json: "data"`
-			//start_date string `json:"start_date"`
-			//region     string `json:"region"`
-		}`json: "data"`
+	Outermoststruct struct {
+		Data []struct {
+			Data struct {
+				Generated_rate float64 `json:"generated_rate"`
+				Marginal_rate  float64 `json:"marginal_rate"`
+				Consumed_rate  float64 `json:"consumed_rate"`
+			}`json:"data"`
+			Meta struct {
+				Generated_emissions_source  string `json:"generated_emissions_source"`
+			}`json:"meta"`
+			Start_date string `json:"start_date"`
+			Region     string `json:"region"`
+		}`json:"data"`
 	}
-	
 )
 
 const (
@@ -105,50 +107,26 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 
 	carbonresp, err := c.HttpGetRequestCall(ctx, req)
 	
-
-	//close the resp
 	defer carbonresp.Body.Close()
-	//resBody, err := ioutil.ReadAll(carbonresp.Body)
-	//fmt.Printf(carbonresp)
-
-	var carbonData outermoststruct
-	//var err1 = json.Unmarshal([]byte(carbonresp.Body), &carbonData)
+	
+	var carbonData Outermoststruct
+	
 	err = json.NewDecoder(carbonresp.Body).Decode(&carbonData)
 	if err != nil {
 		log.Errorf(ctx, err, "cs client Carbon API JSON error")
 		return nil, err
-	} else {
-		fmt.Printf("%+v", carbonData)
 	}
-
-	
-	/**
-	for {
-		var reportdata 
-		fmt.Printf("here\n")
-		//wont work because end of file error
-		if err := dec.Decode(&report); err == io.EOF {
-			break
-		} else if err != nil {
-			fmt.Errorf("error reading reports")
-		}
-		fmt.Printf("hereeeee\n")
-		fmt.Printf("%+v\n", report)
-		fmt.Println()
-	}*/
-
 	//carbonDatahourly, carbonDatadaily := getdayhourlyreports(ctx, carbonData)
 	//carbonDataweekly := getweeklycarbonreport(ctx, carbonDatadaily)
 	//carbonDatamonthly := getmonthlycarbonreport(ctx, carbonDataweekly)
 	//return &genpoller.CarbonResponse{carbonDatahourly, carbonDatadaily, carbonDataweekly, carbonDatamonthly}, err
-
-	return nil, nil
-	//return gethourlyreports(ctx, carbonData), nil
+	return gethourlyreports(ctx, carbonData), nil
 }
 
-/**
-func gethourlyreports(ctx context.Context, minutereports carbonreport) ([]*genpoller.CarbonForecast) {
+
+func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*genpoller.CarbonForecast) {
 	//get averages of all minute report for a given hour
+
 	newreport := true
 	addtoreport := false
 	
@@ -158,25 +136,49 @@ func gethourlyreports(ctx context.Context, minutereports carbonreport) ([]*genpo
 	var margcounter float64 = 0
 
 	var hourlyreports []*genpoller.CarbonForecast
-	var hourlyreport *genpoller.CarbonForecast
 
-	var t, err = time.Parse(timeFormat, minutereports.reports[0].date_taken)
+	var hourlyreport *genpoller.CarbonForecast
+	var hourlyreportperiod *genpoller.Period
+	var t, err = time.Parse(timeFormat, minutereports.Data[0].Start_date)
 	fmt.Println(t)
 	if err != nil {
 		fmt.Printf("error %p", t)
 	}
 	
-	year, month, day, hours, minutes := parseDateTime(ctx, minutereports.reports[0].date_taken)
-	var yearcounter = year
-	var monthcounter = month
-	var daycounter = day
-	var minutecounter = minutes
-	var hourcounter = hours
-
+	//initialize counters
+	var yearcounter = t.Year()
+	
+	var monthcounter = t.Month()
+	
+	var daycounter = t.Day()
+	
+	var minutecounter = t.Minute()
+	
+	var hourcounter = t.Hour()
+	
 	//for the first report only
-	hourlyreport.Duration.StartTime = minutereports.reports[0].date_taken
-	for _, event := range minutereports.reports {
-		year, month, day, hours, minutes := parseDateTime(ctx, event.date_taken)
+	//null deference
+	
+	var Start = minutereports.Data[0].Start_date
+	var End = ""
+	var ConsumedRate = 0.0
+	var MarginalRate = 0.0
+	var GeneratedRate = 0.0
+	var GeneratedSource = ""
+	var Region = ""
+
+	for _, event := range minutereports.Data {
+
+		var t, err = time.Parse(timeFormat, event.Start_date)
+		if err != nil {
+			fmt.Printf("error %p", t)
+		}
+
+		var year = t.Year()
+		var month = t.Month()
+		var day =  t.Day()
+		var hours = t.Hour()
+		var minutes = t.Minute()
 
 		//don't want to read report with the same start time as the last
 		if minutes > minutecounter {
@@ -200,41 +202,43 @@ func gethourlyreports(ctx context.Context, minutereports carbonreport) ([]*genpo
  
 		if addtoreport {
 			addtoreport = false
-			if (event.data.consumed_rate != 0) {
-				hourlyreport.ConsumedRate += event.data.consumed_rate
+			if (event.Data.Consumed_rate != 0) {
+				ConsumedRate += event.Data.Consumed_rate
 				consumedcounter += 1
 			}
-			if (event.data.generated_rate != 0) {
-				hourlyreport.GeneratedRate += event.data.generated_rate
+			if (event.Data.Generated_rate != 0) {
+				GeneratedRate += event.Data.Generated_rate
 				gencounter += 1
 			}
-			if (event.data.marginal_rate != 0) {
-				hourlyreport.MarginalRate += event.data.marginal_rate
+			if (event.Data.Marginal_rate != 0) {
+				MarginalRate += event.Data.Marginal_rate
 				margcounter += 1
 			}
-			hourlyreport.Duration.EndTime = event.date_taken //overwrite end time each report
+			End = event.Start_date //overwrite end time each report
 		}
 
 		if newreport {
 			newreport = false
 			//previous report
-			hourlyreport.ConsumedRate = (hourlyreport.ConsumedRate / consumedcounter)
-			hourlyreport.GeneratedRate = (hourlyreport.GeneratedRate / gencounter)
-			hourlyreport.MarginalRate = (hourlyreport.MarginalRate / margcounter)
-			hourlyreport.ConsumedSource = event.metadata.consumed_emissions_source
-			hourlyreport.MarginalSource = event.metadata.marginal_emissions_source
-			hourlyreport.GeneratedSource = event.metadata.generated_emissions_source
-			hourlyreport.EmissionFactor = event.metadata.emission_factor
-			hourlyreport.Region = event.region
+			ConsumedRate = (ConsumedRate / consumedcounter)
+			GeneratedRate = (GeneratedRate / gencounter)
+			MarginalRate = (MarginalRate / margcounter)
+			GeneratedSource = event.Meta.Generated_emissions_source
+			Region = event.Region
 			//append report
+
+			hourlyreportperiod = &genpoller.Period{StartTime: Start, EndTime: End}
+			hourlyreport = &genpoller.CarbonForecast{GeneratedRate: GeneratedRate, MarginalRate: MarginalRate,
+			ConsumedRate: ConsumedRate, Duration: hourlyreportperiod, GeneratedSource: GeneratedSource, Region: Region}
 			hourlyreports = append(hourlyreports, hourlyreport)
+			
 			//newreport
-			hourlyreport.Duration.StartTime = event.date_taken
+			Start = event.Start_date
 		}
 	}
+
 	return hourlyreports
 }
-*/
 /**
 func getdayhourlyreports(ctx context.Context, minutereports carbonreport) (hourlyreports []*genpoller.HourlyCarbonReports,
 	 dailyreports []*genpoller.DailyCarbonReports) {
@@ -380,37 +384,6 @@ func getmonthlycarbonreport(ctx context.Context, weeklyreports []*genpoller.Week
 	return monthlyreports
 }
 */
-func parseDateTime(ctx context.Context, datetime string) (year int, month int, day int, hours int, minutes int) {
-	//"2022-01-06T15:00:00-00:00"
-	res1 := strings.Split(datetime, "T")
-	res2 := strings.Split(res1[0], "-") //date
-	res3 := strings.Split(res1[1], ":") //time
-
-	year, err := strconv.Atoi(res2[0])
-	if (err != nil) {
-		log.Errorf(ctx, err, "error converting")
-	}
-	month, err2 := strconv.Atoi(res2[1])
-	if (err2 != nil) {
-		log.Errorf(ctx, err, "error converting")
-	}
-
-	day, err3 := strconv.Atoi(res2[2])
-	if (err3 != nil) {
-		log.Errorf(ctx, err, "error converting")
-	}
-
-	hours, err4 := strconv.Atoi(res3[0])
-	if (err4 != nil) {
-		log.Errorf(ctx, err, "error converting")
-	}
-
-	minutes, err5 := strconv.Atoi(res3[1])
-	if (err5 != nil) {
-		log.Errorf(ctx, err, "error converting")
-	}
-	return year, month, day, hours, minutes
-}
 
 /*
 	fueldata struct {
