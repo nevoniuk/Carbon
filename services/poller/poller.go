@@ -115,7 +115,6 @@ func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []string) (res [
 	}
 	fmt.Printf("the length of the dates array is %d\n", len(dates))
 	for i := 0; i < len(regions); i++ {
-		fmt.Printf("region\n")
 		carbonres, err := s.csc.GetEmissions(ctx, regions[i], dates[i], time.Now().GoString())
         if err != nil { //handle errors when a region is not available??
             //instead of returning have a way marking that a region is not available

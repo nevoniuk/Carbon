@@ -9,7 +9,8 @@ import (
 
 	//"strconv"
 	"fmt"
-	"io/ioutil"
+	//"io"
+	//"io/ioutil"
 	"strings"
 	"time"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
@@ -28,38 +29,35 @@ type (
 	}
 
 	//some numbers and events are estimated**
-	carbonreport struct {
-		reports []carbonevent
-	}
-	
-	carbonevent struct {
-		data       carbondata
-		metadata   carbonmetadata
-		date_taken string
-		region     string
-	}
-	carbondata struct {
-		generated_rate float64
-		marginal_rate  float64
-		consumed_rate  float64
-	}
-	carbonmetadata struct {
-		consumed_emissions_source   string
-		consumed_rate_calculated_at string
-		consumed_source             string
-		generated_emissions_source  string
-		inserted_at                 string
-		marginal_emissions_source   string
-		raw_start_date              string
-		source                      string
-		unit                        string
-		updated_at                  string
-		emission_factor             string
+	outermoststruct struct {
+		carbonreports []struct {
+			data struct {
+				generated_rate float64 `json:"generated_rate"`
+				marginal_rate  float64 `json:"marginal_rate"`
+				consumed_rate  float64 `json:"consumed_rate"`
+				meta struct {
+					consumed_emissions_source   string `json:"consumed_emissions_source"`
+					consumed_rate_calculated_at string `json:"consumed_rate_calculated_at"`
+					consumed_source             string `json:"consumed_source"`
+					generated_emissions_source  string `json:"generated_emissions_source"`
+					inserted_at                 string `json:"inserted_at"`
+					marginal_emissions_source   string `json:"marginal_emissions_source"`
+					raw_start_date              string `json:"raw_start_date"`
+					source                      string `json:"source"`
+					unit                        string `json:"unit"`
+					updated_at                  string `json:"updated_at"`
+					emission_factor             string `json:"emission_factor"`
+				} `json:"meta"`
+				start_date string `json:"start_date"`
+				region     string `json:"region"`
+			}
+		} `json: "data"`
 	}
 	
 )
 
 const (
+	//format is year-month-daysThours:minutes:seconds:something:something
 	timeFormat = "2006-01-02T15:04:05-07:00"
 	dateFormat = "2006-01-02"
 	cs_url     = "https://api.singularity.energy/v1/"
@@ -76,6 +74,7 @@ func New(c *http.Client) Client {
 
 func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*http.Response, error) {
 	resp, err := http.DefaultClient.Do(req)
+	//retry
 	if err != nil || resp.StatusCode != http.StatusOK {
 		retries := 0
 		for (err != nil || resp.StatusCode != http.StatusOK) && retries < 3 {
@@ -84,53 +83,83 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 			retries++
 		}
 	}
+	//return error if the "DO" action fails
 	if err != nil {
 		log.Errorf(ctx, err, "carbon client API Get error")
 		return resp, err
 	}
+	//return the exact error code
 	if resp.StatusCode != http.StatusOK {
 		log.Errorf(ctx, err, "%d", resp.StatusCode)
 		return resp, err
 	}
-	resBody, err := ioutil.ReadAll(resp.Body)
-	fmt.Printf("response body: %s\n", resBody)
+
 	return resp, nil
 }
 
 
 func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string) ([]*genpoller.CarbonForecast, error) {
 	//ignore starttime and endtime for now
-	fmt.Println("here")
-	start := "2022-01-06T15:00:00-00:00" //for testing
-	end := "2022-05-06T15:00:00-00:00" //testing
-	carbonUrl := strings.Join([]string{cs_url, "region_events/search?", "region=", region, "?event_type=carbon_intensity&start=",
-		start, "&end=", end}, "/") //for testing
-	fmt.Printf(carbonUrl)
+
+	start := "2022-06-01T15:00:00-00:00" //for testing
+	end := "2022-06-05T15:00:00-00:00" //testing
+	carbonUrl := strings.Join([]string{cs_url, "region_events/search?", "region=", region, "&event_type=carbon_intensity&start=",
+		start, "&end=", end}, "") //for testing
+	
 	//TODO: add io reader instead of nil
-	req, err := http.NewRequest(http.MethodGet, carbonUrl, nil)
+	req, err := http.NewRequest("GET", carbonUrl, nil)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("here")
+	//close request to prevent EOF
+	req.Close = true
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("X-Api-Key", "52f0a90b3a2747dcb651f508b63e002c")
+
 	carbonresp, err := c.HttpGetRequestCall(ctx, req)
+	
+
+	//close the resp
 	defer carbonresp.Body.Close()
-	fmt.Println("here")
-	carbonData := carbonreport{}
+	//resBody, err := ioutil.ReadAll(carbonresp.Body)
+	//fmt.Printf(carbonresp)
+
+	var carbonData outermoststruct
+	//var err1 = json.Unmarshal([]byte(carbonresp.Body), &carbonData)
 	err = json.NewDecoder(carbonresp.Body).Decode(&carbonData)
 	if err != nil {
 		log.Errorf(ctx, err, "cs client Carbon API JSON error")
 		return nil, err
+	} else {
+		fmt.Printf("%+v", carbonData)
 	}
+
+	
+	/**
+	for {
+		var reportdata 
+		fmt.Printf("here\n")
+		//wont work because end of file error
+		if err := dec.Decode(&report); err == io.EOF {
+			break
+		} else if err != nil {
+			fmt.Errorf("error reading reports")
+		}
+		fmt.Printf("hereeeee\n")
+		fmt.Printf("%+v\n", report)
+		fmt.Println()
+	}*/
+
 	//carbonDatahourly, carbonDatadaily := getdayhourlyreports(ctx, carbonData)
 	//carbonDataweekly := getweeklycarbonreport(ctx, carbonDatadaily)
 	//carbonDatamonthly := getmonthlycarbonreport(ctx, carbonDataweekly)
 	//return &genpoller.CarbonResponse{carbonDatahourly, carbonDatadaily, carbonDataweekly, carbonDatamonthly}, err
-	return gethourlyreports(ctx, carbonData), nil
+
+	return nil, nil
+	//return gethourlyreports(ctx, carbonData), nil
 }
 
-
+/**
 func gethourlyreports(ctx context.Context, minutereports carbonreport) ([]*genpoller.CarbonForecast) {
 	//get averages of all minute report for a given hour
 	newreport := true
@@ -218,7 +247,7 @@ func gethourlyreports(ctx context.Context, minutereports carbonreport) ([]*genpo
 	}
 	return hourlyreports
 }
-
+*/
 /**
 func getdayhourlyreports(ctx context.Context, minutereports carbonreport) (hourlyreports []*genpoller.HourlyCarbonReports,
 	 dailyreports []*genpoller.DailyCarbonReports) {
