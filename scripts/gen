@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -e
+
+GIT_ROOT=$(git rev-parse --show-toplevel)
+pushd ${GIT_ROOT}
+
+echo "Generating Goa code..."
+
+for svc in poller calc; do
+  goa gen github.com/crossnokaye/carbon/services/${svc}/design -o services/${svc}
+done
+
+popd

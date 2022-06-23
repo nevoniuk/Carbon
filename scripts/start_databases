@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+GIT_ROOT=$(git rev-parse --show-toplevel)
+pushd ${GIT_ROOT}
+
+source ./scripts/utils/common.sh
+
+is_m1_mac && export CLICKHOUSE_DOCKER_IMAGE="altinity/clickhouse-server:21.8.12.29.altinitydev.arm"
+
+docker-compose -p clickhouse -f docker-compose/docker-compose-clickhouse.yml up -d --remove-orphans
+
+popd

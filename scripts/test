@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo "Running tests..."
+
+export GIT_ROOT=$(git rev-parse --show-toplevel)
+pushd ${GIT_ROOT}
+
+staticcheck ./...
+go test -race -coverprofile=coverage.out -covermode=atomic ./... $@
+
+popd

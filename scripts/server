@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -e
+
+echo "Starting services..."
+
+GIT_ROOT=$(git rev-parse --show-toplevel)
+pushd ${GIT_ROOT}
+
+source .env
+source ./scripts/utils/common.sh
+
+# ugh, host-gateway does not work on WSL because it points to the Windows
+# host, not the WSL host. Instead in this case we need to use the WSL
+# subsystem IP.
+if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null ; then
+    export HOST_GATEWAY=$(hostname -I)
+else
+    export HOST_GATEWAY='host-gateway'
+fi
+
+docker-compose -f docker-compose/docker-compose-grafana.yml up -d --remove-orphans 
+
+./scripts/start_databases
+overmind start
+
+popd
