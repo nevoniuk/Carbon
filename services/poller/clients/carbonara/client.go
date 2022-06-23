@@ -9,6 +9,7 @@ import (
 
 	//"strconv"
 	"fmt"
+	//"math"
 	//"io"
 	//"io/ioutil"
 	"strings"
@@ -122,7 +123,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 	//return &genpoller.CarbonResponse{carbonDatahourly, carbonDatadaily, carbonDataweekly, carbonDatamonthly}, err
 	var reports []*genpoller.CarbonForecast
 	reports = gethourlyreports(ctx, carbonData)
-	//fmt.Printf("%+v\n", reports)
+	fmt.Printf("returned from hourly reports")
 	return reports, nil
 }
 
@@ -134,9 +135,9 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 	addtoreport := false
 	
 	//keep track of which reports have consumed, gen, and marg data
-	var consumedcounter float64 = 0
-	var gencounter float64 = 0
-	var margcounter float64 = 0
+	var consumedcounter float64
+	var gencounter float64
+	var margcounter float64
 
 	var hourlyreports []*genpoller.CarbonForecast
 
@@ -164,9 +165,11 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 	
 	var Start = minutereports.Data[0].Start_date
 	var End string
-	var ConsumedRate float64
-	var MarginalRate float64
-	var GeneratedRate float64
+
+	var consumed float64
+	var marginal float64
+	var generated float64
+
 	var GeneratedSource string
 	var Region string
 
@@ -209,22 +212,20 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 			
 			addtoreport = false
 
-			if (event.Data.Consumed_rate != 0.0) {
-				fmt.Printf("before %f", ConsumedRate)
-				ConsumedRate = ConsumedRate + float64(event.Data.Consumed_rate)
-				fmt.Printf("%f", ConsumedRate)
-				consumedcounter = float64(consumedcounter + 1.0)
+			if (event.Data.Consumed_rate != float64(0)) {
+				consumed += event.Data.Consumed_rate
+				consumedcounter += 1.0
 			}
 
-			if (event.Data.Generated_rate != 0.0) {
-				GeneratedRate += event.Data.Generated_rate
-				gencounter = float64(gencounter + 1.0)
+			if (event.Data.Generated_rate != float64(0)) {
+				generated += event.Data.Generated_rate
+				gencounter += 1.0
 			}
 
-			if (event.Data.Marginal_rate != 0.0) {
-				MarginalRate += event.Data.Marginal_rate
+			if (event.Data.Marginal_rate != float64(0)) {
+				marginal += event.Data.Marginal_rate
 
-				margcounter = float64(margcounter + 1.0)
+				margcounter += 1.0
 			}
 			End = event.Start_date //overwrite end time each report
 		}
@@ -232,21 +233,36 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 		if newreport {
 			newreport = false
 			//previous report
-			ConsumedRate = float64(ConsumedRate / consumedcounter)
+			if consumed != float64(0) && consumedcounter != float64(0) {
+				consumed = consumed / consumedcounter
+			}
 			//fmt.Printf("%f", ConsumedRate)
-			GeneratedRate = float64(GeneratedRate / gencounter)
-			MarginalRate = float64(MarginalRate / margcounter)
+			if generated != float64(0) && gencounter != float64(0) {
+				generated = generated / gencounter
+			}
+			if marginal != float64(0) && margcounter != float64(0) {
+				marginal = float64(marginal / margcounter)
+			}
+
 			GeneratedSource = event.Meta.Generated_emissions_source
 			Region = event.Region
 			//append report
 
 			hourlyreportperiod = &genpoller.Period{StartTime: Start, EndTime: End}
 			fmt.Printf("%+v\n", hourlyreportperiod)
-			hourlyreport = &genpoller.CarbonForecast{GeneratedRate: GeneratedRate, MarginalRate: MarginalRate,
-			ConsumedRate: ConsumedRate, Duration: hourlyreportperiod, GeneratedSource: GeneratedSource, Region: Region}
+			hourlyreport = &genpoller.CarbonForecast{GeneratedRate: generated, MarginalRate: marginal,
+			ConsumedRate: consumed, Duration: hourlyreportperiod, GeneratedSource: GeneratedSource, Region: Region}
 			fmt.Printf("%+v\n", hourlyreport)
 			hourlyreports = append(hourlyreports, hourlyreport)
-			
+
+			//reset values
+			consumed = float64(0)
+			consumedcounter = float64(0)
+			margcounter = float64(0)
+			marginal = float64(0)
+			gencounter = float64(0)
+			generated = float64(0)
+
 			//newreport
 			Start = event.Start_date
 		}

@@ -67,6 +67,7 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 	if err != nil {
 		fmt.Printf("could not retrieve co2 emissions")
 	}
+	
 	return &pollersrvc{csc: csc, dbc: dbc, ctx: ctx, cancel: cancel, readDates: times, carbonReports: carbonReports}
 }
 
@@ -123,6 +124,7 @@ func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []string) (res [
 		}
 		reports = append(reports, carbonres)
 		s.dbc.SaveCarbonReports(ctx, carbonres)
+		fmt.Printf("returned from save reports")
 	}
 	return reports, nil
 }
