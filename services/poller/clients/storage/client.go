@@ -47,7 +47,7 @@ var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
 
 func (c *client) Name() string {
-	var name = "clickhouse"
+	var name = "Clickhouse"
 	return name
 }
 
@@ -55,6 +55,7 @@ func New(chcon clickhouse.Conn) Client {
 	return &client{chcon}
 }
 
+//ping is the time it takes for a small data set to be transmitted from the device to a server on the internet 
 func (c *client) Ping(ctx context.Context) error {
 	return c.chcon.Ping(ctx)
 }
@@ -87,10 +88,14 @@ func convertTimeString(ctx context.Context, t time.Time) (string) {
 func (c *client) Init(ctx context.Context, test bool) error {
 	if err := c.chcon.Ping(ctx); err != nil {
 		if exception, ok := err.(*ch.Exception); ok {
+			fmt.Printf("HERE")
 			return fmt.Errorf("[%d] %s", exception.Code, exception.Message)
 		}
+		//returns this error
+		fmt.Printf("PING ERROR")
 		return err
 	}
+	fmt.Printf("HERE2")
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
 		return err
 	}
@@ -105,13 +110,10 @@ func (c *client) Init(ctx context.Context, test bool) error {
 					generatedrate Float64,
 					marginalrate Float64,
 					consumedrate Float64,
-					generatedsource String,
-					marginalsource String,
-					consumedsource String,
-					emissionfactor String
+					generatedsource String
 				) Engine =  MergeTree()
 				ORDER BY (start, duration)
-			`) 
+	`) 
 	if err != nil {
 		return err
 	}
@@ -129,11 +131,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 				) Engine =  MergeTree()
 				ORDER BY (duration, start)
 			`) 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 	
 			/*
 			err = c.chcon.Exec(ctx, `
@@ -191,7 +189,7 @@ func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.Car
 		}
 		if err := res.Append(report.Duration, startTime,
 			 endTime, report.GeneratedRate, report.MarginalRate,
-			  report.ConsumedRate, report.GeneratedSource, report.MarginalSource, report.ConsumedSource); err != nil {
+			  report.ConsumedRate, report.GeneratedSource); err != nil {
 				return err
 			}
 	}

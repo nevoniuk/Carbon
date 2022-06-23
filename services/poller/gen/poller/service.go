@@ -59,14 +59,8 @@ type CarbonForecast struct {
 	ConsumedRate float64
 	// duration
 	Duration *Period
-	// marginal_source
-	MarginalSource string
-	// consumed_source
-	ConsumedSource string
 	// generated_source
 	GeneratedSource string
-	// emission_factor
-	EmissionFactor string
 	// region
 	Region string
 }

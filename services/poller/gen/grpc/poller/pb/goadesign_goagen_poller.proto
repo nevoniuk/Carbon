@@ -40,14 +40,8 @@ message CarbonForecast {
 	double consumed_rate = 3;
 	// duration
 	Period duration = 4;
-	// marginal_source
-	string marginal_source = 5;
-	// consumed_source
-	string consumed_source = 6;
 	// generated_source
 	string generated_source = 7;
-	// emission_factor
-	string emission_factor = 8;
 	// region
 	string region = 9;
 }

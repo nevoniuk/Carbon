@@ -80,7 +80,7 @@ func (s *pollersrvc) ensurepastdata(ctx context.Context, regionstartdates map[st
 			dates = append(dates, date)
 		} else if err != nil {
 			defaultDate := regionstartdates[string(regions[i])]
-			fmt.Printf("date is %s\n", defaultDate)
+			//fmt.Printf("date is %s\n", defaultDate)
 			if (err != nil) {dates = append(dates, defaultDate)}
 		}
 	}
@@ -113,7 +113,7 @@ func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []string) (res [
 	if err != nil {
 		fmt.Printf("time parse problem in carbon emissions")
 	}
-	fmt.Printf("the length of the dates array is %d\n", len(dates))
+	//fmt.Printf("the length of the dates array is %d\n", len(dates))
 	for i := 0; i < len(regions); i++ {
 		carbonres, err := s.csc.GetEmissions(ctx, regions[i], dates[i], time.Now().GoString())
         if err != nil { //handle errors when a region is not available??

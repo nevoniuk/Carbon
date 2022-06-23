@@ -75,13 +75,16 @@ func main() {
 		log.Errorf(ctx, err, "failed to connect to Grafana agent")
 		os.Exit(1)
 	}
+
 	if ctx, err = trace.Context(ctx, genpoller.ServiceName, trace.WithGRPCExporter(conn)); err != nil {
 		log.Errorf(ctx, err, "failed to initialize tracing")
 		os.Exit(1)
 	}
-	//intiialize the clients
 
-	// Initialize the services.
+	//initialize the metrics
+	ctx = metrics.Context(ctx, genpoller.ServiceName)
+
+	//intiialize the clients
 	c := &http.Client{Transport: trace.Client(ctx, http.DefaultTransport)}
 	csc := carbonara.New(c)
 
@@ -96,7 +99,10 @@ func main() {
 	options := &ch.Options{
 		TLS:  tlsConfig,
 		Addr: []string{chadd},
-		Auth: ch.Auth{Username: *chuser, Password: *chpwd},
+		Auth: ch.Auth{
+			Database: "carbondb",
+			Username: *chuser,
+			Password: *chpwd},
 	}
 	chcon, err := ch.Open(options)
 	retries := 0

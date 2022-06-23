@@ -35,10 +35,7 @@ func NewProtoCarbonEmissionsResponse(result [][]*poller.CarbonForecast) *pollerp
 				GeneratedRate:   val.GeneratedRate,
 				MarginalRate:    val.MarginalRate,
 				ConsumedRate:    val.ConsumedRate,
-				MarginalSource:  val.MarginalSource,
-				ConsumedSource:  val.ConsumedSource,
 				GeneratedSource: val.GeneratedSource,
-				EmissionFactor:  val.EmissionFactor,
 				Region:          val.Region,
 			}
 			if val.Duration != nil {

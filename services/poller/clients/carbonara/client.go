@@ -120,7 +120,10 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 	//carbonDataweekly := getweeklycarbonreport(ctx, carbonDatadaily)
 	//carbonDatamonthly := getmonthlycarbonreport(ctx, carbonDataweekly)
 	//return &genpoller.CarbonResponse{carbonDatahourly, carbonDatadaily, carbonDataweekly, carbonDatamonthly}, err
-	return gethourlyreports(ctx, carbonData), nil
+	var reports []*genpoller.CarbonForecast
+	reports = gethourlyreports(ctx, carbonData)
+	//fmt.Printf("%+v\n", reports)
+	return reports, nil
 }
 
 
@@ -160,12 +163,12 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 	//null deference
 	
 	var Start = minutereports.Data[0].Start_date
-	var End = ""
-	var ConsumedRate = 0.0
-	var MarginalRate = 0.0
-	var GeneratedRate = 0.0
-	var GeneratedSource = ""
-	var Region = ""
+	var End string
+	var ConsumedRate float64
+	var MarginalRate float64
+	var GeneratedRate float64
+	var GeneratedSource string
+	var Region string
 
 	for _, event := range minutereports.Data {
 
@@ -185,6 +188,7 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 			minutecounter = minutes
 			addtoreport = true
 		}
+
 		//have to make sure we dont read data from the previous day because it will mess up the minute counter
 		if hours > hourcounter {
 			hourcounter = hours 
@@ -192,6 +196,7 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 			addtoreport = false
 			minutecounter = -1
 		}
+
 		if month < monthcounter && year <= yearcounter {
 			addtoreport = false
 		} else if day < daycounter && month <= monthcounter {
@@ -199,20 +204,27 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 		} else if hours < hourcounter && day <= daycounter {
 			addtoreport = false
 		}
- 
+
 		if addtoreport {
+			
 			addtoreport = false
-			if (event.Data.Consumed_rate != 0) {
-				ConsumedRate += event.Data.Consumed_rate
-				consumedcounter += 1
+
+			if (event.Data.Consumed_rate != 0.0) {
+				fmt.Printf("before %f", ConsumedRate)
+				ConsumedRate = ConsumedRate + float64(event.Data.Consumed_rate)
+				fmt.Printf("%f", ConsumedRate)
+				consumedcounter = float64(consumedcounter + 1.0)
 			}
-			if (event.Data.Generated_rate != 0) {
+
+			if (event.Data.Generated_rate != 0.0) {
 				GeneratedRate += event.Data.Generated_rate
-				gencounter += 1
+				gencounter = float64(gencounter + 1.0)
 			}
-			if (event.Data.Marginal_rate != 0) {
+
+			if (event.Data.Marginal_rate != 0.0) {
 				MarginalRate += event.Data.Marginal_rate
-				margcounter += 1
+
+				margcounter = float64(margcounter + 1.0)
 			}
 			End = event.Start_date //overwrite end time each report
 		}
@@ -220,16 +232,19 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 		if newreport {
 			newreport = false
 			//previous report
-			ConsumedRate = (ConsumedRate / consumedcounter)
-			GeneratedRate = (GeneratedRate / gencounter)
-			MarginalRate = (MarginalRate / margcounter)
+			ConsumedRate = float64(ConsumedRate / consumedcounter)
+			//fmt.Printf("%f", ConsumedRate)
+			GeneratedRate = float64(GeneratedRate / gencounter)
+			MarginalRate = float64(MarginalRate / margcounter)
 			GeneratedSource = event.Meta.Generated_emissions_source
 			Region = event.Region
 			//append report
 
 			hourlyreportperiod = &genpoller.Period{StartTime: Start, EndTime: End}
+			fmt.Printf("%+v\n", hourlyreportperiod)
 			hourlyreport = &genpoller.CarbonForecast{GeneratedRate: GeneratedRate, MarginalRate: MarginalRate,
 			ConsumedRate: ConsumedRate, Duration: hourlyreportperiod, GeneratedSource: GeneratedSource, Region: Region}
+			fmt.Printf("%+v\n", hourlyreport)
 			hourlyreports = append(hourlyreports, hourlyreport)
 			
 			//newreport

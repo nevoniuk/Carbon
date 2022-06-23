@@ -122,7 +122,7 @@ func (c *client) Exec(ctx context.Context, query string, args ...interface{}) er
 	})
 }
 
-// Ping pings the server.
+//Ping pings the server.
 func (c *client) Ping(ctx context.Context) error {
 	return WithRetries(func() error {
 		return c.Conn.Ping(ctx)
