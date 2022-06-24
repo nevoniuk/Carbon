@@ -54,6 +54,7 @@ message Period {
 }
 
 message AggregateDataRequest {
+	repeated string field = 1;
 }
 
 message AggregateDataResponse {

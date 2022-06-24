@@ -68,6 +68,16 @@ func BuildAggregateDataEndpointFunc(grpccli pollerpb.PollerClient, cliopts ...gr
 	}
 }
 
+// EncodeAggregateDataEndpointRequest encodes requests sent to Poller
+// aggregate_data endpoint.
+func EncodeAggregateDataEndpointRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
+	payload, ok := v.([]string)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "[]string", v)
+	}
+	return NewProtoAggregateDataRequest(payload), nil
+}
+
 // DecodeAggregateDataEndpointResponse decodes responses from the Poller
 // aggregate_data endpoint.
 func DecodeAggregateDataEndpointResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {

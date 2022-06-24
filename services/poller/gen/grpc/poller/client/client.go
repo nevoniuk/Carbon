@@ -52,7 +52,7 @@ func (c *Client) AggregateDataEndpoint() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildAggregateDataEndpointFunc(c.grpccli, c.opts...),
-			nil,
+			EncodeAggregateDataEndpointRequest,
 			DecodeAggregateDataEndpointResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {

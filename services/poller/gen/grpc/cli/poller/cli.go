@@ -30,8 +30,10 @@ func UsageCommands() string {
 func UsageExamples() string {
 	return os.Args[0] + ` poller carbon-emissions --message '{
       "field": [
-         "Doloribus quia ea.",
-         "Minus dolores."
+         "Iure debitis dolores.",
+         "Magni veniam quidem sapiente architecto eos.",
+         "Sunt officia sequi et velit ut minus.",
+         "Consequatur est assumenda ut non quas."
       ]
    }'` + "\n" +
 		""
@@ -46,7 +48,8 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 		pollerCarbonEmissionsFlags       = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
 		pollerCarbonEmissionsMessageFlag = pollerCarbonEmissionsFlags.String("message", "", "")
 
-		pollerAggregateDataFlags = flag.NewFlagSet("aggregate-data", flag.ExitOnError)
+		pollerAggregateDataFlags       = flag.NewFlagSet("aggregate-data", flag.ExitOnError)
+		pollerAggregateDataMessageFlag = pollerAggregateDataFlags.String("message", "", "")
 	)
 	pollerFlags.Usage = pollerUsage
 	pollerCarbonEmissionsFlags.Usage = pollerCarbonEmissionsUsage
@@ -122,7 +125,7 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 				data, err = pollerc.BuildCarbonEmissionsPayload(*pollerCarbonEmissionsMessageFlag)
 			case "aggregate-data":
 				endpoint = c.AggregateDataEndpoint()
-				data = nil
+				data, err = pollerc.BuildAggregateDataEndpointPayload(*pollerAggregateDataMessageFlag)
 			}
 		}
 	}
@@ -156,19 +159,28 @@ query api getting search data for carbon_intensity event
 Example:
     %[1]s poller carbon-emissions --message '{
       "field": [
-         "Doloribus quia ea.",
-         "Minus dolores."
+         "Iure debitis dolores.",
+         "Magni veniam quidem sapiente architecto eos.",
+         "Sunt officia sequi et velit ut minus.",
+         "Consequatur est assumenda ut non quas."
       ]
    }'
 `, os.Args[0])
 }
 
 func pollerAggregateDataUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller aggregate-data
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller aggregate-data -message JSON
 
 get the aggregate data for an event from clickhouse
+    -message JSON: 
 
 Example:
-    %[1]s poller aggregate-data
+    %[1]s poller aggregate-data --message '{
+      "field": [
+         "Eum vel sit reprehenderit neque.",
+         "Minima incidunt eum dolor tenetur et ut.",
+         "Consequatur vel et ipsa in dolor."
+      ]
+   }'
 `, os.Args[0])
 }

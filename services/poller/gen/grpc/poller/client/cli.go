@@ -23,7 +23,27 @@ func BuildCarbonEmissionsPayload(pollerCarbonEmissionsMessage string) ([]string,
 		if pollerCarbonEmissionsMessage != "" {
 			err = json.Unmarshal([]byte(pollerCarbonEmissionsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"field\": [\n         \"Doloribus quia ea.\",\n         \"Minus dolores.\"\n      ]\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"field\": [\n         \"Iure debitis dolores.\",\n         \"Magni veniam quidem sapiente architecto eos.\",\n         \"Sunt officia sequi et velit ut minus.\",\n         \"Consequatur est assumenda ut non quas.\"\n      ]\n   }'")
+			}
+		}
+	}
+	v := make([]string, len(message.Field))
+	for i, val := range message.Field {
+		v[i] = val
+	}
+	return v, nil
+}
+
+// BuildAggregateDataEndpointPayload builds the payload for the Poller
+// aggregate_data endpoint from CLI flags.
+func BuildAggregateDataEndpointPayload(pollerAggregateDataMessage string) ([]string, error) {
+	var err error
+	var message pollerpb.AggregateDataRequest
+	{
+		if pollerAggregateDataMessage != "" {
+			err = json.Unmarshal([]byte(pollerAggregateDataMessage), &message)
+			if err != nil {
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"field\": [\n         \"Eum vel sit reprehenderit neque.\",\n         \"Minima incidunt eum dolor tenetur et ut.\",\n         \"Consequatur vel et ipsa in dolor.\"\n      ]\n   }'")
 			}
 		}
 	}

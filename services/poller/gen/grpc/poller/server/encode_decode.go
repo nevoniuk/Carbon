@@ -56,3 +56,22 @@ func EncodeAggregateDataEndpointResponse(ctx context.Context, v interface{}, hdr
 	resp := NewProtoAggregateDataResponse(result)
 	return resp, nil
 }
+
+// DecodeAggregateDataEndpointRequest decodes requests sent to "Poller" service
+// "aggregate_data" endpoint.
+func DecodeAggregateDataEndpointRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		message *pollerpb.AggregateDataRequest
+		ok      bool
+	)
+	{
+		if message, ok = v.(*pollerpb.AggregateDataRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "*pollerpb.AggregateDataRequest", v)
+		}
+	}
+	var payload []string
+	{
+		payload = NewAggregateDataPayload(message)
+	}
+	return payload, nil
+}

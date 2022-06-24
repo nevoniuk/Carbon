@@ -48,8 +48,12 @@ func NewCarbonEmissionsResult(message *pollerpb.CarbonEmissionsResponse) [][]*po
 
 // NewProtoAggregateDataRequest builds the gRPC request type from the payload
 // of the "aggregate_data" endpoint of the "Poller" service.
-func NewProtoAggregateDataRequest() *pollerpb.AggregateDataRequest {
+func NewProtoAggregateDataRequest(payload []string) *pollerpb.AggregateDataRequest {
 	message := &pollerpb.AggregateDataRequest{}
+	message.Field = make([]string, len(payload))
+	for i, val := range payload {
+		message.Field[i] = val
+	}
 	return message
 }
 

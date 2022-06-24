@@ -62,7 +62,7 @@ func (s *Server) CarbonEmissions(ctx context.Context, message *pollerpb.CarbonEm
 // "Poller" service "aggregate_data" endpoint.
 func NewAggregateDataEndpointHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeAggregateDataEndpointResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeAggregateDataEndpointRequest, EncodeAggregateDataEndpointResponse)
 	}
 	return h
 }

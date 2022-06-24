@@ -46,6 +46,7 @@ func NewCarbonEmissionsEndpoint(s Service) goa.Endpoint {
 // method "aggregate_data" of service "Poller".
 func NewAggregateDataEndpointEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return s.AggregateDataEndpoint(ctx)
+		p := req.([]string)
+		return s.AggregateDataEndpoint(ctx, p)
 	}
 }
