@@ -31,7 +31,6 @@ const ServiceName = "Poller"
 // MethodKey key.
 var MethodNames = [2]string{"carbon_emissions", "aggregate_data"}
 
-// aggregate data
 type AggregateData struct {
 	// average
 	Average float64
@@ -57,8 +56,6 @@ type CarbonForecast struct {
 	MarginalRate float64
 	// consumed_rate
 	ConsumedRate float64
-	// duration
-	Duration *Period
 	// generated_source
 	GeneratedSource string
 	// region

@@ -38,19 +38,10 @@ message CarbonForecast {
 	double marginal_rate = 2;
 	// consumed_rate
 	double consumed_rate = 3;
-	// duration
-	Period duration = 4;
 	// generated_source
 	string generated_source = 7;
 	// region
 	string region = 9;
-}
-// Period of time from start to end of Forecast
-message Period {
-	// Start time
-	string start_time = 1;
-	// End time
-	string end_time = 2;
 }
 
 message AggregateDataRequest {
@@ -59,7 +50,7 @@ message AggregateDataRequest {
 message AggregateDataResponse {
 	repeated AggregateData field = 1;
 }
-// aggregate data
+
 message AggregateData {
 	// average
 	double average = 1;
@@ -75,4 +66,11 @@ message AggregateData {
 	Period duration = 6;
 	// report_type
 	string report_type = 7;
+}
+// Period of time from start to end of Forecast
+message Period {
+	// Start time
+	string start_time = 1;
+	// End time
+	string end_time = 2;
 }
