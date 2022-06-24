@@ -38,6 +38,9 @@ func NewProtoCarbonEmissionsResponse(result [][]*poller.CarbonForecast) *pollerp
 				GeneratedSource: val.GeneratedSource,
 				Region:          val.Region,
 			}
+			if val.Duration != nil {
+				message.Field[i].Field[j].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
+			}
 		}
 	}
 	return message

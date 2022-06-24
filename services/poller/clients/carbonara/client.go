@@ -107,28 +107,27 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 	req.Header.Add("X-Api-Key", "52f0a90b3a2747dcb651f508b63e002c")
 
 	carbonresp, err := c.HttpGetRequestCall(ctx, req)
-	
-	defer carbonresp.Body.Close()
-	if carbonresp.Body == nil {
-		return nil, fmt.Errorf("No data available for the given region and timeframe")
+
+
+	if carbonresp.ContentLength < 100 {
+		return nil, fmt.Errorf("No data available for region %s\n", region)
 	}
 
+	defer carbonresp.Body.Close()
+
 	var carbonData Outermoststruct
+	
 	err = json.NewDecoder(carbonresp.Body).Decode(&carbonData)
 	if err != nil {
 		log.Errorf(ctx, err, "cs client Carbon API JSON error")
 		return nil, err
 	}
-	fmt.Println(carbonData)
 	
-	//carbonDatahourly, carbonDatadaily := getdayhourlyreports(ctx, carbonData)
-	//carbonDataweekly := getweeklycarbonreport(ctx, carbonDatadaily)
-	//carbonDatamonthly := getmonthlycarbonreport(ctx, carbonDataweekly)
-	//return &genpoller.CarbonResponse{carbonDatahourly, carbonDatadaily, carbonDataweekly, carbonDatamonthly}, err
 	var reports []*genpoller.CarbonForecast
 	
 	reports = gethourlyreports(ctx, carbonData)
 	fmt.Printf("returned from hourly reports")
+
 	return reports, nil
 }
 

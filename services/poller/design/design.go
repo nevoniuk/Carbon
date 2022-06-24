@@ -39,7 +39,7 @@ var _ = Service("Poller", func() {
 */
 	Method("aggregate_data", func() {
 		Description("get the aggregate data for an event from clickhouse")
-		Result(ArrayOf(AggregateData))
+		Result(ArrayOf(ArrayOf(AggregateData)))
 		//Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {

@@ -38,6 +38,9 @@ func NewCarbonEmissionsResult(message *pollerpb.CarbonEmissionsResponse) [][]*po
 				GeneratedSource: val.GeneratedSource,
 				Region:          val.Region,
 			}
+			if val.Duration != nil {
+				result[i][j].Duration = protobufPollerpbPeriodToPollerPeriod(val.Duration)
+			}
 		}
 	}
 	return result
@@ -70,6 +73,54 @@ func NewAggregateDataResult(message *pollerpb.AggregateDataResponse) []*poller.A
 	return result
 }
 
+// ValidateCarbonEmissionsResponse runs the validations defined on
+// CarbonEmissionsResponse.
+func ValidateCarbonEmissionsResponse(message *pollerpb.CarbonEmissionsResponse) (err error) {
+	for _, e := range message.Field {
+		if e != nil {
+			if err2 := ValidateArrayOfCarbonForecast(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateArrayOfCarbonForecast runs the validations defined on
+// ArrayOfCarbonForecast.
+func ValidateArrayOfCarbonForecast(message *pollerpb.ArrayOfCarbonForecast) (err error) {
+	for _, e := range message.Field {
+		if e != nil {
+			if err2 := ValidateCarbonForecast(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateCarbonForecast runs the validations defined on CarbonForecast.
+func ValidateCarbonForecast(message *pollerpb.CarbonForecast) (err error) {
+	if message.Duration == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("Duration", "message"))
+	}
+	if message.Duration != nil {
+		if err2 := ValidatePeriod(message.Duration); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidatePeriod runs the validations defined on Period.
+func ValidatePeriod(message *pollerpb.Period) (err error) {
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.startTime", message.StartTime, goa.FormatDateTime))
+
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.endTime", message.EndTime, goa.FormatDateTime))
+
+	return
+}
+
 // ValidateAggregateDataResponse runs the validations defined on
 // AggregateDataResponse.
 func ValidateAggregateDataResponse(message *pollerpb.AggregateDataResponse) (err error) {
@@ -93,15 +144,6 @@ func ValidateAggregateData(message *pollerpb.AggregateData) (err error) {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
-	return
-}
-
-// ValidatePeriod runs the validations defined on Period.
-func ValidatePeriod(message *pollerpb.Period) (err error) {
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.startTime", message.StartTime, goa.FormatDateTime))
-
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.endTime", message.EndTime, goa.FormatDateTime))
-
 	return
 }
 

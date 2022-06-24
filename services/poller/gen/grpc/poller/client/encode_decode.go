@@ -47,6 +47,9 @@ func DecodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr
 	if !ok {
 		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "*pollerpb.CarbonEmissionsResponse", v)
 	}
+	if err := ValidateCarbonEmissionsResponse(message); err != nil {
+		return nil, err
+	}
 	res := NewCarbonEmissionsResult(message)
 	return res, nil
 }
