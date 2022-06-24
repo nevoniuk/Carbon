@@ -66,7 +66,7 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 	//rates poller service uses the command "go"
 	times := s.ensurepastdata(ctx, regionstartdates)
 	carbonReports, err := s.CarbonEmissions(ctx, times)
-	aggregateReports, err := s.AggregateDataEndpoint(ctx)
+	aggregateReports, err := s.AggregateDataEndpoint(ctx, times)
 	if err != nil {
 		fmt.Printf("could not retrieve co2 emissions")
 	}
@@ -108,8 +108,8 @@ func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []string) (res [
 	if err != nil {
 		fmt.Printf("time parse problem in carbon emissions")
 	}
-	//fmt.Printf("the length of the dates array is %d\n", len(dates))
-	for i := 0; i < len(regions); i++ {
+	//TODO for testing only V
+	for i := 0; i < 2; i++ {
 		fmt.Printf("region is %s\n", regions[i])
 		carbonres, err := s.csc.GetEmissions(ctx, regions[i], dates[i], time.Now().GoString())
         if err != nil {
@@ -136,7 +136,7 @@ func (s *pollersrvc) AggregateDataEndpoint(ctx context.Context) (res [][]*genpol
 	
 	if carbonreports != nil {
 
-		for i, region := range regions {
+		for i := 0; i < 2; i++ {
 
 			var days []*genpoller.Period
 			var months []*genpoller.Period
@@ -149,9 +149,10 @@ func (s *pollersrvc) AggregateDataEndpoint(ctx context.Context) (res [][]*genpol
 			}
 
 			days, months, years = getdates(ctx, initialstart, carbonreports[i])
+
 			if days != nil {
 
-				aggregateres, err := s.dbc.GetAggregateReports(ctx, days, region, reportdurations[0])
+				aggregateres, err := s.dbc.GetAggregateReports(ctx, days, regions[i], reportdurations[0])
 				fmt.Println("AGGREGATE REPORTS")
 				fmt.Println(aggregateres)
 				if err == nil {
@@ -160,14 +161,14 @@ func (s *pollersrvc) AggregateDataEndpoint(ctx context.Context) (res [][]*genpol
 
 			}
 			if months != nil {
-				aggregateres, err := s.dbc.GetAggregateReports(ctx, months, region, reportdurations[1])
+				aggregateres, err := s.dbc.GetAggregateReports(ctx, months, regions[i], reportdurations[1])
 				if err == nil {
 					s.dbc.SaveAggregateReports(ctx, aggregateres)
 				}
 			}
 
 			if years != nil {
-				aggregateres, err := s.dbc.GetAggregateReports(ctx, years, region, reportdurations[2])
+				aggregateres, err := s.dbc.GetAggregateReports(ctx, years, regions[i], reportdurations[2])
 				if err == nil {
 					s.dbc.SaveAggregateReports(ctx, aggregateres)
 				}
