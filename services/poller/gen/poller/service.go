@@ -18,7 +18,7 @@ type Service interface {
 	// query api getting search data for carbon_intensity event
 	CarbonEmissions(context.Context, []string) (res [][]*CarbonForecast, err error)
 	// get the aggregate data for an event from clickhouse
-	AggregateDataEndpoint(context.Context) (res []*AggregateData, err error)
+	AggregateDataEndpoint(context.Context) (res [][]*AggregateData, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the

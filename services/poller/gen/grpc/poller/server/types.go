@@ -48,20 +48,24 @@ func NewProtoCarbonEmissionsResponse(result [][]*poller.CarbonForecast) *pollerp
 
 // NewProtoAggregateDataResponse builds the gRPC response type from the result
 // of the "aggregate_data" endpoint of the "Poller" service.
-func NewProtoAggregateDataResponse(result []*poller.AggregateData) *pollerpb.AggregateDataResponse {
+func NewProtoAggregateDataResponse(result [][]*poller.AggregateData) *pollerpb.AggregateDataResponse {
 	message := &pollerpb.AggregateDataResponse{}
-	message.Field = make([]*pollerpb.AggregateData, len(result))
+	message.Field = make([]*pollerpb.ArrayOfAggregateData, len(result))
 	for i, val := range result {
-		message.Field[i] = &pollerpb.AggregateData{
-			Average:    val.Average,
-			Min:        val.Min,
-			Max:        val.Max,
-			Sum:        val.Sum,
-			Count:      int32(val.Count),
-			ReportType: val.ReportType,
-		}
-		if val.Duration != nil {
-			message.Field[i].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
+		message.Field[i] = &pollerpb.ArrayOfAggregateData{}
+		message.Field[i].Field = make([]*pollerpb.AggregateData, len(val))
+		for j, val := range val {
+			message.Field[i].Field[j] = &pollerpb.AggregateData{
+				Average:    val.Average,
+				Min:        val.Min,
+				Max:        val.Max,
+				Sum:        val.Sum,
+				Count:      int32(val.Count),
+				ReportType: val.ReportType,
+			}
+			if val.Duration != nil {
+				message.Field[i].Field[j].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
+			}
 		}
 	}
 	return message

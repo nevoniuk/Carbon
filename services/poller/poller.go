@@ -137,14 +137,17 @@ func (s *pollersrvc) AggregateDataEndpoint(ctx context.Context) (res [][]*genpol
 	if carbonreports != nil {
 
 		for i, region := range regions {
+
 			var days []*genpoller.Period
 			var months []*genpoller.Period
 			var years []*genpoller.Period
 
 			var initialstart, err = time.Parse(timeFormat, dates[i])
+
 			if err != nil {
 				fmt.Errorf("error parsing time")
 			}
+
 			days, months, years = getdates(ctx, initialstart, carbonreports[i])
 			if days != nil {
 
@@ -176,12 +179,13 @@ func (s *pollersrvc) AggregateDataEndpoint(ctx context.Context) (res [][]*genpol
 	
 	return nil, err
 }
-//TODO make function return periods for daily, weekly and monthly reports
+
 func getdates(ctx context.Context, initialstart time.Time, hourlyreports []*genpoller.CarbonForecast) ([]*genpoller.Period, []*genpoller.Period, []*genpoller.Period) {
-	//var datescounter := 0
+	
 	var dailyDates []*genpoller.Period
 	var monthlyDates []*genpoller.Period
 	var yearlyDates []*genpoller.Period
+
 	var daystart time.Time
 	var dayend time.Time
 	var monthstart time.Time
@@ -192,12 +196,13 @@ func getdates(ctx context.Context, initialstart time.Time, hourlyreports []*genp
 
 	var newreport = true
 
-	//TODO dont know if function below returns the right values
+	
 	var daycounter = time.Time.Day(initialstart)
 	var monthcounter = time.Time.Month(initialstart)
 	var yearcounter = time.Time.Year(initialstart)
 
 	daystart = initialstart
+
 	for _, event := range hourlyreports {
 		var time, err = time.Parse(timeFormat, event.Duration.StartTime)
 		if err != nil {

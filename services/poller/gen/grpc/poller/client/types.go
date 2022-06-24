@@ -55,19 +55,22 @@ func NewProtoAggregateDataRequest() *pollerpb.AggregateDataRequest {
 
 // NewAggregateDataResult builds the result type of the "aggregate_data"
 // endpoint of the "Poller" service from the gRPC response type.
-func NewAggregateDataResult(message *pollerpb.AggregateDataResponse) []*poller.AggregateData {
-	result := make([]*poller.AggregateData, len(message.Field))
+func NewAggregateDataResult(message *pollerpb.AggregateDataResponse) [][]*poller.AggregateData {
+	result := make([][]*poller.AggregateData, len(message.Field))
 	for i, val := range message.Field {
-		result[i] = &poller.AggregateData{
-			Average:    val.Average,
-			Min:        val.Min,
-			Max:        val.Max,
-			Sum:        val.Sum,
-			Count:      int(val.Count),
-			ReportType: val.ReportType,
-		}
-		if val.Duration != nil {
-			result[i].Duration = protobufPollerpbPeriodToPollerPeriod(val.Duration)
+		result[i] = make([]*poller.AggregateData, len(val.Field))
+		for j, val := range val.Field {
+			result[i][j] = &poller.AggregateData{
+				Average:    val.Average,
+				Min:        val.Min,
+				Max:        val.Max,
+				Sum:        val.Sum,
+				Count:      int(val.Count),
+				ReportType: val.ReportType,
+			}
+			if val.Duration != nil {
+				result[i][j].Duration = protobufPollerpbPeriodToPollerPeriod(val.Duration)
+			}
 		}
 	}
 	return result
@@ -124,6 +127,19 @@ func ValidatePeriod(message *pollerpb.Period) (err error) {
 // ValidateAggregateDataResponse runs the validations defined on
 // AggregateDataResponse.
 func ValidateAggregateDataResponse(message *pollerpb.AggregateDataResponse) (err error) {
+	for _, e := range message.Field {
+		if e != nil {
+			if err2 := ValidateArrayOfAggregateData(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateArrayOfAggregateData runs the validations defined on
+// ArrayOfAggregateData.
+func ValidateArrayOfAggregateData(message *pollerpb.ArrayOfAggregateData) (err error) {
 	for _, e := range message.Field {
 		if e != nil {
 			if err2 := ValidateAggregateData(e); err2 != nil {

@@ -49,9 +49,9 @@ func DecodeCarbonEmissionsRequest(ctx context.Context, v interface{}, md metadat
 // EncodeAggregateDataEndpointResponse encodes responses from the "Poller"
 // service "aggregate_data" endpoint.
 func EncodeAggregateDataEndpointResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.([]*poller.AggregateData)
+	result, ok := v.([][]*poller.AggregateData)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "[]*poller.AggregateData", v)
+		return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "[][]*poller.AggregateData", v)
 	}
 	resp := NewProtoAggregateDataResponse(result)
 	return resp, nil

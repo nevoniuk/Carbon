@@ -23,7 +23,7 @@ func BuildCarbonEmissionsPayload(pollerCarbonEmissionsMessage string) ([]string,
 		if pollerCarbonEmissionsMessage != "" {
 			err = json.Unmarshal([]byte(pollerCarbonEmissionsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"field\": [\n         \"Molestias eveniet doloribus quia ea.\",\n         \"Minus dolores.\",\n         \"Adipisci non rerum nisi quisquam.\",\n         \"Aliquam pariatur sit iure debitis.\"\n      ]\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"field\": [\n         \"Doloribus quia ea.\",\n         \"Minus dolores.\"\n      ]\n   }'")
 			}
 		}
 	}

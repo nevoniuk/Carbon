@@ -57,6 +57,10 @@ message AggregateDataRequest {
 }
 
 message AggregateDataResponse {
+	repeated ArrayOfAggregateData field = 1;
+}
+
+message ArrayOfAggregateData {
 	repeated AggregateData field = 1;
 }
 

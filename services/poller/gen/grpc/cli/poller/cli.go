@@ -30,10 +30,8 @@ func UsageCommands() string {
 func UsageExamples() string {
 	return os.Args[0] + ` poller carbon-emissions --message '{
       "field": [
-         "Molestias eveniet doloribus quia ea.",
-         "Minus dolores.",
-         "Adipisci non rerum nisi quisquam.",
-         "Aliquam pariatur sit iure debitis."
+         "Doloribus quia ea.",
+         "Minus dolores."
       ]
    }'` + "\n" +
 		""
@@ -158,10 +156,8 @@ query api getting search data for carbon_intensity event
 Example:
     %[1]s poller carbon-emissions --message '{
       "field": [
-         "Molestias eveniet doloribus quia ea.",
-         "Minus dolores.",
-         "Adipisci non rerum nisi quisquam.",
-         "Aliquam pariatur sit iure debitis."
+         "Doloribus quia ea.",
+         "Minus dolores."
       ]
    }'
 `, os.Args[0])

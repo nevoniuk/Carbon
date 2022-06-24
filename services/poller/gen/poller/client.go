@@ -43,11 +43,11 @@ func (c *Client) CarbonEmissions(ctx context.Context, p []string) (res [][]*Carb
 // AggregateDataEndpoint may return the following errors:
 //	- "missing-required-parameter" (type *goa.ServiceError): missing-required-parameter
 //	- error: internal error
-func (c *Client) AggregateDataEndpoint(ctx context.Context) (res []*AggregateData, err error) {
+func (c *Client) AggregateDataEndpoint(ctx context.Context) (res [][]*AggregateData, err error) {
 	var ires interface{}
 	ires, err = c.AggregateDataEndpointEndpoint(ctx, nil)
 	if err != nil {
 		return
 	}
-	return ires.([]*AggregateData), nil
+	return ires.([][]*AggregateData), nil
 }
