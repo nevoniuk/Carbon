@@ -42,9 +42,11 @@ type (
 		chcon clickhouse.Conn
 	}
 )
+const(
+	timeFormat = "2006-01-02T15:04:05-07:00"
+	dateFormat = "2006-01-02"
+)
 
-var timeFormat = "2006-01-02T15:04:05-07:00"
-var dateFormat = "2006-01-02"
 
 func (c *client) Name() string {
 	var name = "Clickhouse"
@@ -88,14 +90,11 @@ func convertTimeString(ctx context.Context, t time.Time) (string) {
 func (c *client) Init(ctx context.Context, test bool) error {
 	if err := c.chcon.Ping(ctx); err != nil {
 		if exception, ok := err.(*ch.Exception); ok {
-			fmt.Printf("HERE")
 			return fmt.Errorf("[%d] %s", exception.Code, exception.Message)
 		}
-		//returns this error
-		fmt.Printf("PING ERROR")
 		return err
 	}
-	fmt.Printf("HERE2")
+
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
 		return err
 	}
@@ -114,6 +113,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 				) Engine =  MergeTree()
 				ORDER BY (start, duration)
 	`) 
+	
 	if err != nil {
 		return err
 	}
@@ -169,20 +169,24 @@ func (c *client) Init(ctx context.Context, test bool) error {
 
 func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.CarbonForecast) (error) {
 	res, err := c.chcon.PrepareBatch(ctx, `Insert INTO carbon_reports (duration, start,
-		 end, generatedrate, marginalrate, consumedrate, generatedsource, marginalsource, consumedsource,
-		  emissionfactor) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`)
+		 end, generatedrate, marginalrate, consumedrate, generatedsource) VALUES ($1, $2, $3, $4, $5, $6, $7)`)
 	if err != nil {
+		fmt.Println("save carbon reports error preparing report")
 		return err
 	}
 
 	for _, report := range reports {
 		var startTime, err1 = time.Parse(timeFormat, report.Duration.StartTime)
+		fmt.Println("starttime is ")
+		fmt.Println(startTime)
 		if err1 != nil {
 			fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly")
 			continue
 		}
 		
 		var endTime, err2 = time.Parse(timeFormat, report.Duration.EndTime)
+		fmt.Println("endtime is ")
+		fmt.Println(endTime)
 		if err2 != nil {
 			fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly")
 			continue

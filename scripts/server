@@ -19,9 +19,10 @@ else
     export HOST_GATEWAY='host-gateway'
 fi
 
-docker-compose -f docker-compose/docker-compose-grafana.yml up -d --remove-orphans 
+#docker-compose -f docker-compose/docker-compose-grafana.yml up -d --remove-orphans 
 
 ./scripts/start_databases
 overmind start
+#used to read environment variables from a file and use them as parameters to configure overmind per directory
 
 popd

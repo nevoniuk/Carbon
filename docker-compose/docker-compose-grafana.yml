@@ -1,0 +1,10 @@
+version: "2"
+services:
+  grafana:
+    image: grafana/grafana:7.5.4
+    entrypoint:
+      - /usr/share/grafana/bin/grafana-server
+      - --homepath=/usr/share/grafana
+      - --config=/etc/grafana-config/grafana.ini
+    ports:
+      - "3000:3000"

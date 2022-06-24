@@ -87,7 +87,7 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 	return resp, nil
 }
 
-
+//Bug last hourly report is not retrieved
 func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string) ([]*genpoller.CarbonForecast, error) {
 	//ignore starttime and endtime for now
 
@@ -109,29 +109,34 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 	carbonresp, err := c.HttpGetRequestCall(ctx, req)
 	
 	defer carbonresp.Body.Close()
-	
+	if carbonresp.Body == nil {
+		return nil, fmt.Errorf("No data available for the given region and timeframe")
+	}
+
 	var carbonData Outermoststruct
-	
 	err = json.NewDecoder(carbonresp.Body).Decode(&carbonData)
 	if err != nil {
 		log.Errorf(ctx, err, "cs client Carbon API JSON error")
 		return nil, err
 	}
+	fmt.Println(carbonData)
+	
 	//carbonDatahourly, carbonDatadaily := getdayhourlyreports(ctx, carbonData)
 	//carbonDataweekly := getweeklycarbonreport(ctx, carbonDatadaily)
 	//carbonDatamonthly := getmonthlycarbonreport(ctx, carbonDataweekly)
 	//return &genpoller.CarbonResponse{carbonDatahourly, carbonDatadaily, carbonDataweekly, carbonDatamonthly}, err
 	var reports []*genpoller.CarbonForecast
+	
 	reports = gethourlyreports(ctx, carbonData)
 	fmt.Printf("returned from hourly reports")
 	return reports, nil
 }
 
-
+//BUG first report does not work
 func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*genpoller.CarbonForecast) {
 	//get averages of all minute report for a given hour
 
-	newreport := true
+	newreport := false
 	addtoreport := false
 	
 	//keep track of which reports have consumed, gen, and marg data
@@ -144,7 +149,7 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 	var hourlyreport *genpoller.CarbonForecast
 	var hourlyreportperiod *genpoller.Period
 	var t, err = time.Parse(timeFormat, minutereports.Data[0].Start_date)
-	fmt.Println(t)
+
 	if err != nil {
 		fmt.Printf("error %p", t)
 	}
@@ -173,13 +178,12 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 	var GeneratedSource string
 	var Region string
 
-	for _, event := range minutereports.Data {
+	for i, event := range minutereports.Data {
 
 		var t, err = time.Parse(timeFormat, event.Start_date)
 		if err != nil {
 			fmt.Printf("error %p", t)
 		}
-
 		var year = t.Year()
 		var month = t.Month()
 		var day =  t.Day()
@@ -230,7 +234,7 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 			End = event.Start_date //overwrite end time each report
 		}
 
-		if newreport {
+		if newreport || (i == len(minutereports.Data) - 1) {
 			newreport = false
 			//previous report
 			if consumed != float64(0) && consumedcounter != float64(0) {
@@ -249,10 +253,10 @@ func gethourlyreports(ctx context.Context, minutereports Outermoststruct) ([]*ge
 			//append report
 
 			hourlyreportperiod = &genpoller.Period{StartTime: Start, EndTime: End}
-			fmt.Printf("%+v\n", hourlyreportperiod)
+			fmt.Printf(" report period is %+v\n", hourlyreportperiod)
 			hourlyreport = &genpoller.CarbonForecast{GeneratedRate: generated, MarginalRate: marginal,
 			ConsumedRate: consumed, Duration: hourlyreportperiod, GeneratedSource: GeneratedSource, Region: Region}
-			fmt.Printf("%+v\n", hourlyreport)
+			fmt.Printf("hourly report is %+v\n", hourlyreport)
 			hourlyreports = append(hourlyreports, hourlyreport)
 
 			//reset values

@@ -100,7 +100,6 @@ func main() {
 		TLS:  tlsConfig,
 		Addr: []string{chadd},
 		Auth: ch.Auth{
-			Database: "carbondb",
 			Username: *chuser,
 			Password: *chpwd},
 	}

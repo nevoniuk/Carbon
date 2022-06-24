@@ -39,7 +39,7 @@ var _ = Service("Poller", func() {
 */
 	Method("aggregate_data", func() {
 		Description("get the aggregate data for an event from clickhouse")
-		Result(ArrayOf(aggregateData))
+		Result(ArrayOf(AggregateData))
 		//Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
@@ -62,15 +62,14 @@ var CarbonForecast = Type("CarbonForecast", func() {
 	Field(3, "consumed_rate", Float64, "consumed_rate", func() {
 		Example(37.8267)
 	})
-	Field(4, "duration", Period, "duration")
+
 	Field(7, "generated_source", String, "generated_source", func() {
 		Example("EGRID_2019")
 	})
 	Field(9, "region", String, "region", func() {
 		Example("MISO, ISO...")
 	})
-	Required("generated_rate", "marginal_rate", "consumed_rate",
-		"duration", "generated_source", "region")
+	Required("generated_rate", "marginal_rate", "consumed_rate", "generated_source", "region")
 })
 /**
 var FuelsForecast = Type("FuelsForecast", func() {
@@ -93,8 +92,8 @@ var FuelsForecast = Type("FuelsForecast", func() {
 	Required("fuels", "duration", "marginal_source", "generated_source", "report_type")
 })
 */
-var aggregateData = Type("aggregateData", func() {
-	Description("aggregate data")
+var AggregateData = Type("aggregateData", func() {
+
 	Field(1, "average", Float64, "average", func() {
 		Example(37.8267)
 	})

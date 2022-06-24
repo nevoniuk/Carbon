@@ -1,0 +1,19 @@
+version: "3"
+services:
+  clickhouse:
+    # NB: If you're on an M1 Mac, try:
+    # export CLICKHOUSE_DOCKER_IMAGE="altinity/clickhouse-server:21.8.12.29.altinitydev.arm"
+    # and re-run any commands. Official M1 docker support is in the works, I believe.
+    image: "${CLICKHOUSE_DOCKER_IMAGE:-yandex/clickhouse-server:21.11.10.1}"
+    container_name: "carbon_clickhouse"
+    environment:
+      CLICKHOUSE_USER: atlas
+      CLICKHOUSE_PASSWORD: atlas
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "8123:8123"
+      - "8088:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+volumes:
+  clickhouse_data:

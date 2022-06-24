@@ -41,7 +41,7 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 	}
 	regions = [...]string{ "AESO", "BPA", "CAISO", "ERCO", "IESO",
        "ISONE", "MISO",
-        "NYSIO", "NYISO.NYCW",
+        "NYISO", "NYISO.NYCW",
          "NYISO.NYLI", "NYISO.NYUP",
           "PJM", "SPP", "EIA"} 
 	var regionstartdates = map[string]string{
@@ -52,8 +52,8 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		"IESO": "2017-12-31T05:00:00+00:00",
 		"ISONE": "2015-01-01T05:00:00+00:00",
 		"MISO": "2018-01-01T05:00:00+00:00",
-		"NYSIO": "2017-12-01T05:05:00+00:00",
-		"NYSIO.NYCW": "2019-01-01T00:00:00+00:00", //wont add to array
+		"NYISO": "2017-12-01T05:05:00+00:00",
+		"NYISO.NYCW": "2019-01-01T00:00:00+00:00", //wont add to array
 		"NYISO.NYLI": "2019-01-01T00:00:00+00:00",
 		"NYISO.NYUP": "2019-01-01T00:00:00+00:00",
 		"PJM": "2017-07-01T04:05:00+00:00",
@@ -67,8 +67,17 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 	if err != nil {
 		fmt.Printf("could not retrieve co2 emissions")
 	}
+	s = &pollersrvc{
+		csc:				csc,
+		dbc:				dbc,
+		ctx:                ctx,
+		cancel: 			cancel,
+		readDates:		    times,
+		carbonReports:		carbonReports,
+
+	}
 	
-	return &pollersrvc{csc: csc, dbc: dbc, ctx: ctx, cancel: cancel, readDates: times, carbonReports: carbonReports}
+	return s
 }
 
 func (s *pollersrvc) ensurepastdata(ctx context.Context, regionstartdates map[string]string) (startDates []string) {
@@ -87,24 +96,6 @@ func (s *pollersrvc) ensurepastdata(ctx context.Context, regionstartdates map[st
 	}
 	return dates
 }
-/**
-func initMap() {
-	regionstartdates["AESO"] = "2020-05-15T16:00:00+00:00"
-	regionstartdates["BPA"] = "2018-01-01T08:00:00+00:00"
-	regionstartdates["CAISO"] = "2018-04-10T07:00:00+00:00"
-	regionstartdates["ERCO"] = "2018-07-02T05:05:00+00:00"
-	regionstartdates["IESO"] = "2017-12-31T05:00:00+00:00"
-	regionstartdates["ISONE"] = "2015-01-01T05:00:00+00:00"
-	regionstartdates["MISO"] = "2018-01-01T05:00:00+00:00"
-	regionstartdates["NYSIO"] = "2017-12-01T05:05:00+00:00"
-	regionstartdates["NYSIO.NYCW"] = "2019-01-01T00:00:00+00:00"
-	regionstartdates["NYISO.NYLI"] = "2019-01-01T00:00:00+00:00"
-	regionstartdates["NYISO.NYUP"] = "2019-01-01T00:00:00+00:00"
-	regionstartdates["PJM"] = "2017-07-01T04:05:00+00:00"
-	regionstartdates["SPP"] = "2017-12-31T00:00:00+00:00"
-	regionstartdates["EIA"] = "2019-01-01T05:00:00+00:00"
-}
-*/
 
 // query api getting search data for carbon_intensity event
 func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []string) (res [][]*genpoller.CarbonForecast, err error) {
@@ -117,14 +108,13 @@ func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []string) (res [
 	//fmt.Printf("the length of the dates array is %d\n", len(dates))
 	for i := 0; i < len(regions); i++ {
 		carbonres, err := s.csc.GetEmissions(ctx, regions[i], dates[i], time.Now().GoString())
-        if err != nil { //handle errors when a region is not available??
-            //instead of returning have a way marking that a region is not available
-            //handle case when
+        if err != nil {
             return nil, err
 		}
-		reports = append(reports, carbonres)
-		s.dbc.SaveCarbonReports(ctx, carbonres)
-		fmt.Printf("returned from save reports")
+		if carbonres != nil {
+			reports = append(reports, carbonres)
+			s.dbc.SaveCarbonReports(ctx, carbonres)	
+		}
 	}
 	return reports, nil
 }
