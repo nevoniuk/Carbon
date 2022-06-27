@@ -15,9 +15,7 @@ var _ = Service("Poller", func() {
 	Description("Service that provides forecasts to clickhouse from Carbonara API")
 
 	Method("carbon_emissions", func() {
-		Payload(ArrayOf(String))
 		Description("query api getting search data for carbon_intensity event")
-		Result(ArrayOf(ArrayOf(CarbonForecast)))
 		//Error("data_not_available", ErrorResult, "The data is not available or server error")
 		//Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {
@@ -39,8 +37,8 @@ var _ = Service("Poller", func() {
 */
 	Method("aggregate_data", func() {
 		Description("get the aggregate data for an event from clickhouse")
-		Payload(ArrayOf(String))
-		Result(ArrayOf(ArrayOf(AggregateData)))
+		//Payload(ArrayOf(String), ArrayOf(CarbonForecast))
+		//Result(ArrayOf(ArrayOf(AggregateData)))
 		//Error("data_not_available", ErrorResult, "The data is not available or server error")
 		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
 		GRPC(func() {

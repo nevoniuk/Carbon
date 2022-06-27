@@ -21,7 +21,6 @@ type pollersrvc struct {
 	cancel context.CancelFunc
 	readDates []string
 	carbonReports		[][]*genpoller.CarbonForecast
-	aggregateReports	[][]*genpoller.AggregateData
 }
 var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
@@ -39,7 +38,6 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		cancel: 			cancel,
 		readDates:		    []string{},
 		carbonReports:		[][]*genpoller.CarbonForecast{},
-		aggregateReports:	[][]*genpoller.AggregateData{},
 	}
 	regions = [...]string{ "AESO", "BPA", "CAISO", "ERCO", "IESO",
        "ISONE", "MISO",
@@ -64,26 +62,29 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 	}
 	reportdurations = [...]string{"daily", "weekly", "monthly"}
 	//rates poller service uses the command "go"
-	times := s.ensurepastdata(ctx, regionstartdates)
-	carbonReports, err := s.CarbonEmissions(ctx, times)
-	aggregateReports, err := s.AggregateDataEndpoint(ctx, times)
-	if err != nil {
-		fmt.Printf("could not retrieve co2 emissions")
-	}
+	times := s.Ensurepastdata(ctx, regionstartdates)
+	//carbonReports, err := s.CarbonEmissions(ctx, times)
+	//aggregateReports, err := s.AggregateDataEndpoint(ctx, times)
 	s = &pollersrvc{
 		csc:				csc,
 		dbc:				dbc,
 		ctx:                ctx,
 		cancel: 			cancel,
 		readDates:		    times,
-		carbonReports:		carbonReports,
-		aggregateReports:   aggregateReports,
 	}
 	
 	return s
 }
 
-func (s *pollersrvc) ensurepastdata(ctx context.Context, regionstartdates map[string]string) (startDates []string) {
+func (s *pollersrvc) Start(ctx context.Context) error {
+	err1 := s.CarbonEmissions(ctx)
+	if err1 != nil {
+		return err1
+	}
+	err2 := s.AggregateDataEndpoint(ctx)
+	return err2
+}
+func (s *pollersrvc) Ensurepastdata(ctx context.Context, regionstartdates map[string]string) (startDates []string) {
 	//configure start dates for each region 
 	var dates []string
 	for i := 0; i < len(regions); i++ {
@@ -101,26 +102,30 @@ func (s *pollersrvc) ensurepastdata(ctx context.Context, regionstartdates map[st
 }
 
 // query api getting search data for carbon_intensity event
-func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []string) (res [][]*genpoller.CarbonForecast, err error) {
-	//var dates = s.readDates
+func (ser *pollersrvc) CarbonEmissions(ctx context.Context) (error) {
+	var dates = ser.readDates
 	var reports [][]*genpoller.CarbonForecast
-	//end, err := time.Parse(timeFormat, time.Now().GoString())
+	end, err := time.Parse(timeFormat, time.Now().GoString())
 	if err != nil {
 		fmt.Printf("time parse problem in carbon emissions")
 	}
 	//TODO for testing only V
 	for i := 0; i < 2; i++ {
 		fmt.Printf("region is %s\n", regions[i])
-		carbonres, err := s.csc.GetEmissions(ctx, regions[i], dates[i], time.Now().GoString())
+		carbonres, err := ser.csc.GetEmissions(ctx, regions[i], dates[i], end.GoString())
         if err != nil {
-            return nil, err
+            return err
 		}
 		if carbonres != nil {
 			reports = append(reports, carbonres)
-			s.dbc.SaveCarbonReports(ctx, carbonres)	
+			ser.dbc.SaveCarbonReports(ctx, carbonres)	
 		}
 	}
-	return reports, nil
+	if reports == nil {
+		return fmt.Errorf("No reports found")
+	}
+	ser.carbonReports = reports
+	return nil
 }
 
 // query api using a search call for a fuel event from Carbonara API
@@ -129,13 +134,15 @@ func (s *pollersrvc) Fuels(ctx context.Context, dates []time.Time) (err error) {
 }
 
 // get the aggregate data for an event from clickhouse
-func (s *pollersrvc) AggregateDataEndpoint(ctx context.Context) (res [][]*genpoller.AggregateData, err error) {
+func (ser *pollersrvc) AggregateDataEndpoint(ctx context.Context) (error) {
 
-	var carbonreports = s.carbonReports
-	var dates = s.readDates //the start dates for each carbon report per region
+	var carbonreports = ser.carbonReports
+	var dates = ser.readDates
+
+	//var dates = s.readDates //the start dates for each carbon report per region
 	
 	if carbonreports != nil {
-
+		//TODO: change 
 		for i := 0; i < 2; i++ {
 
 			var days []*genpoller.Period
@@ -152,33 +159,36 @@ func (s *pollersrvc) AggregateDataEndpoint(ctx context.Context) (res [][]*genpol
 
 			if days != nil {
 
-				aggregateres, err := s.dbc.GetAggregateReports(ctx, days, regions[i], reportdurations[0])
+				aggregateres, err := ser.dbc.GetAggregateReports(ctx, days, regions[i], reportdurations[0])
+				
 				fmt.Println("AGGREGATE REPORTS")
 				fmt.Println(aggregateres)
-				if err == nil {
-					s.dbc.SaveAggregateReports(ctx, aggregateres)
+				if err != nil {
+					return err
 				}
+				ser.dbc.SaveAggregateReports(ctx, aggregateres)
 
 			}
 			if months != nil {
-				aggregateres, err := s.dbc.GetAggregateReports(ctx, months, regions[i], reportdurations[1])
-				if err == nil {
-					s.dbc.SaveAggregateReports(ctx, aggregateres)
+				aggregateres, err := ser.dbc.GetAggregateReports(ctx, months, regions[i], reportdurations[1])
+				if err != nil {
+					return err
 				}
+				ser.dbc.SaveAggregateReports(ctx, aggregateres)
 			}
 
 			if years != nil {
-				aggregateres, err := s.dbc.GetAggregateReports(ctx, years, regions[i], reportdurations[2])
-				if err == nil {
-					s.dbc.SaveAggregateReports(ctx, aggregateres)
+				aggregateres, err := ser.dbc.GetAggregateReports(ctx, years, regions[i], reportdurations[2])
+				if err != nil {
+					return err
 				}
+				ser.dbc.SaveAggregateReports(ctx, aggregateres)
 			}
 			
 			
 		}
 	}
-	
-	return nil, err
+	return nil
 }
 
 func getdates(ctx context.Context, initialstart time.Time, hourlyreports []*genpoller.CarbonForecast) ([]*genpoller.Period, []*genpoller.Period, []*genpoller.Period) {
@@ -205,6 +215,7 @@ func getdates(ctx context.Context, initialstart time.Time, hourlyreports []*genp
 	daystart = initialstart
 
 	for _, event := range hourlyreports {
+		fmt.Printf("here\n")
 		var time, err = time.Parse(timeFormat, event.Duration.StartTime)
 		if err != nil {
 			fmt.Errorf("parsing error")
