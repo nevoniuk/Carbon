@@ -15,39 +15,30 @@ import (
 
 // Client is the "Poller" service client.
 type Client struct {
-	CarbonEmissionsEndpoint       goa.Endpoint
-	AggregateDataEndpointEndpoint goa.Endpoint
+	CarbonEmissionsEndpoint goa.Endpoint
+	AggregateDataEndpoint   goa.Endpoint
 }
 
 // NewClient initializes a "Poller" service client given the endpoints.
-func NewClient(carbonEmissions, aggregateDataEndpoint goa.Endpoint) *Client {
+func NewClient(carbonEmissions, aggregateData goa.Endpoint) *Client {
 	return &Client{
-		CarbonEmissionsEndpoint:       carbonEmissions,
-		AggregateDataEndpointEndpoint: aggregateDataEndpoint,
+		CarbonEmissionsEndpoint: carbonEmissions,
+		AggregateDataEndpoint:   aggregateData,
 	}
 }
 
 // CarbonEmissions calls the "carbon_emissions" endpoint of the "Poller"
 // service.
-func (c *Client) CarbonEmissions(ctx context.Context, p []string) (res [][]*CarbonForecast, err error) {
-	var ires interface{}
-	ires, err = c.CarbonEmissionsEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.([][]*CarbonForecast), nil
+func (c *Client) CarbonEmissions(ctx context.Context) (err error) {
+	_, err = c.CarbonEmissionsEndpoint(ctx, nil)
+	return
 }
 
-// AggregateDataEndpoint calls the "aggregate_data" endpoint of the "Poller"
-// service.
-// AggregateDataEndpoint may return the following errors:
+// AggregateData calls the "aggregate_data" endpoint of the "Poller" service.
+// AggregateData may return the following errors:
 //	- "missing-required-parameter" (type *goa.ServiceError): missing-required-parameter
 //	- error: internal error
-func (c *Client) AggregateDataEndpoint(ctx context.Context, p []string) (res [][]*AggregateData, err error) {
-	var ires interface{}
-	ires, err = c.AggregateDataEndpointEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.([][]*AggregateData), nil
+func (c *Client) AggregateData(ctx context.Context) (err error) {
+	_, err = c.AggregateDataEndpoint(ctx, nil)
+	return
 }

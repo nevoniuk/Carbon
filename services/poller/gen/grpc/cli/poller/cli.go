@@ -28,14 +28,7 @@ func UsageCommands() string {
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` poller carbon-emissions --message '{
-      "field": [
-         "Iure debitis dolores.",
-         "Magni veniam quidem sapiente architecto eos.",
-         "Sunt officia sequi et velit ut minus.",
-         "Consequatur est assumenda ut non quas."
-      ]
-   }'` + "\n" +
+	return os.Args[0] + ` poller carbon-emissions` + "\n" +
 		""
 }
 
@@ -45,11 +38,9 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	var (
 		pollerFlags = flag.NewFlagSet("poller", flag.ContinueOnError)
 
-		pollerCarbonEmissionsFlags       = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
-		pollerCarbonEmissionsMessageFlag = pollerCarbonEmissionsFlags.String("message", "", "")
+		pollerCarbonEmissionsFlags = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
 
-		pollerAggregateDataFlags       = flag.NewFlagSet("aggregate-data", flag.ExitOnError)
-		pollerAggregateDataMessageFlag = pollerAggregateDataFlags.String("message", "", "")
+		pollerAggregateDataFlags = flag.NewFlagSet("aggregate-data", flag.ExitOnError)
 	)
 	pollerFlags.Usage = pollerUsage
 	pollerCarbonEmissionsFlags.Usage = pollerCarbonEmissionsUsage
@@ -122,10 +113,10 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			switch epn {
 			case "carbon-emissions":
 				endpoint = c.CarbonEmissions()
-				data, err = pollerc.BuildCarbonEmissionsPayload(*pollerCarbonEmissionsMessageFlag)
+				data = nil
 			case "aggregate-data":
-				endpoint = c.AggregateDataEndpoint()
-				data, err = pollerc.BuildAggregateDataEndpointPayload(*pollerAggregateDataMessageFlag)
+				endpoint = c.AggregateData()
+				data = nil
 			}
 		}
 	}
@@ -151,36 +142,21 @@ Additional help:
 `, os.Args[0])
 }
 func pollerCarbonEmissionsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller carbon-emissions -message JSON
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller carbon-emissions
 
 query api getting search data for carbon_intensity event
-    -message JSON: 
 
 Example:
-    %[1]s poller carbon-emissions --message '{
-      "field": [
-         "Iure debitis dolores.",
-         "Magni veniam quidem sapiente architecto eos.",
-         "Sunt officia sequi et velit ut minus.",
-         "Consequatur est assumenda ut non quas."
-      ]
-   }'
+    %[1]s poller carbon-emissions
 `, os.Args[0])
 }
 
 func pollerAggregateDataUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller aggregate-data -message JSON
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller aggregate-data
 
 get the aggregate data for an event from clickhouse
-    -message JSON: 
 
 Example:
-    %[1]s poller aggregate-data --message '{
-      "field": [
-         "Eum vel sit reprehenderit neque.",
-         "Minima incidunt eum dolor tenetur et ut.",
-         "Consequatur vel et ipsa in dolor."
-      ]
-   }'
+    %[1]s poller aggregate-data
 `, os.Args[0])
 }

@@ -102,7 +102,7 @@ func (s *pollersrvc) Ensurepastdata(ctx context.Context, regionstartdates map[st
 }
 
 // query api getting search data for carbon_intensity event
-func (ser *pollersrvc) CarbonEmissions(ctx context.Context) (error) {
+func (ser *pollersrvc) CarbonEmissions(ctx context.Context) ([][]*genpoller.CarbonForecast, error) {
 	var dates = ser.readDates
 	var reports [][]*genpoller.CarbonForecast
 	end, err := time.Parse(timeFormat, time.Now().GoString())
@@ -134,11 +134,11 @@ func (s *pollersrvc) Fuels(ctx context.Context, dates []time.Time) (err error) {
 }
 
 // get the aggregate data for an event from clickhouse
-func (ser *pollersrvc) AggregateDataEndpoint(ctx context.Context) (error) {
+func (ser *pollersrvc) AggregateData(ctx context.Context) ([][]*genpoller.AggregateData, error) {
 
 	var carbonreports = ser.carbonReports
 	var dates = ser.readDates
-
+	var aggregatefinal [][]*genpoller.AggregateData
 	//var dates = s.readDates //the start dates for each carbon report per region
 	
 	if carbonreports != nil {
@@ -160,7 +160,7 @@ func (ser *pollersrvc) AggregateDataEndpoint(ctx context.Context) (error) {
 			if days != nil {
 
 				aggregateres, err := ser.dbc.GetAggregateReports(ctx, days, regions[i], reportdurations[0])
-				
+				aggregatefinal = append(aggregatefinal, aggregateres)
 				fmt.Println("AGGREGATE REPORTS")
 				fmt.Println(aggregateres)
 				if err != nil {
@@ -171,6 +171,7 @@ func (ser *pollersrvc) AggregateDataEndpoint(ctx context.Context) (error) {
 			}
 			if months != nil {
 				aggregateres, err := ser.dbc.GetAggregateReports(ctx, months, regions[i], reportdurations[1])
+				aggregatefinal = append(aggregatefinal, aggregateres)
 				if err != nil {
 					return err
 				}
@@ -179,6 +180,7 @@ func (ser *pollersrvc) AggregateDataEndpoint(ctx context.Context) (error) {
 
 			if years != nil {
 				aggregateres, err := ser.dbc.GetAggregateReports(ctx, years, regions[i], reportdurations[2])
+				aggregatefinal = append(aggregatefinal, aggregateres)
 				if err != nil {
 					return err
 				}
@@ -188,7 +190,7 @@ func (ser *pollersrvc) AggregateDataEndpoint(ctx context.Context) (error) {
 			
 		}
 	}
-	return nil
+	return aggregatefinal
 }
 
 func getdates(ctx context.Context, initialstart time.Time, hourlyreports []*genpoller.CarbonForecast) ([]*genpoller.Period, []*genpoller.Period, []*genpoller.Period) {
