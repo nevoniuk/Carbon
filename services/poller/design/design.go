@@ -15,7 +15,7 @@ var _ = Service("Poller", func() {
 
 	Method("carbon_emissions", func() {
 		Description("query api getting search data for carbon_intensity event. Return reports in 5 minute intervals")
-		Payload(String, String)
+		Payload(CarbonPayload)
 		Result(ArrayOf(CarbonForecast))
 		//payload is region and start time
 		//result is minute reports
@@ -29,7 +29,7 @@ var _ = Service("Poller", func() {
 	})
 	Method("aggregate_data", func() {
 		Description("convert 5 minute reports into hourly, daily, monthly, yearly reports using clickhouse aggregate queries")
-		Payload(String, ArrayOf(Period))
+		Payload(AggregatePayload)
 		//region and dates to get reports for
 
 		//Error("data_not_available", ErrorResult, "The data is not available or server error")
@@ -66,6 +66,7 @@ var CarbonForecast = Type("CarbonForecast", func() {
 	Required("generated_rate", "marginal_rate", "consumed_rate", "generated_source", "region", "Duration")
 })
 
+/**
 var AggregateData = Type("aggregateData", func() {
 
 	Field(1, "average", Float64, "average", func() {
@@ -92,7 +93,7 @@ var AggregateData = Type("aggregateData", func() {
 
 	Required("average", "count", "max", "min", "sum", "duration", "report_type")
 })
-
+*/
 
 var Period = Type("Period", func() {
 	Description("Period of time from start to end of Forecast")
@@ -105,4 +106,21 @@ var Period = Type("Period", func() {
 		Example("2020-01-01T00:00:00Z")
 	})
 	Required("startTime", "endTime")
+})
+
+var CarbonPayload = Type("CarbonPayload", func() {
+	Field(1, "region", String, "region", func() {
+	})
+	Field(2, "start", String, "start", func() {
+		Format(FormatDateTime)
+		Example("2020-01-01T00:00:00Z")
+	})
+})
+
+var AggregatePayload = Type("AggregatePayload", func() {
+	Field(1, "region", String, "region", func() {
+	})
+	Field(2, "periods", ArrayOf(Period), "periods", func() {
+	
+	})
 })
