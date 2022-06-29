@@ -116,7 +116,7 @@ func (s *pollersrvc) Start(ctx context.Context) error {
 		s.dbc.SaveCarbonReports(ctx, minutereports)
 		//loop through hourly, weekly, monthly, yearly periods to create reports
 		for j := 0; j < len(dateConfigs); j++ {
-			s.AggregateDataEndpoint(ctx, regions[i], dateConfigs[j])
+			s.AggregateData(ctx, regions[i], dateConfigs[j])
 		}
 	}
 	return nil
