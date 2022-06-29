@@ -15,36 +15,36 @@ import (
 
 // Endpoints wraps the "Poller" service endpoints.
 type Endpoints struct {
-	CarbonEmissions goa.Endpoint
-	AggregateData   goa.Endpoint
+	CarbonEmissions       goa.Endpoint
+	AggregateDataEndpoint goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "Poller" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		CarbonEmissions: NewCarbonEmissionsEndpoint(s),
-		AggregateData:   NewAggregateDataEndpoint(s),
+		CarbonEmissions:       NewCarbonEmissionsEndpoint(s),
+		AggregateDataEndpoint: NewAggregateDataEndpointEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "Poller" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.CarbonEmissions = m(e.CarbonEmissions)
-	e.AggregateData = m(e.AggregateData)
+	e.AggregateDataEndpoint = m(e.AggregateDataEndpoint)
 }
 
 // NewCarbonEmissionsEndpoint returns an endpoint function that calls the
 // method "carbon_emissions" of service "Poller".
 func NewCarbonEmissionsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.CarbonEmissions(ctx)
+		return s.CarbonEmissions(ctx)
 	}
 }
 
-// NewAggregateDataEndpoint returns an endpoint function that calls the method
-// "aggregate_data" of service "Poller".
-func NewAggregateDataEndpoint(s Service) goa.Endpoint {
+// NewAggregateDataEndpointEndpoint returns an endpoint function that calls the
+// method "aggregate_data" of service "Poller".
+func NewAggregateDataEndpointEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.AggregateData(ctx)
+		return s.AggregateDataEndpoint(ctx)
 	}
 }

@@ -124,7 +124,7 @@ func main() {
 	//setup the service
 	pollerSvc := pollerapi.NewPoller(ctx, csc, dbc)
 	endpoints := genpoller.NewEndpoints(pollerSvc)
-
+	pollerSvc.Start(ctx)
 	// Wrap the services in endpoints that can be invoked from other services
 	// potentially running in different processes.
 

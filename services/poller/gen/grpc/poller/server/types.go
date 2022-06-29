@@ -9,18 +9,76 @@ package server
 
 import (
 	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
+	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
 // NewProtoCarbonEmissionsResponse builds the gRPC response type from the
 // result of the "carbon_emissions" endpoint of the "Poller" service.
-func NewProtoCarbonEmissionsResponse() *pollerpb.CarbonEmissionsResponse {
+func NewProtoCarbonEmissionsResponse(result [][]*poller.CarbonForecast) *pollerpb.CarbonEmissionsResponse {
 	message := &pollerpb.CarbonEmissionsResponse{}
+	message.Field = make([]*pollerpb.ArrayOfCarbonForecast, len(result))
+	for i, val := range result {
+		message.Field[i] = &pollerpb.ArrayOfCarbonForecast{}
+		message.Field[i].Field = make([]*pollerpb.CarbonForecast, len(val))
+		for j, val := range val {
+			message.Field[i].Field[j] = &pollerpb.CarbonForecast{
+				GeneratedRate:   val.GeneratedRate,
+				MarginalRate:    val.MarginalRate,
+				ConsumedRate:    val.ConsumedRate,
+				GeneratedSource: val.GeneratedSource,
+				Region:          val.Region,
+			}
+			if val.Duration != nil {
+				message.Field[i].Field[j].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
+			}
+		}
+	}
 	return message
 }
 
 // NewProtoAggregateDataResponse builds the gRPC response type from the result
 // of the "aggregate_data" endpoint of the "Poller" service.
-func NewProtoAggregateDataResponse() *pollerpb.AggregateDataResponse {
+func NewProtoAggregateDataResponse(result [][]*poller.AggregateData) *pollerpb.AggregateDataResponse {
 	message := &pollerpb.AggregateDataResponse{}
+	message.Field = make([]*pollerpb.ArrayOfAggregateData, len(result))
+	for i, val := range result {
+		message.Field[i] = &pollerpb.ArrayOfAggregateData{}
+		message.Field[i].Field = make([]*pollerpb.AggregateData, len(val))
+		for j, val := range val {
+			message.Field[i].Field[j] = &pollerpb.AggregateData{
+				Average:    val.Average,
+				Min:        val.Min,
+				Max:        val.Max,
+				Sum:        val.Sum,
+				Count:      int32(val.Count),
+				ReportType: val.ReportType,
+			}
+			if val.Duration != nil {
+				message.Field[i].Field[j].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
+			}
+		}
+	}
 	return message
+}
+
+// svcPollerPeriodToPollerpbPeriod builds a value of type *pollerpb.Period from
+// a value of type *poller.Period.
+func svcPollerPeriodToPollerpbPeriod(v *poller.Period) *pollerpb.Period {
+	res := &pollerpb.Period{
+		StartTime: v.StartTime,
+		EndTime:   v.EndTime,
+	}
+
+	return res
+}
+
+// protobufPollerpbPeriodToPollerPeriod builds a value of type *poller.Period
+// from a value of type *pollerpb.Period.
+func protobufPollerpbPeriodToPollerPeriod(v *pollerpb.Period) *poller.Period {
+	res := &poller.Period{
+		StartTime: v.StartTime,
+		EndTime:   v.EndTime,
+	}
+
+	return res
 }

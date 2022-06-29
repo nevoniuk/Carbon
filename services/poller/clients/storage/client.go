@@ -33,7 +33,7 @@ type (
 		
 		//query data then update tables with aggregate information(generated data only)
 		//carbon data only
-		GetAggregateReports(context.Context, []*genpoller.Period, string, string) ([]*genpoller.AggregateData, error)
+		GetAggregateReports(context.Context, []*genpoller.Period, string, string) ([]*genpoller.CarbonForecast, error)
 
 		SaveAggregateReports(context.Context, []*genpoller.AggregateData) (error)
 	}
@@ -111,10 +111,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 				ORDER BY (start)
 	`) 
 	
-	if err != nil {
-		return err
-	}
-
+	/**
 	err = c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS carbondb.aggregate_reports (
 					duration String,
@@ -128,40 +125,10 @@ func (c *client) Init(ctx context.Context, test bool) error {
 				) Engine =  MergeTree()
 				ORDER BY (duration, start)
 	`) 
+	*/
 	return err
 	
-			/*
-			err = c.chcon.Exec(ctx, `
-			CREATE TABLE IF NOT EXISTS fuel_report (
-					duration String,
-					start DateTime,
-					end DateTime,
-					eventtype, String
-					fuel1name String,
-					flue1value Float64,
-					fuel2name String,
-					flue2value Float64,
-					fuel3name String,
-					flue3value Float64,
-					fuel4name String,
-					flue4value Float64,
-					fuel5name String,
-					flue5value Float64,
-					fuel6name String,
-					flue6value Float64,
-					fuel7name String,
-					flue7value Float64,
-					fuel8name String,
-					flue8value Float64,
-					generatedsource String,
-					marginalsource String,
-					emissionfactor String,
-					average Float64,
-					max Float64,
-					min Float64,
-					sum Float64
-			)`)
-			*/
+		
 }
 
 func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.CarbonForecast) (error) {
@@ -199,62 +166,51 @@ func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.Car
 }
 
 func (c *client) GetAggregateReports(ctx context.Context,
-	 periods []*genpoller.Period, region string, duration string) ([]*genpoller.AggregateData, error) {
+	 periods []*genpoller.Period, region string, duration string) ([]*genpoller.CarbonForecast, error) {
 	
-	var finalaggdata []*genpoller.AggregateData
+	var finalaggdata []*genpoller.CarbonForecast
 	
-	var aggdata *genpoller.AggregateData
+	var aggdata *genpoller.CarbonForecast
 	
 	//should return aggregate date for hour reports, daily reports etc...
 	startTime := time.Time{}
 	endTime := time.Time{}
-	var min float64
-	var max float64
-	var sum float64
-	var count int
-	var average float64
-	var regionQ string
+	var averagegen float64
+	var averagemarg float64
+	var averagecons float64
+	var tempregion string
 	
 	for _, period := range periods {
-		rows, err := c.chcon.Query(ctx, `
+		rows := c.chcon.QueryRow(ctx, `
 			SELECT
-				start,
-				end,
-				region,
-				MIN(generatedrate),
-				MAX(generatedrate),
-				COUNT(generatedrate),
-				SUM(generatedrate),
-				AVG(generatedrate)
+				AVG(generatedrate),
+				AVG(marginalrate),
+				AVG(consumedrate)
 			FROM
-				aggregate_reports
-			WHERE   
-				start >= $1 AND end <= $2 AND region = $3
-			ORDER BY
-				start`, period.StartTime, period.EndTime, region)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		aggdata := genpoller.AggregateData{}
-		if err := rows.Scan(&startTime, &endTime, &regionQ, &aggdata.Min, &aggdata.Max, &aggdata.Count, &aggdata.Sum, &aggdata.Average); err != nil {
+				(SELECT *
+				FROM 
+					carbondb.carbon_reports
+				WHERE
+					start >= $1 AND end <= $2 AND region == $3
+				ORDER BY
+					start) 
+				`, period.StartTime, period.EndTime, region)
+		//aggdata := *genpoller.CarbonForecast{}
+		if err := rows.Scan(&startTime, &endTime, &tempregion, &averagegen, &averagemarg, &averagecons); err != nil {
 			return nil, err
 		}
-		fmt.Printf("min is %f\n", aggdata.Min)
-		fmt.Printf("max is %f\n", aggdata.Max)
-		fmt.Printf("count is %d\n", aggdata.Count)
-		fmt.Printf("average is %f\n", aggdata.Sum)
-		fmt.Printf("average is %f\n", aggdata.Average)
-		fmt.Printf("average is %s\n", regionQ)
-	}
+		fmt.Printf(" g average is %f\n", averagegen)
+		fmt.Printf(" m average is %f\n", averagemarg)
+		fmt.Printf(" c average is %s\n", averagecons)
 	
-	aggdata = &genpoller.AggregateData{average, min, max, sum, count, period, duration}
+	aggdata = &genpoller.CarbonForecast{GeneratedRate: averagegen, MarginalRate: averagemarg, ConsumedRate: averagecons,
+	Duration: periods[0], GeneratedSource: "", Region: region}
 	finalaggdata = append(finalaggdata, aggdata)
 	}
 
 	return finalaggdata, nil
 }
+
 
 func (c *client) SaveAggregateReports(ctx context.Context, aggData []*genpoller.AggregateData) (error) {
 	//save aggregate data in new table
@@ -270,37 +226,7 @@ func (c *client) SaveAggregateReports(ctx context.Context, aggData []*genpoller.
 	}
 	return batch.Send()
 }
-/**
-func (c *client) GetCarbonReports(ctx context.Context, durationtype string,
-	timeInterval genpoller.Period, region string) ([]*genpoller.CarbonForecast) {
-		var reports []*genpoller.CarbonForecast
-	rows, err := c.chcon.Query(ctx, `
-		SELECT
-			*
-		FROM weather_observations
 
-		WHERE
-			region = $1 AND duration = $2
-
-		ORDER BY
-			end
-	`, region, durationtype)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		p := genpoller.CarbonForecast{}
-		if err := rows.Scan(&p.duration, &p.region, &p.generated_rate...); err != nil {
-			return nil, err
-		}
-		reports = append(reports, &p)
-	}
-	return reports, nil
-
-
-}
-*/
 
 
 

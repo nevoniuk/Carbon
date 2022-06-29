@@ -115,7 +115,7 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 				endpoint = c.CarbonEmissions()
 				data = nil
 			case "aggregate-data":
-				endpoint = c.AggregateData()
+				endpoint = c.AggregateDataEndpoint()
 				data = nil
 			}
 		}
