@@ -28,7 +28,9 @@ func UsageCommands() string {
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` poller carbon-emissions` + "\n" +
+	return os.Args[0] + ` poller carbon-emissions --message '{
+      "field": "Aut sit inventore itaque est."
+   }'` + "\n" +
 		""
 }
 
@@ -38,9 +40,11 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	var (
 		pollerFlags = flag.NewFlagSet("poller", flag.ContinueOnError)
 
-		pollerCarbonEmissionsFlags = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
+		pollerCarbonEmissionsFlags       = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
+		pollerCarbonEmissionsMessageFlag = pollerCarbonEmissionsFlags.String("message", "", "")
 
-		pollerAggregateDataFlags = flag.NewFlagSet("aggregate-data", flag.ExitOnError)
+		pollerAggregateDataFlags       = flag.NewFlagSet("aggregate-data", flag.ExitOnError)
+		pollerAggregateDataMessageFlag = pollerAggregateDataFlags.String("message", "", "")
 	)
 	pollerFlags.Usage = pollerUsage
 	pollerCarbonEmissionsFlags.Usage = pollerCarbonEmissionsUsage
@@ -113,10 +117,10 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			switch epn {
 			case "carbon-emissions":
 				endpoint = c.CarbonEmissions()
-				data = nil
+				data, err = pollerc.BuildCarbonEmissionsPayload(*pollerCarbonEmissionsMessageFlag)
 			case "aggregate-data":
-				endpoint = c.AggregateDataEndpoint()
-				data = nil
+				endpoint = c.AggregateData()
+				data, err = pollerc.BuildAggregateDataPayload(*pollerAggregateDataMessageFlag)
 			}
 		}
 	}
@@ -134,29 +138,35 @@ Usage:
     %[1]s [globalflags] poller COMMAND [flags]
 
 COMMAND:
-    carbon-emissions: query api getting search data for carbon_intensity event
-    aggregate-data: get the aggregate data for an event from clickhouse
+    carbon-emissions: query api getting search data for carbon_intensity event. Return reports in 5 minute intervals
+    aggregate-data: convert 5 minute reports into hourly, daily, monthly, yearly reports using clickhouse aggregate queries
 
 Additional help:
     %[1]s poller COMMAND --help
 `, os.Args[0])
 }
 func pollerCarbonEmissionsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller carbon-emissions
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller carbon-emissions -message JSON
 
-query api getting search data for carbon_intensity event
+query api getting search data for carbon_intensity event. Return reports in 5 minute intervals
+    -message JSON: 
 
 Example:
-    %[1]s poller carbon-emissions
+    %[1]s poller carbon-emissions --message '{
+      "field": "Aut sit inventore itaque est."
+   }'
 `, os.Args[0])
 }
 
 func pollerAggregateDataUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller aggregate-data
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller aggregate-data -message JSON
 
-get the aggregate data for an event from clickhouse
+convert 5 minute reports into hourly, daily, monthly, yearly reports using clickhouse aggregate queries
+    -message JSON: 
 
 Example:
-    %[1]s poller aggregate-data
+    %[1]s poller aggregate-data --message '{
+      "field": "Adipisci non rerum nisi quisquam."
+   }'
 `, os.Args[0])
 }

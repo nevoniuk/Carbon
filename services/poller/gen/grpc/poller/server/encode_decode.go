@@ -10,6 +10,7 @@ package server
 import (
 	"context"
 
+	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
 	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	goagrpc "goa.design/goa/v3/grpc"
 	"google.golang.org/grpc/metadata"
@@ -18,21 +19,55 @@ import (
 // EncodeCarbonEmissionsResponse encodes responses from the "Poller" service
 // "carbon_emissions" endpoint.
 func EncodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.([][]*poller.CarbonForecast)
+	result, ok := v.([]*poller.CarbonForecast)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "[][]*poller.CarbonForecast", v)
+		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "[]*poller.CarbonForecast", v)
 	}
 	resp := NewProtoCarbonEmissionsResponse(result)
 	return resp, nil
 }
 
-// EncodeAggregateDataEndpointResponse encodes responses from the "Poller"
-// service "aggregate_data" endpoint.
-func EncodeAggregateDataEndpointResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.([][]*poller.AggregateData)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "[][]*poller.AggregateData", v)
+// DecodeCarbonEmissionsRequest decodes requests sent to "Poller" service
+// "carbon_emissions" endpoint.
+func DecodeCarbonEmissionsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		message *pollerpb.CarbonEmissionsRequest
+		ok      bool
+	)
+	{
+		if message, ok = v.(*pollerpb.CarbonEmissionsRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "*pollerpb.CarbonEmissionsRequest", v)
+		}
 	}
-	resp := NewProtoAggregateDataResponse(result)
+	var payload string
+	{
+		payload = NewCarbonEmissionsPayload(message)
+	}
+	return payload, nil
+}
+
+// EncodeAggregateDataResponse encodes responses from the "Poller" service
+// "aggregate_data" endpoint.
+func EncodeAggregateDataResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
+	resp := NewProtoAggregateDataResponse()
 	return resp, nil
+}
+
+// DecodeAggregateDataRequest decodes requests sent to "Poller" service
+// "aggregate_data" endpoint.
+func DecodeAggregateDataRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		message *pollerpb.AggregateDataRequest
+		ok      bool
+	)
+	{
+		if message, ok = v.(*pollerpb.AggregateDataRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "*pollerpb.AggregateDataRequest", v)
+		}
+	}
+	var payload string
+	{
+		payload = NewAggregateDataPayload(message)
+	}
+	return payload, nil
 }

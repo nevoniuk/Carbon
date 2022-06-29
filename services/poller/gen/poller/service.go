@@ -15,10 +15,12 @@ import (
 
 // Service that provides forecasts to clickhouse from Carbonara API
 type Service interface {
-	// query api getting search data for carbon_intensity event
-	CarbonEmissions(context.Context) (res [][]*CarbonForecast, err error)
-	// get the aggregate data for an event from clickhouse
-	AggregateDataEndpoint(context.Context) (res [][]*AggregateData, err error)
+	// query api getting search data for carbon_intensity event. Return reports in
+	// 5 minute intervals
+	CarbonEmissions(context.Context, string) (res []*CarbonForecast, err error)
+	// convert 5 minute reports into hourly, daily, monthly, yearly reports using
+	// clickhouse aggregate queries
+	AggregateData(context.Context, string) (err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -30,23 +32,6 @@ const ServiceName = "Poller"
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
 var MethodNames = [2]string{"carbon_emissions", "aggregate_data"}
-
-type AggregateData struct {
-	// average
-	Average float64
-	// min
-	Min float64
-	// max
-	Max float64
-	// sum
-	Sum float64
-	// count
-	Count int
-	// duration
-	Duration *Period
-	// report_type
-	ReportType string
-}
 
 // Emissions Forecast
 type CarbonForecast struct {

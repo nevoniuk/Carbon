@@ -30,6 +30,16 @@ func BuildCarbonEmissionsFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.Cal
 	}
 }
 
+// EncodeCarbonEmissionsRequest encodes requests sent to Poller
+// carbon_emissions endpoint.
+func EncodeCarbonEmissionsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
+	payload, ok := v.(string)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "string", v)
+	}
+	return NewProtoCarbonEmissionsRequest(payload), nil
+}
+
 // DecodeCarbonEmissionsResponse decodes responses from the Poller
 // carbon_emissions endpoint.
 func DecodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
@@ -44,30 +54,26 @@ func DecodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr
 	return res, nil
 }
 
-// BuildAggregateDataEndpointFunc builds the remote method to invoke for
-// "Poller" service "aggregate_data" endpoint.
-func BuildAggregateDataEndpointFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
+// BuildAggregateDataFunc builds the remote method to invoke for "Poller"
+// service "aggregate_data" endpoint.
+func BuildAggregateDataFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
 	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
 		for _, opt := range cliopts {
 			opts = append(opts, opt)
 		}
 		if reqpb != nil {
-			return grpccli.AggregateDataEndpoint(ctx, reqpb.(*pollerpb.AggregateDataRequest), opts...)
+			return grpccli.AggregateData(ctx, reqpb.(*pollerpb.AggregateDataRequest), opts...)
 		}
-		return grpccli.AggregateDataEndpoint(ctx, &pollerpb.AggregateDataRequest{}, opts...)
+		return grpccli.AggregateData(ctx, &pollerpb.AggregateDataRequest{}, opts...)
 	}
 }
 
-// DecodeAggregateDataEndpointResponse decodes responses from the Poller
-// aggregate_data endpoint.
-func DecodeAggregateDataEndpointResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*pollerpb.AggregateDataResponse)
+// EncodeAggregateDataRequest encodes requests sent to Poller aggregate_data
+// endpoint.
+func EncodeAggregateDataRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
+	payload, ok := v.(string)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "*pollerpb.AggregateDataResponse", v)
+		return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "string", v)
 	}
-	if err := ValidateAggregateDataResponse(message); err != nil {
-		return nil, err
-	}
-	res := NewAggregateDataResult(message)
-	return res, nil
+	return NewProtoAggregateDataRequest(payload), nil
 }

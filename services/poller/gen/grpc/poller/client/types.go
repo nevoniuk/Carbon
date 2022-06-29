@@ -15,28 +15,26 @@ import (
 
 // NewProtoCarbonEmissionsRequest builds the gRPC request type from the payload
 // of the "carbon_emissions" endpoint of the "Poller" service.
-func NewProtoCarbonEmissionsRequest() *pollerpb.CarbonEmissionsRequest {
+func NewProtoCarbonEmissionsRequest(payload string) *pollerpb.CarbonEmissionsRequest {
 	message := &pollerpb.CarbonEmissionsRequest{}
+	message.Field = payload
 	return message
 }
 
 // NewCarbonEmissionsResult builds the result type of the "carbon_emissions"
 // endpoint of the "Poller" service from the gRPC response type.
-func NewCarbonEmissionsResult(message *pollerpb.CarbonEmissionsResponse) [][]*poller.CarbonForecast {
-	result := make([][]*poller.CarbonForecast, len(message.Field))
+func NewCarbonEmissionsResult(message *pollerpb.CarbonEmissionsResponse) []*poller.CarbonForecast {
+	result := make([]*poller.CarbonForecast, len(message.Field))
 	for i, val := range message.Field {
-		result[i] = make([]*poller.CarbonForecast, len(val.Field))
-		for j, val := range val.Field {
-			result[i][j] = &poller.CarbonForecast{
-				GeneratedRate:   val.GeneratedRate,
-				MarginalRate:    val.MarginalRate,
-				ConsumedRate:    val.ConsumedRate,
-				GeneratedSource: val.GeneratedSource,
-				Region:          val.Region,
-			}
-			if val.Duration != nil {
-				result[i][j].Duration = protobufPollerpbPeriodToPollerPeriod(val.Duration)
-			}
+		result[i] = &poller.CarbonForecast{
+			GeneratedRate:   val.GeneratedRate,
+			MarginalRate:    val.MarginalRate,
+			ConsumedRate:    val.ConsumedRate,
+			GeneratedSource: val.GeneratedSource,
+			Region:          val.Region,
+		}
+		if val.Duration != nil {
+			result[i].Duration = protobufPollerpbPeriodToPollerPeriod(val.Duration)
 		}
 	}
 	return result
@@ -44,50 +42,15 @@ func NewCarbonEmissionsResult(message *pollerpb.CarbonEmissionsResponse) [][]*po
 
 // NewProtoAggregateDataRequest builds the gRPC request type from the payload
 // of the "aggregate_data" endpoint of the "Poller" service.
-func NewProtoAggregateDataRequest() *pollerpb.AggregateDataRequest {
+func NewProtoAggregateDataRequest(payload string) *pollerpb.AggregateDataRequest {
 	message := &pollerpb.AggregateDataRequest{}
+	message.Field = payload
 	return message
-}
-
-// NewAggregateDataResult builds the result type of the "aggregate_data"
-// endpoint of the "Poller" service from the gRPC response type.
-func NewAggregateDataResult(message *pollerpb.AggregateDataResponse) [][]*poller.AggregateData {
-	result := make([][]*poller.AggregateData, len(message.Field))
-	for i, val := range message.Field {
-		result[i] = make([]*poller.AggregateData, len(val.Field))
-		for j, val := range val.Field {
-			result[i][j] = &poller.AggregateData{
-				Average:    val.Average,
-				Min:        val.Min,
-				Max:        val.Max,
-				Sum:        val.Sum,
-				Count:      int(val.Count),
-				ReportType: val.ReportType,
-			}
-			if val.Duration != nil {
-				result[i][j].Duration = protobufPollerpbPeriodToPollerPeriod(val.Duration)
-			}
-		}
-	}
-	return result
 }
 
 // ValidateCarbonEmissionsResponse runs the validations defined on
 // CarbonEmissionsResponse.
 func ValidateCarbonEmissionsResponse(message *pollerpb.CarbonEmissionsResponse) (err error) {
-	for _, e := range message.Field {
-		if e != nil {
-			if err2 := ValidateArrayOfCarbonForecast(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-	}
-	return
-}
-
-// ValidateArrayOfCarbonForecast runs the validations defined on
-// ArrayOfCarbonForecast.
-func ValidateArrayOfCarbonForecast(message *pollerpb.ArrayOfCarbonForecast) (err error) {
 	for _, e := range message.Field {
 		if e != nil {
 			if err2 := ValidateCarbonForecast(e); err2 != nil {
@@ -117,45 +80,6 @@ func ValidatePeriod(message *pollerpb.Period) (err error) {
 
 	err = goa.MergeErrors(err, goa.ValidateFormat("message.endTime", message.EndTime, goa.FormatDateTime))
 
-	return
-}
-
-// ValidateAggregateDataResponse runs the validations defined on
-// AggregateDataResponse.
-func ValidateAggregateDataResponse(message *pollerpb.AggregateDataResponse) (err error) {
-	for _, e := range message.Field {
-		if e != nil {
-			if err2 := ValidateArrayOfAggregateData(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-	}
-	return
-}
-
-// ValidateArrayOfAggregateData runs the validations defined on
-// ArrayOfAggregateData.
-func ValidateArrayOfAggregateData(message *pollerpb.ArrayOfAggregateData) (err error) {
-	for _, e := range message.Field {
-		if e != nil {
-			if err2 := ValidateAggregateData(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-	}
-	return
-}
-
-// ValidateAggregateData runs the validations defined on AggregateData.
-func ValidateAggregateData(message *pollerpb.AggregateData) (err error) {
-	if message.Duration == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "message"))
-	}
-	if message.Duration != nil {
-		if err2 := ValidatePeriod(message.Duration); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
-	}
 	return
 }
 

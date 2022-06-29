@@ -13,20 +13,19 @@ option go_package = "/pollerpb";
 
 // Service that provides forecasts to clickhouse from Carbonara API
 service Poller {
-	// query api getting search data for carbon_intensity event
+	// query api getting search data for carbon_intensity event. Return reports in
+// 5 minute intervals
 	rpc CarbonEmissions (CarbonEmissionsRequest) returns (CarbonEmissionsResponse);
-	// get the aggregate data for an event from clickhouse
-	rpc AggregateDataEndpoint (AggregateDataRequest) returns (AggregateDataResponse);
+	// convert 5 minute reports into hourly, daily, monthly, yearly reports using
+// clickhouse aggregate queries
+	rpc AggregateData (AggregateDataRequest) returns (AggregateDataResponse);
 }
 
 message CarbonEmissionsRequest {
+	string field = 1;
 }
 
 message CarbonEmissionsResponse {
-	repeated ArrayOfCarbonForecast field = 1;
-}
-
-message ArrayOfCarbonForecast {
 	repeated CarbonForecast field = 1;
 }
 // Emissions Forecast
@@ -53,29 +52,8 @@ message Period {
 }
 
 message AggregateDataRequest {
+	string field = 1;
 }
 
 message AggregateDataResponse {
-	repeated ArrayOfAggregateData field = 1;
-}
-
-message ArrayOfAggregateData {
-	repeated AggregateData field = 1;
-}
-
-message AggregateData {
-	// average
-	double average = 1;
-	// min
-	double min = 2;
-	// max
-	double max = 3;
-	// sum
-	double sum = 4;
-	// count
-	sint32 count = 5;
-	// duration
-	Period duration = 6;
-	// report_type
-	string report_type = 7;
 }

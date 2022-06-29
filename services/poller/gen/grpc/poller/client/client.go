@@ -36,7 +36,7 @@ func (c *Client) CarbonEmissions() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildCarbonEmissionsFunc(c.grpccli, c.opts...),
-			nil,
+			EncodeCarbonEmissionsRequest,
 			DecodeCarbonEmissionsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
@@ -46,14 +46,14 @@ func (c *Client) CarbonEmissions() goa.Endpoint {
 	}
 }
 
-// AggregateDataEndpoint calls the "AggregateDataEndpoint" function in
-// pollerpb.PollerClient interface.
-func (c *Client) AggregateDataEndpoint() goa.Endpoint {
+// AggregateData calls the "AggregateData" function in pollerpb.PollerClient
+// interface.
+func (c *Client) AggregateData() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
-			BuildAggregateDataEndpointFunc(c.grpccli, c.opts...),
-			nil,
-			DecodeAggregateDataEndpointResponse)
+			BuildAggregateDataFunc(c.grpccli, c.opts...),
+			EncodeAggregateDataRequest,
+			nil)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			return nil, goa.Fault(err.Error())

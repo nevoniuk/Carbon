@@ -149,7 +149,7 @@ func (ser *pollersrvc) CarbonEmissions(ctx context.Context, region string, start
 }
 
 // get the aggregate data for an event from clickhouse
-func (ser *pollersrvc) AggregateDataEndpoint(ctx context.Context, region string, dates []*genpoller.Period) (error) {
+func (ser *pollersrvc) AggregateData(ctx context.Context, region string, dates []*genpoller.Period) (error) {
 
 	//loop through period array
 	aggregateres, err := ser.dbc.GetAggregateReports(ctx, dates, region, reportdurations[0])
