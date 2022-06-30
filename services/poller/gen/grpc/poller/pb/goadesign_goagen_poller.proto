@@ -1,0 +1,65 @@
+// Code generated with goa v3.7.6, DO NOT EDIT.
+//
+// Poller protocol buffer definition
+//
+// Command:
+// $ goa gen github.com/crossnokaye/carbon/services/poller/design
+
+syntax = "proto3";
+
+package poller;
+
+option go_package = "/pollerpb";
+
+// Service that provides forecasts to clickhouse from Carbonara API
+service Poller {
+	// query api getting search data for carbon_intensity event. Return reports in
+// 5 minute intervals
+	rpc CarbonEmissions (CarbonEmissionsRequest) returns (CarbonEmissionsResponse);
+	// convert 5 minute reports into hourly, daily, monthly, yearly reports using
+// clickhouse aggregate queries
+	rpc AggregateData (AggregateDataRequest) returns (AggregateDataResponse);
+}
+
+message CarbonEmissionsRequest {
+	// region
+	string region = 1;
+	// start
+	string start = 2;
+}
+
+message CarbonEmissionsResponse {
+	repeated CarbonForecast field = 1;
+}
+// Emissions Forecast
+message CarbonForecast {
+	// generated_rate
+	double generated_rate = 1;
+	// marginal_rate
+	double marginal_rate = 2;
+	// consumed_rate
+	double consumed_rate = 3;
+	// Duration
+	Period duration = 4;
+	// generated_source
+	string generated_source = 5;
+	// region
+	string region = 6;
+}
+// Period of time from start to end of Forecast
+message Period {
+	// Start time
+	string start_time = 1;
+	// End time
+	string end_time = 2;
+}
+
+message AggregateDataRequest {
+	// region
+	string region = 1;
+	// periods
+	repeated Period periods = 2;
+}
+
+message AggregateDataResponse {
+}

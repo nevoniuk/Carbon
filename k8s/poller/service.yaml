@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: poller
+  labels:
+    app: poller
+spec:
+  type: ClusterIP
+  ports:
+   - name: grpc
+     targetPort: 12201
+     port: 12201
+   - name: http-metrics
+     targetPort: 12202
+     port: 12202
+  selector:
+    app: poller

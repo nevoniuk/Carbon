@@ -2,9 +2,11 @@ package carbonara
 
 import (
 	"context"
+	"strconv"
 	//"bytes"
 	"encoding/json"
 	"net/http"
+
 	//"strconv"
 
 	//"strconv"
@@ -14,6 +16,7 @@ import (
 	//"io/ioutil"
 	"strings"
 	"time"
+
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	"goa.design/clue/log"
 )
@@ -96,23 +99,21 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 //Bug last hourly report is not retrieved
 func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string, reports []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
 	//ignore starttime and endtime for now
+	fmt.Println("start is")
 	fmt.Println(startime)
+	fmt.Println("end is")
 	fmt.Println(endtime)
-	//loop until pagination this variable == last variable
 	
-	start := "2018-04-10T07:00:00+00:00" //for testing
-	end := "2018-04-16T07:00:00+00:00" //testing
-	//var found = false
 	var page = 1
-
+	var last = 100
 	var report *genpoller.CarbonForecast
 	var reportperiod *genpoller.Period
 
 	//var reports []*genpoller.CarbonForecast
 
-	for {
+	for page <= last{
 		carbonUrl := strings.Join([]string{cs_url, "region_events/search?", "region=", region, "&event_type=carbon_intensity&start=",
-		start, "&end=", end, "&per_page=1000", "&page=", string(page)}, "") //for testing
+		startime, "&end=", endtime, "&per_page=1000", "&page=", strconv.Itoa(page)}, "") //for testing
 	
 		//TODO: add io reader instead of nil
 		req, err := http.NewRequest("GET", carbonUrl, nil)
@@ -126,7 +127,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 
 		carbonresp, err := c.HttpGetRequestCall(ctx, req)
 
-
+		//nil report
 		if carbonresp.ContentLength < 100 {
 			return nil, fmt.Errorf("No data available for region %s\n", region)
 		}
@@ -140,29 +141,32 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 			log.Errorf(ctx, err, "cs client Carbon API JSON error")
 			return nil, err
 		}
-		//finalcarbonData = append(finalcarbonData, carbonData)
+		//fmt.Print("response")
+		//fmt.Println(carbonData)
 		var count = 0
+		last = carbonData.Meta.Pagination.Last
+		fmt.Printf("there are %d pages\n", carbonData.Meta.Pagination.Last)
 		var start = carbonData.Data[0].Start_date
+		var end string
 		//iterate though the page returned to make carbon forecasts
+		//maybe not do this part or only read half the reports
 		for count < len(carbonData.Data) {
-			var end = carbonData.Data[count].Start_date
+			
+			end = carbonData.Data[count].Start_date
 			if start != end {
 				reportperiod = &genpoller.Period{StartTime: start, EndTime: end}
 				start = end
 				report = &genpoller.CarbonForecast{GeneratedRate: carbonData.Data[count].Data.Generated_rate, MarginalRate: carbonData.Data[count].Data.Marginal_rate,
 					ConsumedRate: carbonData.Data[count].Data.Consumed_rate, Duration: reportperiod, GeneratedSource: carbonData.Data[count].Meta.Generated_emissions_source, Region: carbonData.Data[count].Region}
-				reports = append(reports, report)
+				//fmt.Println(report.Duration)
+					reports = append(reports, report)
 			}
+			count += 1
 		}
-		//add the last report
-		reportperiod = &genpoller.Period{StartTime: start, EndTime: end}
-		report = &genpoller.CarbonForecast{GeneratedRate: carbonData.Data[count].Data.Generated_rate, MarginalRate: carbonData.Data[count].Data.Marginal_rate,
-			ConsumedRate: carbonData.Data[count].Data.Consumed_rate, Duration: reportperiod, GeneratedSource: carbonData.Data[count].Meta.Generated_emissions_source, Region: carbonData.Data[count].Region}
-		reports = append(reports, report)
-
+		fmt.Printf("THIS PAGE IS %d\n", carbonData.Meta.Pagination.This)
 		if carbonData.Meta.Pagination.This == carbonData.Meta.Pagination.Last {
 			fmt.Println("reached last report")
-			break
+			return reports, nil
 		}
 		page += 1
 	}
