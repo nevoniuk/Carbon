@@ -99,10 +99,10 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 //Bug last hourly report is not retrieved
 func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string, reports []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
 	//ignore starttime and endtime for now
-	fmt.Println("start is")
-	fmt.Println(startime)
-	fmt.Println("end is")
-	fmt.Println(endtime)
+	//fmt.Println("start is")
+	//fmt.Println(startime)
+	//fmt.Println("end is")
+	//fmt.Println(endtime)
 	
 	var page = 1
 	var last = 100

@@ -114,7 +114,7 @@ func (s *pollersrvc) Start(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-
+		
 		s.dbc.SaveCarbonReports(ctx, minutereports)
 		//loop through hourly, weekly, monthly, yearly periods to create reports
 		for j := 0; j < len(dateConfigs); j++ {
@@ -167,7 +167,7 @@ func (ser *pollersrvc) CarbonEmissions(ctx context.Context, input *genpoller.Car
 func (ser *pollersrvc) AggregateData(ctx context.Context, input *genpoller.AggregatePayload) (error) {
 
 	var region = *input.Region
-	
+	var duration = *input.Duration
 	var dates = input.Periods
 	//loop through period array
 	aggregateres, err := ser.dbc.GetAggregateReports(ctx, dates, region, reportdurations[0])
@@ -289,7 +289,12 @@ func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 		dailyDates = append(dailyDates, &genpoller.Period{daystart.Format(timeFormat),previous.Format(timeFormat)})
 		//fmt.Println(dailyDates[0])
 	}
-	finalDates = append(finalDates, hourlyDates, dailyDates, weeklyDates, monthlyDates, yearlyDates)
+	//finalDates = append(finalDates, hourlyDates, dailyDates, weeklyDates, monthlyDates, yearlyDates)
+	finalDates[0] = hourlyDates
+	finalDates[1] = dailyDates
+	finalDates[2] = weeklyDates
+	finalDates[3] = monthlyDates
+	finalDates[4] = yearlyDates
 	//fmt.Printf("DATES")
 	//fmt.Println(hourlyDates)
 	//fmt.Println(dailyDates)

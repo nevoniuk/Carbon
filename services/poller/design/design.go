@@ -57,6 +57,8 @@ var CarbonForecast = Type("CarbonForecast", func() {
 	})
 	Field(4, "Duration", Period, "Duration")
 
+	Field(5, "duration_type", String, "duration_type")
+
 	Field(5, "generated_source", String, "generated_source", func() {
 		Example("EGRID_2019")
 	})
@@ -121,6 +123,9 @@ var AggregatePayload = Type("AggregatePayload", func() {
 	Field(1, "region", String, "region", func() {
 	})
 	Field(2, "periods", ArrayOf(Period), "periods", func() {
+	
+	})
+	Field(3, "duration", String, "duration", func() {
 	
 	})
 })
