@@ -59,10 +59,10 @@ var CarbonForecast = Type("CarbonForecast", func() {
 
 	Field(5, "duration_type", String, "duration_type")
 
-	Field(5, "generated_source", String, "generated_source", func() {
+	Field(6, "generated_source", String, "generated_source", func() {
 		Example("EGRID_2019")
 	})
-	Field(6, "region", String, "region", func() {
+	Field(7, "region", String, "region", func() {
 		Example("MISO, ISO...")
 	})
 	Required("generated_rate", "marginal_rate", "consumed_rate", "generated_source", "region", "Duration", "duration_type")
