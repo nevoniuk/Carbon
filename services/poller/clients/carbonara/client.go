@@ -145,7 +145,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		//fmt.Println(carbonData)
 		var count = 0
 		last = carbonData.Meta.Pagination.Last
-		fmt.Printf("there are %d pages\n", carbonData.Meta.Pagination.Last)
+		//fmt.Printf("there are %d pages\n", carbonData.Meta.Pagination.Last)
 		var start = carbonData.Data[0].Start_date
 		var end string
 		//iterate though the page returned to make carbon forecasts
@@ -163,9 +163,9 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 			}
 			count += 1
 		}
-		fmt.Printf("THIS PAGE IS %d\n", carbonData.Meta.Pagination.This)
+		//fmt.Printf("THIS PAGE IS %d\n", carbonData.Meta.Pagination.This)
 		if carbonData.Meta.Pagination.This == carbonData.Meta.Pagination.Last {
-			fmt.Println("reached last report")
+			//fmt.Println("reached last report")
 			return reports, nil
 		}
 		page += 1

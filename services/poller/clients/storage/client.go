@@ -74,9 +74,12 @@ func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 			FROM carbondb.carbon_reports
 			WHERE region = $1
 			`, region).Scan(&start); err != nil {
-				fmt.Errorf("error reading time in CheckDB\n")
-				return convertTimeString(ctx, start), err//time would be null
+				fmt.Errorf("error in CheckDB %s\n", err)
+				
+				return "", err//time would be null
 			}
+	fmt.Println("START IS")
+	fmt.Println(start)
 	return convertTimeString(ctx, start), err
 }
 
@@ -99,6 +102,9 @@ func (c *client) Init(ctx context.Context, test bool) error {
 
 	var err error 
 		//research replication engine
+	err = c.chcon.Exec(ctx, `
+			DROP TABLE carbondb.carbon_reports
+	`)
 	err = c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS carbondb.carbon_reports (
 					start DateTime,
@@ -137,6 +143,7 @@ func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.Car
 		 end, generatedrate, marginalrate, consumedrate, generatedsource, region) VALUES ($1, $2, $3, $4, $5, $6, $7)`)
 	if err != nil {
 		//this throws the error
+		fmt.Println(err)
 		fmt.Println("save carbon reports error preparing report")
 		return err
 	}

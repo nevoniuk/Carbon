@@ -63,9 +63,9 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		"SPP": "2017-12-31T00:00:00+00:00",
 	}
 	reportdurations = [...]string{ "minute", "hourly", "daily", "monthly", "yearly"}
-	//rates poller service uses the command "go"
-	//makes more sense to read dates here
+	//return weird date
 	times := s.Ensurepastdata(ctx, regionstartdates)
+	fmt.Println(times)
 	//carbonReports, err := s.CarbonEmissions(ctx, times)
 	//aggregateReports, err := s.AggregateDataEndpoint(ctx, times)
 	s = &pollersrvc{
@@ -85,12 +85,15 @@ func (s *pollersrvc) Ensurepastdata(ctx context.Context, regionstartdates map[st
 	for i := 0; i < len(regions); i++ {
 		//failing at checkDB because clickhouse connection is refused
 		date, err := s.dbc.CheckDB(ctx, string(regions[i]))
+		//TODO remove this
+		err = fmt.Errorf("error")
 		if err == nil {
 			dates = append(dates, date)
 		} else if err != nil {
+			fmt.Println(err)
 			defaultDate := regionstartdates[string(regions[i])]
 			//fmt.Printf("date is %s\n", defaultDate)
-			if (err != nil) {dates = append(dates, defaultDate)}
+			dates = append(dates, defaultDate)
 		}
 	}
 	return dates
@@ -239,8 +242,8 @@ func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 				
 				monthcounter = month
 				monthlyDates = append(monthlyDates, &genpoller.Period{monthstart.Format(timeFormat), previous.Format(timeFormat)})
-				fmt.Println("MONTHLY DATE")
-				fmt.Println(&genpoller.Period{monthstart.Format(timeFormat), previous.Format(timeFormat)})
+				//fmt.Println("MONTHLY DATE")
+				//fmt.Println(&genpoller.Period{monthstart.Format(timeFormat), previous.Format(timeFormat)})
 				monthstart = time
 			}
 
@@ -254,16 +257,16 @@ func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 			if day != daycounter {
 				daycounter = day
 				weekcounter += 1
-				fmt.Println("DAILY DATE")
+				//fmt.Println("DAILY DATE")
 				dailyDates = append(dailyDates, &genpoller.Period{daystart.Format(timeFormat), previous.Format(timeFormat)})
-				fmt.Println(&genpoller.Period{daystart.Format(timeFormat), previous.Format(timeFormat)})
+				///fmt.Println(&genpoller.Period{daystart.Format(timeFormat), previous.Format(timeFormat)})
 				
 				daystart = time
 				//might be 8 instead
 				if weekcounter == 7 {
 					weeklyDates = append(weeklyDates, &genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
-					fmt.Println("WEEKLYDATE")
-					fmt.Println(&genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
+					//fmt.Println("WEEKLYDATE")
+					//fmt.Println(&genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
 					weekstart = time
 					weekcounter = 0
 				}
@@ -271,8 +274,8 @@ func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 
 			hourcounter = hour
 			hourlyDates = append(hourlyDates, &genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
-			fmt.Println("HOURLYDATE")
-			fmt.Println(&genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
+			//fmt.Println("HOURLYDATE")
+			//fmt.Println(&genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
 			//fmt.Println(&genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
 			hourstart = time
 		}
@@ -282,9 +285,9 @@ func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 	}
 	//handle the case where only one day was returned
 	if daycounter == time.Time.Day(initialstart) {
-		fmt.Println("day counter is the same")
+		//fmt.Println("day counter is the same")
 		dailyDates = append(dailyDates, &genpoller.Period{daystart.Format(timeFormat),previous.Format(timeFormat)})
-		fmt.Println(dailyDates[0])
+		//fmt.Println(dailyDates[0])
 	}
 	finalDates = append(finalDates, hourlyDates, dailyDates, weeklyDates, monthlyDates, yearlyDates)
 	//fmt.Printf("DATES")
