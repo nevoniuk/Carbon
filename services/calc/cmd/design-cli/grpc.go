@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	cli "github.com/crossnokaye/carbon/services/calc/gen/grpc/cli/design"
+	cli "github.com/crossnokaye/carbon/services/calc/gen/grpc/cli/calc"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
