@@ -1,0 +1,42 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: poller
+  labels:
+    app: poller
+spec:
+  # Every Monday at 12AM
+  #doesn't matter
+  schedule: "0 12 * * 1"
+  concurrencyPolicy: Replace
+  startingDeadlineSeconds: 1200
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          enableServiceLinks: false
+          automountServiceAccountToken: false
+          securityContext:
+            runAsGroup: 100001
+            runAsNonRoot: true
+            runAsUser: 100001
+          containers:
+          - name: poller-cron
+            image: fullstorydev/grpcurl:v1.8.6
+            imagePullPolicy: Always
+            args:
+            - -plaintext
+            - -vv
+            - -max-time=30.0
+            - poller.carbon.svc.cluster.local.:12500
+            - poller.Poller.Start
+            securityContext:
+              readOnlyRootFilesystem: true
+            resources:
+              requests:
+                memory: "100Mi"
+                cpu: "10m"
+              limits:
+                memory: "100Mi"
+                cpu: "10m"

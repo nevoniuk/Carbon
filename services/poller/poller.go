@@ -27,7 +27,7 @@ var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
 //var regionstartdates map[string]string
 var regions [13]string
-var reportdurations [5]string
+var reportdurations [6]string
 	//ensurepastdata
 // NewPoller returns the Poller service implementation.
 func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *pollersrvc {
@@ -62,12 +62,12 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		"PJM": "2017-07-01T04:05:00+00:00",
 		"SPP": "2017-12-31T00:00:00+00:00",
 	}
-	reportdurations = [...]string{ "minute", "hourly", "daily", "monthly", "yearly"}
-	//return weird date
+	reportdurations = [...]string{ "minute", "hourly", "daily", "weekly", "monthly", "yearly"}
+	
 	times := s.Ensurepastdata(ctx, regionstartdates)
+	fmt.Println("READ DATES")
 	fmt.Println(times)
-	//carbonReports, err := s.CarbonEmissions(ctx, times)
-	//aggregateReports, err := s.AggregateDataEndpoint(ctx, times)
+	
 	s = &pollersrvc{
 		csc:				csc,
 		dbc:				dbc,
@@ -82,17 +82,15 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 func (s *pollersrvc) Ensurepastdata(ctx context.Context, regionstartdates map[string]string) (startDates []string) {
 	//configure start dates for each region 
 	var dates []string
+
 	for i := 0; i < len(regions); i++ {
-		//failing at checkDB because clickhouse connection is refused
+		
 		date, err := s.dbc.CheckDB(ctx, string(regions[i]))
-		//TODO remove this
-		err = fmt.Errorf("error")
 		if err == nil {
 			dates = append(dates, date)
 		} else if err != nil {
 			fmt.Println(err)
 			defaultDate := regionstartdates[string(regions[i])]
-			//fmt.Printf("date is %s\n", defaultDate)
 			dates = append(dates, defaultDate)
 		}
 	}
@@ -100,27 +98,39 @@ func (s *pollersrvc) Ensurepastdata(ctx context.Context, regionstartdates map[st
 }
 
 func (s *pollersrvc) Start(ctx context.Context) error {
-	//1.loop through regions here
-	//loop through len(regions) but for now only one
-	for i := 0; i < 1; i++ {
+	
+	for i := 0; i < len(regions); i++ {
+
 		var payload = genpoller.CarbonPayload{Region: &regions[i], Start: &s.startDates[i]}
-		minutereports, err1 := s.CarbonEmissions(ctx, &payload) //returns single array of forecasts
-		if err1 != nil {
-			return err1
+		minutereports, emissionsError := s.CarbonEmissions(ctx, &payload) //returns single array of forecasts
+		if emissionsError != nil {
+			fmt.Errorf("Error from carbon emissions %s\n", emissionsError)
+			//keep reading
+			//return emissionsError
+			continue
 		}
 		//dates used as input for clickhouse queries to get averages
-		dateConfigs, err := getdates(ctx, minutereports)
-
-		if err != nil {
-			return err
-		}
 		
+		dateConfigs, datesErr := getdates(ctx, minutereports)
+
+		if datesErr != nil {
+			return datesErr
+		}
+		fmt.Println("5 MINUTE REPORTS:")
+		fmt.Println(len(minutereports))
 		s.dbc.SaveCarbonReports(ctx, minutereports)
-		//loop through hourly, weekly, monthly, yearly periods to create reports
+
+		//now create hourly, weekly, monthly averages
+		var durationsCounter = 1
 		for j := 0; j < len(dateConfigs); j++ {
 			if dateConfigs[j] != nil {
-				var payload = genpoller.AggregatePayload{Region: &regions[i], Periods: dateConfigs[j]}
-				s.AggregateData(ctx, &payload)
+				var payload = genpoller.AggregatePayload{Region: &regions[i], Periods: dateConfigs[j], Duration: &reportdurations[durationsCounter]}
+				aggErr := s.AggregateData(ctx, &payload)
+				if aggErr != nil {
+					fmt.Errorf("Error from aggregate data %s\n", aggErr)
+					return aggErr
+				}
+				durationsCounter += 1
 			}
 			
 		}
@@ -134,30 +144,56 @@ func (s *pollersrvc) Start(ctx context.Context) error {
 
 func (ser *pollersrvc) CarbonEmissions(ctx context.Context, input *genpoller.CarbonPayload) ([]*genpoller.CarbonForecast, error) {
 	var start = *input.Start
+
 	var region = *input.Region
+
 	var reports []*genpoller.CarbonForecast
+
 	lastDate := time.Now().Format(timeFormat)
 	
 	//search endpoint wont take requests over 7 day
-	//REMOVE TEMP COUNTER
-	var testcounter = 0
+	
 	//loop through every week from stand -> lastDate
-	for testcounter < 5 {
-		if lastDate == start {
-			return reports, nil
-		}
+
+	var startTime, err1 = time.Parse(timeFormat, start)
+
+	if err1 != nil {
+		return nil, err1
+	}
+
+	var endTime, err2 = time.Parse(timeFormat, lastDate)
+
+	if err2 != nil {
+		return nil, err2
+	}
+
+	for startTime.Before(endTime) {
+		fmt.Printf("REGION IS %s\n", region)
+		fmt.Printf("START TIME IS %s\n", start)
+		
 		t, err := time.Parse(timeFormat, start)
+
 		if err != nil {
 			return nil, err
 		}
+
 		newTime := t.AddDate(0, 0, 6)
-		var end = newTime.Format(timeFormat)
-		reports, err = ser.csc.GetEmissions(ctx, region, start, end, reports)
-		
+		//exceeded last date
+		if !newTime.Before(endTime) {
+			return reports, nil
+		}
+
+		var tempend = newTime.Format(timeFormat)
+		fmt.Printf("END TIME IS %s\n", tempend)
+		var emissionsErr error
+		reports, emissionsErr = ser.csc.GetEmissions(ctx, region, start, tempend, reports)
+		if emissionsErr != nil {
+			return nil, emissionsErr
+		}
 		newTime = newTime.AddDate(0, 0, 1)
-		end = newTime.Format(timeFormat)
-		start = end
-		testcounter += 1
+		
+		start = newTime.Format(timeFormat)
+		//testcounter += 1
 	}
 
 	return reports, nil
@@ -170,20 +206,28 @@ func (ser *pollersrvc) AggregateData(ctx context.Context, input *genpoller.Aggre
 	var duration = *input.Duration
 	var dates = input.Periods
 	//loop through period array
-	aggregateres, err := ser.dbc.GetAggregateReports(ctx, dates, region, reportdurations[0])
+	aggregateres, geterr := ser.dbc.GetAggregateReports(ctx, dates, region, duration)
 
 	fmt.Println(aggregateres)
-	if err != nil {
-		return err
+	if geterr != nil {
+		fmt.Errorf("Error from get carbon reports: %s\n", geterr)
+		return geterr
 	}
-	ser.dbc.SaveCarbonReports(ctx, aggregateres)
+	saveerr := ser.dbc.SaveCarbonReports(ctx, aggregateres)
+	if saveerr != nil {
+		fmt.Errorf("Error from save carbon reports: %s\n", saveerr)
+		return saveerr
+	}
 
 	return nil
 }
 
 //NOTE: need function to get the dates from minute reports because some data may have not been available
 func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
-	
+	if minutereports == nil {
+		var err = fmt.Errorf("no reports for get dates")
+		return nil, err
+	}
 	var initialstart, err = time.Parse(timeFormat, minutereports[0].Duration.StartTime)
 
 	if err != nil {
@@ -290,16 +334,15 @@ func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 		//fmt.Println(dailyDates[0])
 	}
 	//finalDates = append(finalDates, hourlyDates, dailyDates, weeklyDates, monthlyDates, yearlyDates)
-	finalDates[0] = hourlyDates
-	finalDates[1] = dailyDates
-	finalDates[2] = weeklyDates
-	finalDates[3] = monthlyDates
-	finalDates[4] = yearlyDates
-	//fmt.Printf("DATES")
-	//fmt.Println(hourlyDates)
-	//fmt.Println(dailyDates)
-	//fmt.Println(weeklyDates)
-	//fmt.Println()
+	finalDates = append(finalDates, hourlyDates)
+	finalDates = append(finalDates, dailyDates)
+	finalDates = append(finalDates, weeklyDates)
+	finalDates = append(finalDates, monthlyDates)
+	finalDates = append(finalDates, yearlyDates)
+	for _, date := range finalDates {
+		fmt.Println("DATE")
+		fmt.Println(date)
+	}
 	return finalDates, nil
 }
 

@@ -24,7 +24,7 @@ func BuildCarbonEmissionsPayload(pollerCarbonEmissionsMessage string) (*poller.C
 		if pollerCarbonEmissionsMessage != "" {
 			err = json.Unmarshal([]byte(pollerCarbonEmissionsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"region\": \"Sit inventore itaque est voluptate.\",\n      \"start\": \"2020-01-01T00:00:00Z\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"region\": \"Minus dolores.\",\n      \"start\": \"2020-01-01T00:00:00Z\"\n   }'")
 			}
 		}
 	}
@@ -48,13 +48,16 @@ func BuildAggregateDataPayload(pollerAggregateDataMessage string) (*poller.Aggre
 		if pollerAggregateDataMessage != "" {
 			err = json.Unmarshal([]byte(pollerAggregateDataMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"periods\": [\n         {\n            \"endTime\": \"2020-01-01T00:00:00Z\",\n            \"startTime\": \"2020-01-01T00:00:00Z\"\n         },\n         {\n            \"endTime\": \"2020-01-01T00:00:00Z\",\n            \"startTime\": \"2020-01-01T00:00:00Z\"\n         }\n      ],\n      \"region\": \"Doloribus quia ea.\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"duration\": \"Dolores quia magni veniam quidem sapiente architecto.\",\n      \"periods\": [\n         {\n            \"endTime\": \"2020-01-01T00:00:00Z\",\n            \"startTime\": \"2020-01-01T00:00:00Z\"\n         },\n         {\n            \"endTime\": \"2020-01-01T00:00:00Z\",\n            \"startTime\": \"2020-01-01T00:00:00Z\"\n         }\n      ],\n      \"region\": \"Rerum nisi quisquam reiciendis aliquam pariatur sit.\"\n   }'")
 			}
 		}
 	}
 	v := &poller.AggregatePayload{}
 	if message.Region != "" {
 		v.Region = &message.Region
+	}
+	if message.Duration != "" {
+		v.Duration = &message.Duration
 	}
 	if message.Periods != nil {
 		v.Periods = make([]*poller.Period, len(message.Periods))

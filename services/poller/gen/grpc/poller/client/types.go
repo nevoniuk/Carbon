@@ -35,6 +35,7 @@ func NewCarbonEmissionsResult(message *pollerpb.CarbonEmissionsResponse) []*poll
 			GeneratedRate:   val.GeneratedRate,
 			MarginalRate:    val.MarginalRate,
 			ConsumedRate:    val.ConsumedRate,
+			DurationType:    val.DurationType,
 			GeneratedSource: val.GeneratedSource,
 			Region:          val.Region,
 		}
@@ -51,6 +52,9 @@ func NewProtoAggregateDataRequest(payload *poller.AggregatePayload) *pollerpb.Ag
 	message := &pollerpb.AggregateDataRequest{}
 	if payload.Region != nil {
 		message.Region = *payload.Region
+	}
+	if payload.Duration != nil {
+		message.Duration = *payload.Duration
 	}
 	if payload.Periods != nil {
 		message.Periods = make([]*pollerpb.Period, len(payload.Periods))

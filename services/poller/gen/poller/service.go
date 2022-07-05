@@ -40,6 +40,8 @@ type AggregatePayload struct {
 	Region *string
 	// periods
 	Periods []*Period
+	// duration
+	Duration *string
 }
 
 // Emissions Forecast
@@ -52,6 +54,8 @@ type CarbonForecast struct {
 	ConsumedRate float64
 	// Duration
 	Duration *Period
+	// duration_type
+	DurationType string
 	// generated_source
 	GeneratedSource string
 	// region

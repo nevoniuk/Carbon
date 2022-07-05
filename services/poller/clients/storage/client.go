@@ -3,12 +3,9 @@ package storage
 import (
 	"context"
 	"fmt"
-	//"go/constant"
 	"time"
 	ch "github.com/ClickHouse/clickhouse-go/v2"
-
 	"github.com/crossnokaye/carbon/clients/clickhouse"
-	//"github.com/crossnokaye/rates/clients/clickhouse"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
@@ -67,20 +64,26 @@ func (c *client) Ping(ctx context.Context) error {
 func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 	var start time.Time
 	var err error
-	//1.check if any hourly reports are missing
+	
 	if err = c.chcon.QueryRow(ctx, `
 			SELECT
-					MAX(start)
-			FROM carbondb.carbon_reports
-			WHERE region = $1
+					MAX(start) as max_start
+			FROM 
+					carbondb.carbon_reports
+			
+			WHERE
+					region = $1
 			`, region).Scan(&start); err != nil {
-				fmt.Errorf("error in CheckDB %s\n", err)
-				
-				return "", err//time would be null
+
+				return "", fmt.Errorf("Error in checkDB: [%s]\n")
 			}
 	fmt.Println("START IS")
 	fmt.Println(start)
-	return convertTimeString(ctx, start), err
+	if start.Year() < 2000 {
+		err = fmt.Errorf("No records for given region")
+		return "", err
+	}
+	return convertTimeString(ctx, start.UTC()), err
 }
 
 func convertTimeString(ctx context.Context, t time.Time) (string) {
@@ -101,10 +104,13 @@ func (c *client) Init(ctx context.Context, test bool) error {
 	}
 
 	var err error 
-		//research replication engine
+		
+	/**
 	err = c.chcon.Exec(ctx, `
 			DROP TABLE carbondb.carbon_reports
 	`)
+	*/
+
 	err = c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS carbondb.carbon_reports (
 					start DateTime,
@@ -114,26 +120,11 @@ func (c *client) Init(ctx context.Context, test bool) error {
 					consumedrate Float64,
 					generatedsource String,
 					region String,
-					duration String,
+					duration String
 				) Engine =  MergeTree()
 				ORDER BY (start)
 	`) 
 	
-	/**
-	err = c.chcon.Exec(ctx, `
-			CREATE TABLE IF NOT EXISTS carbondb.aggregate_reports (
-					duration String,
-					start DateTime,
-					end DateTime,
-					average Float64,
-					min Float64,
-					max Float64,
-					sum Float64,
-					count Float64
-				) Engine =  MergeTree()
-				ORDER BY (duration, start)
-	`) 
-	*/
 	return err
 	
 		
@@ -143,38 +134,34 @@ func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.Car
 	res, err := c.chcon.PrepareBatch(ctx, `Insert INTO carbondb.carbon_reports (start,
 		 end, generatedrate, marginalrate, consumedrate, generatedsource, region, duration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`)
 	if err != nil {
-		//this throws the error
-		fmt.Println(err)
-		fmt.Println("save carbon reports error preparing report")
-		return err
+		return fmt.Errorf("Error in Save Carbon Reports [%s]", err)
 	}
 
 	for _, report := range reports {
 		var startTime, err1 = time.Parse(timeFormat, report.Duration.StartTime)
 		fmt.Println("save reports start time is")
 		fmt.Println(startTime)
-		//fmt.Println(report.GeneratedRate)
 		if err1 != nil {
-			fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly")
-			return err1
+
+			return fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
+			report.Duration.StartTime, report, err1)
 		}
 		
 		var endTime, err2 = time.Parse(timeFormat, report.Duration.EndTime)
 		fmt.Println("save reports endtime is ")
 		fmt.Println(endTime)
 		if err2 != nil {
-			fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly")
-			return err2
+
+			return fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
+			report.Duration.EndTime, report, err2)
 		}
 		if err := res.Append(startTime.UTC(),
 			 endTime.UTC(), report.GeneratedRate, report.MarginalRate,
-			  report.ConsumedRate, report.GeneratedSource, report.Region, report.Duration); err != nil {
-				fmt.Errorf("Error saving carbon reports")
-				return err
+			  report.ConsumedRate, report.GeneratedSource, report.Region, report.DurationType); err != nil {
+				return fmt.Errorf("Error saving carbon reports: [%s]", err)
 			}
 	}
 
-	fmt.Printf("reports sent\n")
 	return res.Send()
 }
 
@@ -183,53 +170,25 @@ func (c *client) GetAggregateReports(ctx context.Context,
 	
 	var finalaggdata []*genpoller.CarbonForecast
 	
-	//var aggdata *genpoller.CarbonForecast
+	var aggdata *genpoller.CarbonForecast
 	
 	
 	var averagegen float64
 	var averagemarg float64
 	var averagecons float64
-	//var tempregion string
-	//var tempsource string
-	
-	/**
-	err := c.chcon.QueryRow(ctx,	`
-		SELECT AVG(generatedrate) FROM carbondb.carbon_reports`).Scan(&averagegen)
-	if err != nil {
-		fmt.Println("ERROR in get aggregate reports")
-			return nil, err
-	} else {
-		fmt.Println(averagegen)
-	}
-SELECT
-				AVG(generatedrate),
-				AVG(marginalrate),
-				AVG(consumedrate)
-			FROM
-				(SELECT *
-				FROM 
-					carbondb.carbon_reports
-				WHERE
-					start >= $1 AND end <= $2 AND region == $3
-				ORDER BY
-					start) 
-
-	*/
 	
 	for _, period := range periods {
 
-		fmt.Println("in get report start time is\n")
 		var newstart, starterr = time.Parse(timeFormat, period.StartTime)
 		if starterr != nil {
 			return nil, starterr
 		}
-		fmt.Println(newstart)
-		fmt.Println("in get report end time is\n")
+
 		var newend, enderr = time.Parse(timeFormat, period.EndTime)
 		if enderr != nil {
 			return nil, enderr
 		}
-		fmt.Println(newend)
+		
 		rows := c.chcon.QueryRow(ctx,`
 		SELECT
 			AVG(generatedrate) AS generatedate,
@@ -241,53 +200,21 @@ SELECT
 			region = $1 AND start >= $2 AND end <= $3
 		GROUP BY region
 				`, region, newstart.UTC(), newend.UTC())
-		//aggdata := *genpoller.CarbonForecast{}
+		
 		err := rows.Scan(&averagegen, &averagemarg, &averagecons)
-		if err != nil {
-			fmt.Println("ERROR in get aggregate reports")
-			fmt.Println(err)
-			return nil, err
-		}
-		fmt.Println(averagegen)
-/**
-		defer rows.Close()
-		for rows.Next() {
-			
-			if err := rows.Scan(&startTime, &endTime, &averagegen, &averagemarg, &averagecons, &tempregion); err != nil {
-				return nil, err
-			}
 
-			fmt.Printf(" g average is %f\n", averagegen)
-			
-			fmt.Printf(" m average is %f\n", averagemarg)
-			fmt.Printf(" c average is %s\n", averagecons)
-			aggdata = &genpoller.CarbonForecast{GeneratedRate: averagegen, MarginalRate: averagemarg, ConsumedRate: averagecons,
-				Duration: period, GeneratedSource: "", Region: region}
-				finalaggdata = append(finalaggdata, aggdata)
-			
-		} 
-		*/	
+		if err != nil {
+			return nil, fmt.Errorf("Error could not get report [%s]", err)
+		}
+
+		aggdata = &genpoller.CarbonForecast{GeneratedRate: averagegen, MarginalRate: averagemarg, ConsumedRate: averagecons,
+			Duration: period, DurationType: duration, GeneratedSource: "", Region: region}
+		finalaggdata = append(finalaggdata, aggdata)	
 	}
 
 	return finalaggdata, nil
 }
 
-/**
-func (c *client) SaveAggregateReports(ctx context.Context, aggData []*genpoller.AggregateData) (error) {
-	//save aggregate data in new table
-	batch, err := c.chcon.PrepareBatch(ctx, `INSERT INTO carbondb.aggregate_reports (duration, start, end, average, min, max, sum, count) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`)
-	if err != nil {
-		return err
-	}
-	for _, p := range aggData {
-		if err := batch.Append(p.ReportType, p.Duration.StartTime, p.Duration.EndTime,
-			 p.Average, p.Min, p.Max, p.Sum, p.Count); err != nil {
-			return err
-		}
-	}
-	return batch.Send()
-}
-*/
 
 
 

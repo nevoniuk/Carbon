@@ -29,7 +29,7 @@ func UsageCommands() string {
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
 	return os.Args[0] + ` poller carbon-emissions --message '{
-      "region": "Sit inventore itaque est voluptate.",
+      "region": "Minus dolores.",
       "start": "2020-01-01T00:00:00Z"
    }'` + "\n" +
 		""
@@ -154,7 +154,7 @@ query api getting search data for carbon_intensity event. Return reports in 5 mi
 
 Example:
     %[1]s poller carbon-emissions --message '{
-      "region": "Sit inventore itaque est voluptate.",
+      "region": "Minus dolores.",
       "start": "2020-01-01T00:00:00Z"
    }'
 `, os.Args[0])
@@ -168,6 +168,7 @@ convert 5 minute reports into hourly, daily, monthly, yearly reports using click
 
 Example:
     %[1]s poller aggregate-data --message '{
+      "duration": "Dolores quia magni veniam quidem sapiente architecto.",
       "periods": [
          {
             "endTime": "2020-01-01T00:00:00Z",
@@ -178,7 +179,7 @@ Example:
             "startTime": "2020-01-01T00:00:00Z"
          }
       ],
-      "region": "Doloribus quia ea."
+      "region": "Rerum nisi quisquam reiciendis aliquam pariatur sit."
    }'
 `, os.Args[0])
 }

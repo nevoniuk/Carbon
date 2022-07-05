@@ -20,7 +20,7 @@ import (
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	"goa.design/clue/log"
 )
-
+var reportdurations [6]string
 //methods need to be created for different event types. they all use the same search endpoint
 type (
 
@@ -31,7 +31,8 @@ type (
 	client struct {
 		c *http.Client
 	}
-
+	
+	
 	//some numbers and events are estimated**
 	Outermoststruct struct {
 		Data []struct {
@@ -64,6 +65,7 @@ const (
 
 func (c *client) Init() {
 	fmt.Printf("initialized")
+	reportdurations = [...]string{ "minute", "hourly", "daily", "weekly", "monthly", "yearly"}
 }
 
 func New(c *http.Client) Client {
@@ -111,22 +113,27 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 
 	//var reports []*genpoller.CarbonForecast
 
-	for page <= last{
+	for page <= last {
 		carbonUrl := strings.Join([]string{cs_url, "region_events/search?", "region=", region, "&event_type=carbon_intensity&start=",
 		startime, "&end=", endtime, "&per_page=1000", "&page=", strconv.Itoa(page)}, "") //for testing
 	
+		fmt.Println(carbonUrl)
 		//TODO: add io reader instead of nil
 		req, err := http.NewRequest("GET", carbonUrl, nil)
 		if err != nil {
+			fmt.Println(err)
 			return nil, err
 		}
 		//close request to prevent EOF
 		req.Close = true
 		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("X-Api-Key", "52f0a90b3a2747dcb651f508b63e002c")
+		req.Header.Add("X-Api-Key", "f74f6d5bafa942dcab07dd8e2a0af564")
 
 		carbonresp, err := c.HttpGetRequestCall(ctx, req)
-
+		if err != nil {
+			fmt.Errorf("ERROR FROM GET REQUEST: %s", err)
+			return nil, err
+		}
 		//nil report
 		if carbonresp.ContentLength < 100 {
 			return nil, fmt.Errorf("No data available for region %s\n", region)
@@ -157,7 +164,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 				reportperiod = &genpoller.Period{StartTime: start, EndTime: end}
 				start = end
 				report = &genpoller.CarbonForecast{GeneratedRate: carbonData.Data[count].Data.Generated_rate, MarginalRate: carbonData.Data[count].Data.Marginal_rate,
-					ConsumedRate: carbonData.Data[count].Data.Consumed_rate, Duration: reportperiod, GeneratedSource: carbonData.Data[count].Meta.Generated_emissions_source, Region: carbonData.Data[count].Region}
+					ConsumedRate: carbonData.Data[count].Data.Consumed_rate, Duration: reportperiod, DurationType: reportdurations[0], GeneratedSource: carbonData.Data[count].Meta.Generated_emissions_source, Region: carbonData.Data[count].Region}
 				//fmt.Println(report.Duration)
 					reports = append(reports, report)
 			}
