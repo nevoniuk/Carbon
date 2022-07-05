@@ -2,9 +2,9 @@ package design
 
 import . "goa.design/goa/v3/dsl"
 
-var _ = API("Trends Service", func() {
+var _ = API("Calc", func() {
 	Title("Service to interpret CO2 emissions through power and carbon intensity data")
-	Server("design", func() {
+	Server("calc", func() {
 		Host("localhost", func() {
 			URI("http://localhost:8080")
 		})

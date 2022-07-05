@@ -1,0 +1,66 @@
+// Code generated with goa v3.7.6, DO NOT EDIT.
+//
+// calc protocol buffer definition
+//
+// Command:
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+
+syntax = "proto3";
+
+package calc;
+
+option go_package = "/calcpb";
+
+// Service is the calc service interface.
+service Calc {
+	// helper method to make kW/lbs of Co2 report
+	rpc CalculateReports (CalculateReportsRequest) returns (CalculateReportsResponse);
+	// This endpoint will retrieve the control points for a facility
+	rpc GetControlPoints (GetControlPointsRequest) returns (GetControlPointsResponse);
+	// This endpoint will retrieve the power data using control points from the
+// past-values service
+	rpc GetPower (GetPowerRequest) returns (GetPowerResponse);
+	// This endpoint will retrieve the emissions data for a facility
+	rpc GetEmissions (GetEmissionsRequest) returns (GetEmissionsResponse);
+	// This endpoint is used by a front end service to return energy usage
+// information
+	rpc HandleRequests (HandleRequestsRequest) returns (HandleRequestsResponse);
+	// Make reports available to external/R&D clients
+	rpc Carbonreport (CarbonreportRequest) returns (CarbonreportResponse);
+}
+
+message CalculateReportsRequest {
+}
+
+message CalculateReportsResponse {
+}
+
+message GetControlPointsRequest {
+}
+
+message GetControlPointsResponse {
+}
+
+message GetPowerRequest {
+}
+
+message GetPowerResponse {
+}
+
+message GetEmissionsRequest {
+}
+
+message GetEmissionsResponse {
+}
+
+message HandleRequestsRequest {
+}
+
+message HandleRequestsResponse {
+}
+
+message CarbonreportRequest {
+}
+
+message CarbonreportResponse {
+}
