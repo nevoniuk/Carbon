@@ -1,8 +1,8 @@
-#cmd/dl/dl
-#services/poller/cmd/poller/poller
+cmd/dl/dl
+services/poller/cmd/poller/poller
 
-#bin/
-#cmd/carbon/carbon
-#*.csv
-#mdl--*/
-#coverage.out
+bin/
+cmd/carbon/carbon
+*.csv
+mdl--*/
+coverage.out

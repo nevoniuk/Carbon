@@ -25,25 +25,43 @@ var _ = Service("calc", func() {
 		GRPC(func() {})
 	})
 	*/
-	Method("calc_reports", func() {
-		//helper method to make kW/lbs of Co2 report
+	Method("calculate_reports", func() {
+		
+		Description("helper method to make kW/lbs of Co2 report")
 		GRPC(func() {})
 	})
-	Method("display_carbon", func() {
-		//talks to storage and power clients
-		//by default returns co2 emissions for the past few months
-		Description("This endpoint is used by a front end service to make carbon reports available")
+
+	Method("get_control_points", func() {
+		//talks to power client
+		Description("This endpoint will retrieve the control points for a facility")
 		GRPC(func() {})
 	})
+
+	Method("get_power", func() {
+		//talks to power client
+		Description("This endpoint will retrieve the power data using control points from the past-values service")
+		GRPC(func() {})
+	})
+
+	Method("get_emissions", func() {
+		//talks to power client
+		Description("This endpoint will retrieve the emissions data for a facility")
+		GRPC(func() {})
+	})
+
+	
 	Method("handle_requests", func() {
-		//frontend client
-		//handles client requests for power usage from
+		//gets:
 		//1.a specific time peripd
 		//2.an auth
 		//3.a specific time interval
+		//4.a specific facility ID/name
+		//5.a specific building
+		//6. then calls the above functions to get the power/emission reports
 		Description("This endpoint is used by a front end service to return energy usage information")
 		GRPC(func() {})
 	})
+
 	Method("carbonreport", func() {
 		//R&D client
 		Description("Make reports available to external/R&D clients")
