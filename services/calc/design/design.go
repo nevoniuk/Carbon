@@ -13,18 +13,7 @@ var _ = API("Trends Service", func() {
 
 //need some kidn of auth?
 var _ = Service("calc", func() {
-	/**
-	Method("download_power", func() {
-		//clickhouse client
-		Description("Query clickhouse for power meter data")
-		GRPC(func() {})
-	})
-	Method("download_carbon", func() {
-		//clickhouse client
-		Description("Query clickhouse for carbon intensity data")
-		GRPC(func() {})
-	})
-	*/
+	
 	Method("calculate_reports", func() {
 		
 		Description("helper method to make kW/lbs of Co2 report")
@@ -69,18 +58,40 @@ var _ = Service("calc", func() {
 	})
 
 })
-
-var CarbonReport = Type("CarbonReport", func() {
+//1.make electrical reports
+//2.make carbon reports
+//3.make total reports from both
+var TotalReport = Type("TotalReport", func() {
 	Description("Carbon/Energy Generation Report")
 	
-	Field(1, "Intervals", Period, "Intervals", func() {
+	Field(1, "Interval", Period, "Interval", func() {
 		
 	})
-	Field(2, "point", DataPoint, "point", func() {
-		Example(37.8267)
+	Field(2, "point", ArrayOf(DataPoint), "point", func() {
+		
+	})
+	Field(3, "facility", Int, "facility", func() {
+		
 	})
 	
-	Required("Intervals", "point")
+	Required("Intervals", "point", "facility")
+})
+
+var CarbonReport = Type("CarbonReport", func() {
+	Description("Carbon Report from clickhouse")
+	
+	Field(1, "generated_rate", Float64, "generated_rate", func() {
+		Example(37.8267)
+	})
+
+	Field(2, "Duration", Period, "Duration")
+
+	Field(3, "duration_type", String, "duration_type")
+
+	Field(4, "region", String, "region", func() {
+		Example("MISO, ISO...")
+	})
+	Required("generated_rate", "region", "Duration", "duration_type")
 })
 
 var Period = Type("Period", func() {
@@ -124,11 +135,14 @@ var ElectricalReport = Type("ElectricalReport", func() {
 	Field(2, "facility", Int, "facility", func() {
 		
 	})
-	Field(2, "stamp", ArrayOf(PowerStamp), "stamp", func() {
+	Field(3, "building", Int, "building", func() {
+		
+	})
+	Field(4, "stamp", ArrayOf(PowerStamp), "stamp", func() {
 		
 	})
 	
-	Required("postalcode", "facility", "stamp")
+	Required("postalcode", "facility", "stamp", "building")
 })
 
 var PowerStamp = Type("PowerStamp", func() {
