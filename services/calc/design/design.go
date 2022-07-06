@@ -3,7 +3,7 @@ package design
 import . "goa.design/goa/v3/dsl"
 
 var _ = API("Calc", func() {
-	Title("Service to interpret CO2 emissions through power and carbon intensity data")
+	Title("calc")
 	Server("calc", func() {
 		Host("localhost", func() {
 			URI("http://localhost:8080")
@@ -11,9 +11,8 @@ var _ = API("Calc", func() {
 	})
 })
 
-//need some kidn of auth?
 var _ = Service("calc", func() {
-	
+	Description("Service to interpret CO2 emissions through power and carbon intensity data")
 	Method("calculate_reports", func() {
 		
 		Description("helper method to make kW/lbs of Co2 report")
@@ -21,32 +20,32 @@ var _ = Service("calc", func() {
 	})
 
 	Method("get_control_points", func() {
-		//talks to power client
-		Description("This endpoint will retrieve the control points for a facility")
+		//facility config stuff
+		Description("wrapper for the power-service repo. gets the control points for the get_power function")
+		Payload(PastValuesPayload)
+		Result(ArrayOf(UUID)) //control points
 		GRPC(func() {})
 	})
 
 	Method("get_power", func() {
 		//talks to power client
-		Description("This endpoint will retrieve the power data using control points from the past-values service")
+		Payload(GetPowerPayload)
+		Result(ElectricalReport)
+		Description("This endpoint will retrieve the power data using control points from the get_control_points function")
 		GRPC(func() {})
 	})
 
 	Method("get_emissions", func() {
-		//talks to power client
+		//talks to storage client
+		Result(CarbonReport)
 		Description("This endpoint will retrieve the emissions data for a facility")
 		GRPC(func() {})
 	})
 
 	
 	Method("handle_requests", func() {
-		//gets:
-		//1.a specific time peripd
-		//2.an auth
-		//3.a specific time interval
-		//4.a specific facility ID/name
-		//5.a specific building
-		//6. then calls the above functions to get the power/emission reports
+		Payload(RequestPayload)
+		//calls the above functions to get the power/emission reports
 		Description("This endpoint is used by a front end service to return energy usage information")
 		GRPC(func() {})
 	})
@@ -58,9 +57,64 @@ var _ = Service("calc", func() {
 	})
 
 })
-//1.make electrical reports
-//2.make carbon reports
-//3.make total reports from both
+
+//payloads
+var RequestPayload = Type("RequestPayload", func() {
+	Description("Payload for the handle_requests function")
+
+	Field(1, "org", String, "org", func() {
+		Format(FormatUUID)
+	})
+	Field(2, "Period", Period, "Period", func() {
+		Format(FormatDateTime)
+	})
+
+	Field(3, "building", String, "building", func() {
+		Format(FormatUUID)
+	})
+
+	Field(4, "interval", String, "interval", func() {
+		Example("hours, days, weeks, months, years")
+	})
+	Required("org", "Period", "building", "interval")
+})
+
+var PastValuesPayload = Type("PastValuesPayload", func() {
+	Description("Payload for the past values get-values function")
+	Field(1, "org", String, "org", func() {
+		Format(FormatUUID)
+	})
+	Field(2, "Period", Period, "Period", func() {
+		Format(FormatDateTime)
+	})
+
+	Field(3, "building", String, "building", func() {
+		Format(FormatUUID)
+	})
+
+	Field(4, "client", String, "client", func() {
+		Format(FormatUUID)
+	})
+})
+
+var GetPowerPayload = Type("GetPowerPayload", func() {
+	Description("Payload for the past values get-values function")
+
+	Field(1, "org", String, "org", func() {
+		Format(FormatUUID)
+	})
+	Field(2, "Period", Period, "Period", func() {
+		Format(FormatDateTime)
+	})
+
+	Field(3, "cps", ArrayOf(UUID), "cps", func() {
+		Format(FormatUUID)
+	})
+
+	Field(4, "interval", Int64, "samping interval")
+	Required("org", "Period", "cps", "interval")
+})
+
 var TotalReport = Type("TotalReport", func() {
 	Description("Carbon/Energy Generation Report")
 	
@@ -77,6 +131,7 @@ var TotalReport = Type("TotalReport", func() {
 	Required("Intervals", "point", "facility")
 })
 
+//reports read from clickhouse
 var CarbonReport = Type("CarbonReport", func() {
 	Description("Carbon Report from clickhouse")
 	
@@ -94,38 +149,24 @@ var CarbonReport = Type("CarbonReport", func() {
 	Required("generated_rate", "region", "Duration", "duration_type")
 })
 
-var Period = Type("Period", func() {
-	Description("Period of time from start to end of Forecast")
-	Field(1, "startTime", String, "Start time", func() {
-		Format(FormatDateTime)
-		Example("2020-01-01T00:00:00Z")
-	})
-	Field(2, "endTime", String, "End time", func() {
-		Format(FormatDateTime)
-		Example("2020-01-01T00:00:00Z")
-	})
-	Required("startTime", "endTime")
-})
 
 var DataPoint = Type("DataPoint", func() {
 	Description("Contains a time stamp with its respective x-y coordinates")
 
-	Field(1, "Time", String, "Time", func() {
+	Field(1, "time", String, "time", func() {
 		Format(FormatDateTime)
 		Example("2020-01-01T00:00:00Z")
 	})
 
 	Field(2, "carbon_rate", Float64, "carbon_rate", func() {
 		Example(37.8267)
+		//pounds of CO2
 	})
 
-	Field(3, "power_rate", Float64, "power_rate", func() {
-		Example(37.8267)
-	})
-
-	Required("Time", "carbon_rate", "power_rate")
+	Required("Time", "carbon_rate",)
 })
 
+//reports read from past-values
 var ElectricalReport = Type("ElectricalReport", func() {
 	Description("Energy Generation Report")
 
@@ -153,4 +194,22 @@ var PowerStamp = Type("PowerStamp", func() {
 		Description("power stamp in KW")
 	})
 })
+
+var UUID = Type("String", func() {
+	Format(FormatUUID)
+})
+
+var Period = Type("Period", func() {
+	Description("Period of time from start to end of Forecast")
+	Field(1, "startTime", String, "Start time", func() {
+		Format(FormatDateTime)
+		Example("2020-01-01T00:00:00Z")
+	})
+	Field(2, "endTime", String, "End time", func() {
+		Format(FormatDateTime)
+		Example("2020-01-01T00:00:00Z")
+	})
+	Required("startTime", "endTime")
+})
+
 

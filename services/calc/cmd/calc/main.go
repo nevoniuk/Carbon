@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	
+	"crypto/tls"
 	"net"
 	"net/url"
 	"os"
@@ -12,7 +12,9 @@ import (
 	"sync"
 	"syscall"
 	"strconv"
+	"time"
 
+	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/crossnokaye/facilityconfig/envloader"
 	calc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 	calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
@@ -20,7 +22,8 @@ import (
 
 	calcapi "github.com/crossnokaye/carbon/services/calc"
 
-
+	//clients
+	"github.com/crossnokaye/carbon/clients/clickhouse"
 	"github.com/crossnokaye/carbon/services/calc/clients/storage"
 	"github.com/crossnokaye/carbon/services/calc/clients/power"
 
@@ -127,11 +130,14 @@ func main() {
 		grpcPortF = flag.String("grpc-port", "", "gRPC port (overrides host gRPC port specified in service design)")
 		secureF   = flag.Bool("secure", false, "Use secure scheme (https or grpcs)")
 		dbgF      = flag.Bool("debug", false, "Log request and response bodies")
+
+		chssl  = flag.Bool("ch-ssl", os.Getenv("CLICKHOUSE_SSL") != "", "ClickHouse connection SSL")
+
 		env = resolveStringEnv("ENV", "dev", "facility environment")
 
-		chaddr = resolveStringEnv("CH_ADDRESS", "127.0.0.1:8087", "click house server url")
-		chuser = resolveStringEnv("CH_USER", "atlas", "click house user name")
-		chpwd  = resolveStringEnv("CH_PASSWORD", "atlas", "click house password")
+		chaddr = resolveStringEnv("CH_ADDRESS", "127.0.0.1:8087", "click house server url") //different from poller/main.go
+		chuser = resolveStringEnv("CLICKHOUSE_USER", "atlas", "click house user name")
+		chpwd  = resolveStringEnv("CLICKHOUSE_PASSWORD", "atlas", "click house password")
 		chsec  = resolveBooleanEnv("CH_SECURE", false, "click house secure connection")
 
 		debug            = resolveBooleanEnv("DEBUG", false, "enable debug logging")
@@ -154,7 +160,42 @@ func main() {
 	log.Print(ctx, log.KV{K: "creating", V: "report repositories"})
 
 	//initialize the clients
-	
+	//storage client is for power reports
+	//could initialize storage client like how roman did with the point values
+
+	//initialize clickhouse client
+	if chaddr == "" {
+		chaddr = "localhost:8088" // dev default
+	}
+	var tlsConfig *tls.Config
+	if *chssl {
+		tlsConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+
+	options := &ch.Options{
+		TLS:  tlsConfig,
+		Addr: []string{chaddr},
+		Auth: ch.Auth{
+			Username: chuser,
+			Password: chpwd},
+	}
+
+	chcon, err := ch.Open(options)
+	retries := 0
+	for err != nil && retries < 10 {
+		// CH can take a few seconds before it accepts connection on start
+		time.Sleep(time.Second)
+		chcon, err = ch.Open(options)
+		retries++
+	}
+	con := clickhouse.New(chcon)
+	if err != nil {
+		log.Errorf(ctx, err, "could not connect to clickhouse")
+	}
+	defer con.Close()
+
+	//initialize environment loader
+	//cpRepo := control_point.New(envloader.MustNew(env))
 	// Initialize the services.
 	var (
 		calcSvc calc.Service
