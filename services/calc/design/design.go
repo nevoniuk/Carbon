@@ -23,7 +23,7 @@ var _ = Service("calc", func() {
 		//facility config stuff
 		Description("wrapper for the power-service repo. gets the control points for the get_power function")
 		Payload(PastValuesPayload)
-		Result(ArrayOf(UUID)) //control points
+		Result(ArrayOf(String)) //control points
 		GRPC(func() {})
 	})
 
