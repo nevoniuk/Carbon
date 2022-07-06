@@ -65,9 +65,7 @@ var RequestPayload = Type("RequestPayload", func() {
 	Field(1, "org", String, "org", func() {
 		Format(FormatUUID)
 	})
-	Field(2, "Period", Period, "Period", func() {
-		Format(FormatDateTime)
-	})
+	Field(2, "Period", Period, "Period")
 
 	Field(3, "building", String, "building", func() {
 		Format(FormatUUID)
@@ -85,9 +83,7 @@ var PastValuesPayload = Type("PastValuesPayload", func() {
 	Field(1, "org", String, "org", func() {
 		Format(FormatUUID)
 	})
-	Field(2, "Period", Period, "Period", func() {
-		Format(FormatDateTime)
-	})
+	Field(2, "Period", Period, "Period")
 
 	Field(3, "building", String, "building", func() {
 		Format(FormatUUID)
@@ -104,6 +100,7 @@ var GetPowerPayload = Type("GetPowerPayload", func() {
 	Field(1, "org", String, "org", func() {
 		Format(FormatUUID)
 	})
+
 	Field(2, "Period", Period, "Period", func() {
 		Format(FormatDateTime)
 	})
@@ -113,6 +110,7 @@ var GetPowerPayload = Type("GetPowerPayload", func() {
 	})
 
 	Field(4, "interval", Int64, "samping interval")
+	
 	Required("org", "Period", "cps", "interval")
 })
 
