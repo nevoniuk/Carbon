@@ -81,6 +81,7 @@ var RequestPayload = Type("RequestPayload", func() {
 
 var PastValuesPayload = Type("PastValuesPayload", func() {
 	Description("Payload for the past values get-values function")
+
 	Field(1, "org", String, "org", func() {
 		Format(FormatUUID)
 	})
@@ -107,8 +108,8 @@ var GetPowerPayload = Type("GetPowerPayload", func() {
 		Format(FormatDateTime)
 	})
 
-	Field(3, "cps", ArrayOf(UUID), "cps", func() {
-		Format(FormatUUID)
+	Field(3, "cps", ArrayOf(String), "cps", func() {
+		//Format(FormatUUID)
 	})
 
 	Field(4, "interval", Int64, "samping interval")
@@ -124,7 +125,7 @@ var TotalReport = Type("TotalReport", func() {
 	Field(2, "point", ArrayOf(DataPoint), "point", func() {
 		
 	})
-	Field(3, "facility", Int, "facility", func() {
+	Field(3, "facility", String, "facility", func() {
 		
 	})
 	
@@ -170,14 +171,14 @@ var DataPoint = Type("DataPoint", func() {
 var ElectricalReport = Type("ElectricalReport", func() {
 	Description("Energy Generation Report")
 
-	Field(1, "postalcode", Int, "postalcode", func() {
-		
+	Field(1, "postalcode", String, "postalcode", func() {
+		Format(FormatUUID)
 	})
-	Field(2, "facility", Int, "facility", func() {
-		
+	Field(2, "facility", String, "facility", func() {
+		Format(FormatUUID)
 	})
-	Field(3, "building", Int, "building", func() {
-		
+	Field(3, "building", String, "building", func() {
+		Format(FormatUUID)
 	})
 	Field(4, "stamp", ArrayOf(PowerStamp), "stamp", func() {
 		
@@ -195,9 +196,6 @@ var PowerStamp = Type("PowerStamp", func() {
 	})
 })
 
-var UUID = Type("String", func() {
-	Format(FormatUUID)
-})
 
 var Period = Type("Period", func() {
 	Description("Period of time from start to end of Forecast")
