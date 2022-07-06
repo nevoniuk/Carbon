@@ -101,16 +101,14 @@ var GetPowerPayload = Type("GetPowerPayload", func() {
 		Format(FormatUUID)
 	})
 
-	Field(2, "Period", Period, "Period", func() {
-		Format(FormatDateTime)
-	})
+	Field(2, "Period", Period, "Period")
 
 	Field(3, "cps", ArrayOf(String), "cps", func() {
 		//Format(FormatUUID)
 	})
 
 	Field(4, "interval", Int64, "samping interval")
-	
+
 	Required("org", "Period", "cps", "interval")
 })
 
