@@ -10,9 +10,11 @@ package client
 import (
 	"context"
 
+	calc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 	calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
 	goagrpc "goa.design/goa/v3/grpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 // BuildCalculateReportsFunc builds the remote method to invoke for "calc"
@@ -43,6 +45,27 @@ func BuildGetControlPointsFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOp
 	}
 }
 
+// EncodeGetControlPointsRequest encodes requests sent to calc
+// get_control_points endpoint.
+func EncodeGetControlPointsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
+	payload, ok := v.(*calc.PastValuesPayload)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "get_control_points", "*calc.PastValuesPayload", v)
+	}
+	return NewProtoGetControlPointsRequest(payload), nil
+}
+
+// DecodeGetControlPointsResponse decodes responses from the calc
+// get_control_points endpoint.
+func DecodeGetControlPointsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*calcpb.GetControlPointsResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "get_control_points", "*calcpb.GetControlPointsResponse", v)
+	}
+	res := NewGetControlPointsResult(message)
+	return res, nil
+}
+
 // BuildGetPowerFunc builds the remote method to invoke for "calc" service
 // "get_power" endpoint.
 func BuildGetPowerFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
@@ -55,6 +78,28 @@ func BuildGetPowerFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) go
 		}
 		return grpccli.GetPower(ctx, &calcpb.GetPowerRequest{}, opts...)
 	}
+}
+
+// EncodeGetPowerRequest encodes requests sent to calc get_power endpoint.
+func EncodeGetPowerRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
+	payload, ok := v.(*calc.GetPowerPayload)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "get_power", "*calc.GetPowerPayload", v)
+	}
+	return NewProtoGetPowerRequest(payload), nil
+}
+
+// DecodeGetPowerResponse decodes responses from the calc get_power endpoint.
+func DecodeGetPowerResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*calcpb.GetPowerResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "get_power", "*calcpb.GetPowerResponse", v)
+	}
+	if err := ValidateGetPowerResponse(message); err != nil {
+		return nil, err
+	}
+	res := NewGetPowerResult(message)
+	return res, nil
 }
 
 // BuildGetEmissionsFunc builds the remote method to invoke for "calc" service
@@ -71,6 +116,20 @@ func BuildGetEmissionsFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption
 	}
 }
 
+// DecodeGetEmissionsResponse decodes responses from the calc get_emissions
+// endpoint.
+func DecodeGetEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*calcpb.GetEmissionsResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "get_emissions", "*calcpb.GetEmissionsResponse", v)
+	}
+	if err := ValidateGetEmissionsResponse(message); err != nil {
+		return nil, err
+	}
+	res := NewGetEmissionsResult(message)
+	return res, nil
+}
+
 // BuildHandleRequestsFunc builds the remote method to invoke for "calc"
 // service "handle_requests" endpoint.
 func BuildHandleRequestsFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
@@ -83,6 +142,16 @@ func BuildHandleRequestsFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOpti
 		}
 		return grpccli.HandleRequests(ctx, &calcpb.HandleRequestsRequest{}, opts...)
 	}
+}
+
+// EncodeHandleRequestsRequest encodes requests sent to calc handle_requests
+// endpoint.
+func EncodeHandleRequestsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
+	payload, ok := v.(*calc.RequestPayload)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "handle_requests", "*calc.RequestPayload", v)
+	}
+	return NewProtoHandleRequestsRequest(payload), nil
 }
 
 // BuildCarbonreportFunc builds the remote method to invoke for "calc" service

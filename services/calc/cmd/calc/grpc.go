@@ -6,12 +6,10 @@ import (
 	"net"
 	"net/url"
 	"sync"
-	"github.com/crossnokaye/facilityconfig/envloader"
+
 	calc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 	calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
 	calcsvr "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/server"
-
-	
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpcmdlwr "goa.design/goa/v3/grpc/middleware"
 	"goa.design/goa/v3/middleware"

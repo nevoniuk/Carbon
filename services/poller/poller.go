@@ -47,20 +47,20 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
          "NYISO.NYLI", "NYISO.NYUP",
           "PJM", "SPP"} 
 	var regionstartdates = map[string]string{
-		"CAISO":"2018-04-10T07:00:00+00:00",
+		"CAISO":"2020-01-1T00:00:00+00:00",
 		"AESO": "2020-05-15T16:00:00+00:00",
-		"BPA": "2018-01-01T08:00:00+00:00",
+		"BPA": "2020-01-1T00:00:00+00:00",
 		
-		"ERCO" : "2018-07-02T05:05:00+00:00",
-		"IESO": "2017-12-31T05:00:00+00:00",
-		"ISONE": "2015-01-01T05:00:00+00:00",
-		"MISO": "2018-01-01T05:00:00+00:00",
-		"NYISO": "2017-12-01T05:05:00+00:00",
-		"NYISO.NYCW": "2019-01-01T00:00:00+00:00", //wont add to array
-		"NYISO.NYLI": "2019-01-01T00:00:00+00:00",
-		"NYISO.NYUP": "2019-01-01T00:00:00+00:00",
-		"PJM": "2017-07-01T04:05:00+00:00",
-		"SPP": "2017-12-31T00:00:00+00:00",
+		"ERCO" : "2020-01-1T00:00:00+00:00",
+		"IESO": "2020-01-1T00:00:00+00:00",
+		"ISONE": "2020-01-1T00:00:00+00:00",
+		"MISO": "2020-01-1T00:00:00+00:00",
+		"NYISO":"2020-01-1T00:00:00+00:00",
+		"NYISO.NYCW": "2020-01-1T00:00:00+00:00", //wont add to array
+		"NYISO.NYLI": "2020-01-1T00:00:00+00:00",
+		"NYISO.NYUP": "2020-01-1T00:00:00+00:00",
+		"PJM": "2020-01-1T00:00:00+00:00",
+		"SPP": "2020-01-1T00:00:00+00:00",
 	}
 	reportdurations = [...]string{ "minute", "hourly", "daily", "weekly", "monthly", "yearly"}
 	

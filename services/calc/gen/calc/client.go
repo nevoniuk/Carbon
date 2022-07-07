@@ -44,26 +44,38 @@ func (c *Client) CalculateReports(ctx context.Context) (err error) {
 
 // GetControlPoints calls the "get_control_points" endpoint of the "calc"
 // service.
-func (c *Client) GetControlPoints(ctx context.Context) (err error) {
-	_, err = c.GetControlPointsEndpoint(ctx, nil)
-	return
+func (c *Client) GetControlPoints(ctx context.Context, p *PastValuesPayload) (res []string, err error) {
+	var ires interface{}
+	ires, err = c.GetControlPointsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.([]string), nil
 }
 
 // GetPower calls the "get_power" endpoint of the "calc" service.
-func (c *Client) GetPower(ctx context.Context) (err error) {
-	_, err = c.GetPowerEndpoint(ctx, nil)
-	return
+func (c *Client) GetPower(ctx context.Context, p *GetPowerPayload) (res *ElectricalReport, err error) {
+	var ires interface{}
+	ires, err = c.GetPowerEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ElectricalReport), nil
 }
 
 // GetEmissions calls the "get_emissions" endpoint of the "calc" service.
-func (c *Client) GetEmissions(ctx context.Context) (err error) {
-	_, err = c.GetEmissionsEndpoint(ctx, nil)
-	return
+func (c *Client) GetEmissions(ctx context.Context) (res *CarbonReport, err error) {
+	var ires interface{}
+	ires, err = c.GetEmissionsEndpoint(ctx, nil)
+	if err != nil {
+		return
+	}
+	return ires.(*CarbonReport), nil
 }
 
 // HandleRequests calls the "handle_requests" endpoint of the "calc" service.
-func (c *Client) HandleRequests(ctx context.Context) (err error) {
-	_, err = c.HandleRequestsEndpoint(ctx, nil)
+func (c *Client) HandleRequests(ctx context.Context, p *RequestPayload) (err error) {
+	_, err = c.HandleRequestsEndpoint(ctx, p)
 	return
 }
 

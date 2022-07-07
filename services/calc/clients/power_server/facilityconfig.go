@@ -15,7 +15,8 @@ func New(f *facilityconfig.Store) *powerConfig {
 type powerConfig struct {
 	f *facilityconfig.Store
 }
-
+//control points
+//
 
 func (pc *powerConfig) getOrgByID(orgID uuid.UUID) (*facilityconfig.Org, error) {
 	for _, org := range pc.f.Orgs {

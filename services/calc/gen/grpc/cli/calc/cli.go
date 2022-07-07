@@ -40,13 +40,16 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 
 		calcCalculateReportsFlags = flag.NewFlagSet("calculate-reports", flag.ExitOnError)
 
-		calcGetControlPointsFlags = flag.NewFlagSet("get-control-points", flag.ExitOnError)
+		calcGetControlPointsFlags       = flag.NewFlagSet("get-control-points", flag.ExitOnError)
+		calcGetControlPointsMessageFlag = calcGetControlPointsFlags.String("message", "", "")
 
-		calcGetPowerFlags = flag.NewFlagSet("get-power", flag.ExitOnError)
+		calcGetPowerFlags       = flag.NewFlagSet("get-power", flag.ExitOnError)
+		calcGetPowerMessageFlag = calcGetPowerFlags.String("message", "", "")
 
 		calcGetEmissionsFlags = flag.NewFlagSet("get-emissions", flag.ExitOnError)
 
-		calcHandleRequestsFlags = flag.NewFlagSet("handle-requests", flag.ExitOnError)
+		calcHandleRequestsFlags       = flag.NewFlagSet("handle-requests", flag.ExitOnError)
+		calcHandleRequestsMessageFlag = calcHandleRequestsFlags.String("message", "", "")
 
 		calcCarbonreportFlags = flag.NewFlagSet("carbonreport", flag.ExitOnError)
 	)
@@ -140,16 +143,16 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 				data = nil
 			case "get-control-points":
 				endpoint = c.GetControlPoints()
-				data = nil
+				data, err = calcc.BuildGetControlPointsPayload(*calcGetControlPointsMessageFlag)
 			case "get-power":
 				endpoint = c.GetPower()
-				data = nil
+				data, err = calcc.BuildGetPowerPayload(*calcGetPowerMessageFlag)
 			case "get-emissions":
 				endpoint = c.GetEmissions()
 				data = nil
 			case "handle-requests":
 				endpoint = c.HandleRequests()
-				data = nil
+				data, err = calcc.BuildHandleRequestsPayload(*calcHandleRequestsMessageFlag)
 			case "carbonreport":
 				endpoint = c.Carbonreport()
 				data = nil
@@ -165,14 +168,14 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 
 // calcUsage displays the usage of the calc command and its subcommands.
 func calcUsage() {
-	fmt.Fprintf(os.Stderr, `Service is the calc service interface.
+	fmt.Fprintf(os.Stderr, `Service to interpret CO2 emissions through power and carbon intensity data
 Usage:
     %[1]s [globalflags] calc COMMAND [flags]
 
 COMMAND:
     calculate-reports: helper method to make kW/lbs of Co2 report
-    get-control-points: This endpoint will retrieve the control points for a facility
-    get-power: This endpoint will retrieve the power data using control points from the past-values service
+    get-control-points: wrapper for the power-service repo. gets the control points for the get_power function
+    get-power: This endpoint will retrieve the power data using control points from the get_control_points function
     get-emissions: This endpoint will retrieve the emissions data for a facility
     handle-requests: This endpoint is used by a front end service to return energy usage information
     carbonreport: Make reports available to external/R&D clients
@@ -192,22 +195,44 @@ Example:
 }
 
 func calcGetControlPointsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-control-points
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-control-points -message JSON
 
-This endpoint will retrieve the control points for a facility
+wrapper for the power-service repo. gets the control points for the get_power function
+    -message JSON: 
 
 Example:
-    %[1]s calc get-control-points
+    %[1]s calc get-control-points --message '{
+      "Period": {
+         "endTime": "2020-01-01T00:00:00Z",
+         "startTime": "2020-01-01T00:00:00Z"
+      },
+      "building": "5E3B665E-1239-9C12-9643-FFC1E6C04697",
+      "client": "1265498D-5A84-134A-1C7A-ED5B4B92788E",
+      "org": "773F4E7F-A748-DF6D-4355-233071D2534A"
+   }'
 `, os.Args[0])
 }
 
 func calcGetPowerUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-power
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-power -message JSON
 
-This endpoint will retrieve the power data using control points from the past-values service
+This endpoint will retrieve the power data using control points from the get_control_points function
+    -message JSON: 
 
 Example:
-    %[1]s calc get-power
+    %[1]s calc get-power --message '{
+      "Period": {
+         "endTime": "2020-01-01T00:00:00Z",
+         "startTime": "2020-01-01T00:00:00Z"
+      },
+      "cps": [
+         "Odit modi fugiat alias minima iste.",
+         "Et aspernatur consequatur vitae.",
+         "Natus inventore eos perspiciatis."
+      ],
+      "interval": 4987969451329189843,
+      "org": "7D80331A-7620-D09D-7CCB-2EF87B797732"
+   }'
 `, os.Args[0])
 }
 
@@ -222,12 +247,21 @@ Example:
 }
 
 func calcHandleRequestsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc handle-requests
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc handle-requests -message JSON
 
 This endpoint is used by a front end service to return energy usage information
+    -message JSON: 
 
 Example:
-    %[1]s calc handle-requests
+    %[1]s calc handle-requests --message '{
+      "Period": {
+         "endTime": "2020-01-01T00:00:00Z",
+         "startTime": "2020-01-01T00:00:00Z"
+      },
+      "building": "A129B534-C1FC-F09D-BF29-3DA5781E0ECB",
+      "interval": "hours, days, weeks, months, years",
+      "org": "AC77D914-0A36-9917-2BA7-F519556A50B8"
+   }'
 `, os.Args[0])
 }
 

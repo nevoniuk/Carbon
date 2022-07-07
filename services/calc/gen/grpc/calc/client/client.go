@@ -52,8 +52,8 @@ func (c *Client) GetControlPoints() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildGetControlPointsFunc(c.grpccli, c.opts...),
-			nil,
-			nil)
+			EncodeGetControlPointsRequest,
+			DecodeGetControlPointsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			return nil, goa.Fault(err.Error())
@@ -67,8 +67,8 @@ func (c *Client) GetPower() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildGetPowerFunc(c.grpccli, c.opts...),
-			nil,
-			nil)
+			EncodeGetPowerRequest,
+			DecodeGetPowerResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			return nil, goa.Fault(err.Error())
@@ -84,7 +84,7 @@ func (c *Client) GetEmissions() goa.Endpoint {
 		inv := goagrpc.NewInvoker(
 			BuildGetEmissionsFunc(c.grpccli, c.opts...),
 			nil,
-			nil)
+			DecodeGetEmissionsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			return nil, goa.Fault(err.Error())
@@ -99,7 +99,7 @@ func (c *Client) HandleRequests() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildHandleRequestsFunc(c.grpccli, c.opts...),
-			nil,
+			EncodeHandleRequestsRequest,
 			nil)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {

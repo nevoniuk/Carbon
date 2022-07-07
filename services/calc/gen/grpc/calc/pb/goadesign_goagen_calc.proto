@@ -11,14 +11,15 @@ package calc;
 
 option go_package = "/calcpb";
 
-// Service is the calc service interface.
+// Service to interpret CO2 emissions through power and carbon intensity data
 service Calc {
 	// helper method to make kW/lbs of Co2 report
 	rpc CalculateReports (CalculateReportsRequest) returns (CalculateReportsResponse);
-	// This endpoint will retrieve the control points for a facility
+	// wrapper for the power-service repo. gets the control points for the
+// get_power function
 	rpc GetControlPoints (GetControlPointsRequest) returns (GetControlPointsResponse);
 	// This endpoint will retrieve the power data using control points from the
-// past-values service
+// get_control_points function
 	rpc GetPower (GetPowerRequest) returns (GetPowerResponse);
 	// This endpoint will retrieve the emissions data for a facility
 	rpc GetEmissions (GetEmissionsRequest) returns (GetEmissionsResponse);
@@ -36,24 +37,79 @@ message CalculateReportsResponse {
 }
 
 message GetControlPointsRequest {
+	// org
+	string org = 1;
+	// Period
+	Period period = 2;
+	// building
+	string building = 3;
+	// client
+	string client = 4;
+}
+// Period of time from start to end of Forecast
+message Period {
+	// Start time
+	string start_time = 1;
+	// End time
+	string end_time = 2;
 }
 
 message GetControlPointsResponse {
+	repeated string field = 1;
 }
 
 message GetPowerRequest {
+	// org
+	string org = 1;
+	// Period
+	Period period = 2;
+	// cps
+	repeated string cps = 3;
+	// samping interval
+	sint64 interval = 4;
 }
 
 message GetPowerResponse {
+	// postalcode
+	string postalcode = 1;
+	// facility
+	string facility = 2;
+	// building
+	string building = 3;
+	// stamp
+	repeated PowerStamp stamp = 4;
+}
+
+message PowerStamp {
+	// period
+	Period period = 1;
+	// power stamp in KW
+	double gen_rate = 2;
 }
 
 message GetEmissionsRequest {
 }
 
 message GetEmissionsResponse {
+	// generated_rate
+	double generated_rate = 1;
+	// Duration
+	Period duration = 2;
+	// duration_type
+	string duration_type = 3;
+	// region
+	string region = 4;
 }
 
 message HandleRequestsRequest {
+	// org
+	string org = 1;
+	// Period
+	Period period = 2;
+	// building
+	string building = 3;
+	// interval
+	string interval = 4;
 }
 
 message HandleRequestsResponse {

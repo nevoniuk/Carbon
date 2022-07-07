@@ -10,6 +10,9 @@ package server
 import (
 	"context"
 
+	calc "github.com/crossnokaye/carbon/services/calc/gen/calc"
+	calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
+	goagrpc "goa.design/goa/v3/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -23,21 +26,77 @@ func EncodeCalculateReportsResponse(ctx context.Context, v interface{}, hdr, trl
 // EncodeGetControlPointsResponse encodes responses from the "calc" service
 // "get_control_points" endpoint.
 func EncodeGetControlPointsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	resp := NewProtoGetControlPointsResponse()
+	result, ok := v.([]string)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "get_control_points", "[]string", v)
+	}
+	resp := NewProtoGetControlPointsResponse(result)
 	return resp, nil
+}
+
+// DecodeGetControlPointsRequest decodes requests sent to "calc" service
+// "get_control_points" endpoint.
+func DecodeGetControlPointsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		message *calcpb.GetControlPointsRequest
+		ok      bool
+	)
+	{
+		if message, ok = v.(*calcpb.GetControlPointsRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("calc", "get_control_points", "*calcpb.GetControlPointsRequest", v)
+		}
+		if err := ValidateGetControlPointsRequest(message); err != nil {
+			return nil, err
+		}
+	}
+	var payload *calc.PastValuesPayload
+	{
+		payload = NewGetControlPointsPayload(message)
+	}
+	return payload, nil
 }
 
 // EncodeGetPowerResponse encodes responses from the "calc" service "get_power"
 // endpoint.
 func EncodeGetPowerResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	resp := NewProtoGetPowerResponse()
+	result, ok := v.(*calc.ElectricalReport)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "get_power", "*calc.ElectricalReport", v)
+	}
+	resp := NewProtoGetPowerResponse(result)
 	return resp, nil
+}
+
+// DecodeGetPowerRequest decodes requests sent to "calc" service "get_power"
+// endpoint.
+func DecodeGetPowerRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		message *calcpb.GetPowerRequest
+		ok      bool
+	)
+	{
+		if message, ok = v.(*calcpb.GetPowerRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("calc", "get_power", "*calcpb.GetPowerRequest", v)
+		}
+		if err := ValidateGetPowerRequest(message); err != nil {
+			return nil, err
+		}
+	}
+	var payload *calc.GetPowerPayload
+	{
+		payload = NewGetPowerPayload(message)
+	}
+	return payload, nil
 }
 
 // EncodeGetEmissionsResponse encodes responses from the "calc" service
 // "get_emissions" endpoint.
 func EncodeGetEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	resp := NewProtoGetEmissionsResponse()
+	result, ok := v.(*calc.CarbonReport)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "get_emissions", "*calc.CarbonReport", v)
+	}
+	resp := NewProtoGetEmissionsResponse(result)
 	return resp, nil
 }
 
@@ -46,6 +105,28 @@ func EncodeGetEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr *m
 func EncodeHandleRequestsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
 	resp := NewProtoHandleRequestsResponse()
 	return resp, nil
+}
+
+// DecodeHandleRequestsRequest decodes requests sent to "calc" service
+// "handle_requests" endpoint.
+func DecodeHandleRequestsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+	var (
+		message *calcpb.HandleRequestsRequest
+		ok      bool
+	)
+	{
+		if message, ok = v.(*calcpb.HandleRequestsRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("calc", "handle_requests", "*calcpb.HandleRequestsRequest", v)
+		}
+		if err := ValidateHandleRequestsRequest(message); err != nil {
+			return nil, err
+		}
+	}
+	var payload *calc.RequestPayload
+	{
+		payload = NewHandleRequestsPayload(message)
+	}
+	return payload, nil
 }
 
 // EncodeCarbonreportResponse encodes responses from the "calc" service

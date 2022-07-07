@@ -20,10 +20,11 @@ const _ = grpc.SupportPackageIsVersion7
 type CalcClient interface {
 	// helper method to make kW/lbs of Co2 report
 	CalculateReports(ctx context.Context, in *CalculateReportsRequest, opts ...grpc.CallOption) (*CalculateReportsResponse, error)
-	// This endpoint will retrieve the control points for a facility
+	// wrapper for the power-service repo. gets the control points for the
+	// get_power function
 	GetControlPoints(ctx context.Context, in *GetControlPointsRequest, opts ...grpc.CallOption) (*GetControlPointsResponse, error)
 	// This endpoint will retrieve the power data using control points from the
-	// past-values service
+	// get_control_points function
 	GetPower(ctx context.Context, in *GetPowerRequest, opts ...grpc.CallOption) (*GetPowerResponse, error)
 	// This endpoint will retrieve the emissions data for a facility
 	GetEmissions(ctx context.Context, in *GetEmissionsRequest, opts ...grpc.CallOption) (*GetEmissionsResponse, error)
@@ -102,10 +103,11 @@ func (c *calcClient) Carbonreport(ctx context.Context, in *CarbonreportRequest, 
 type CalcServer interface {
 	// helper method to make kW/lbs of Co2 report
 	CalculateReports(context.Context, *CalculateReportsRequest) (*CalculateReportsResponse, error)
-	// This endpoint will retrieve the control points for a facility
+	// wrapper for the power-service repo. gets the control points for the
+	// get_power function
 	GetControlPoints(context.Context, *GetControlPointsRequest) (*GetControlPointsResponse, error)
 	// This endpoint will retrieve the power data using control points from the
-	// past-values service
+	// get_control_points function
 	GetPower(context.Context, *GetPowerRequest) (*GetPowerResponse, error)
 	// This endpoint will retrieve the emissions data for a facility
 	GetEmissions(context.Context, *GetEmissionsRequest) (*GetEmissionsResponse, error)

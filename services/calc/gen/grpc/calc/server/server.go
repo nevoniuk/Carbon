@@ -70,7 +70,7 @@ func (s *Server) CalculateReports(ctx context.Context, message *calcpb.Calculate
 // service "get_control_points" endpoint.
 func NewGetControlPointsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeGetControlPointsResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeGetControlPointsRequest, EncodeGetControlPointsResponse)
 	}
 	return h
 }
@@ -91,7 +91,7 @@ func (s *Server) GetControlPoints(ctx context.Context, message *calcpb.GetContro
 // "get_power" endpoint.
 func NewGetPowerHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeGetPowerResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeGetPowerRequest, EncodeGetPowerResponse)
 	}
 	return h
 }
@@ -132,7 +132,7 @@ func (s *Server) GetEmissions(ctx context.Context, message *calcpb.GetEmissionsR
 // service "handle_requests" endpoint.
 func NewHandleRequestsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeHandleRequestsResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeHandleRequestsRequest, EncodeHandleRequestsResponse)
 	}
 	return h
 }

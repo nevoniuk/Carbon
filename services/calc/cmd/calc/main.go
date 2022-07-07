@@ -1,207 +1,218 @@
 package main
 
 import (
-	"context"
-	"flag"
-	"fmt"
-	"crypto/tls"
-	"net"
-	"net/url"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
-	"strconv"
-	"time"
+    "context"
+    "flag"
+    "fmt"
+    "crypto/tls"
+    "net"
+    "net/url"
+    "os"
+    "os/signal"
+    "sync"
+    "syscall"
+    "strconv"
+    "time"
 
-	ch "github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/crossnokaye/facilityconfig/envloader"
-	calc "github.com/crossnokaye/carbon/services/calc/gen/calc"
-	calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
-	calcsvr "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/server"
+    ch "github.com/ClickHouse/clickhouse-go/v2"
+    "github.com/crossnokaye/facilityconfig/envloader"
+    calc "github.com/crossnokaye/carbon/services/calc/gen/calc"
+    calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
+    calcsvr "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/server"
 
-	calcapi "github.com/crossnokaye/carbon/services/calc"
+    calcapi "github.com/crossnokaye/carbon/services/calc"
 
-	//clients
-	"github.com/crossnokaye/carbon/clients/clickhouse"
-	"github.com/crossnokaye/carbon/services/calc/clients/storage"
-	"github.com/crossnokaye/carbon/services/calc/clients/power"
+    //clients
+    "github.com/crossnokaye/carbon/clients/clickhouse"
+    "github.com/crossnokaye/carbon/services/calc/clients/storage"
+    "github.com/crossnokaye/carbon/services/calc/clients/power"
+	"github.com/crossnokaye/carbon/services/calc/clients/power_server"
 
-	"github.com/go-pg/pg"
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/prometheus/client_golang/prometheus"
-	"goa.design/clue/health"
-	"goa.design/clue/log"
-	"goa.design/clue/metrics"
-	"goa.design/clue/trace"
-	"goa.design/goa/v3/grpc/middleware"
-	"golang.org/x/sync/errgroup"
+    "github.com/go-pg/pg"
+    "github.com/grpc-ecosystem/go-grpc-middleware"
+    "github.com/prometheus/client_golang/prometheus"
+    "goa.design/clue/health"
+    "goa.design/clue/log"
+    "goa.design/clue/metrics"
+    "goa.design/clue/trace"
+    "goa.design/goa/v3/grpc/middleware"
+    "golang.org/x/sync/errgroup"
 
-	"google.golang.org/grpc/credentials/insecure"
-	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpcmdlwr "goa.design/goa/v3/grpc/middleware"
-	"goa.design/goa/v3/middleware"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+    "google.golang.org/grpc/credentials/insecure"
+    grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
+    grpcmdlwr "goa.design/goa/v3/grpc/middleware"
+    "goa.design/goa/v3/middleware"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/reflection"
 )
 
 func resolveStringEnv(key, def, desc string) string {
-	res := def
-	if env := os.Getenv(key); env != "" {
-		res = env
-	}
-	return res
+    res := def
+    if env := os.Getenv(key); env != "" {
+        res = env
+    }
+    return res
 }
 
 func resolveBooleanEnv(key string, def bool, desc string) bool {
-	res := def
-	if env := os.Getenv(key); env != "" {
-		if b, err := strconv.ParseBool(env); err == nil {
-			res = b
-		}
-	}
-	return res
+    res := def
+    if env := os.Getenv(key); env != "" {
+        if b, err := strconv.ParseBool(env); err == nil {
+            res = b
+        }
+    }
+    return res
 }
 
 func initLogging(debug bool) context.Context {
-	ctx := log.Context(context.Background(),
-		log.WithFormat(log.FormatJSON),
-		log.WithFunc(trace.Log))
-	ctx = log.With(ctx, log.KV{K: "svc", V: calc.ServiceName})
-	if debug {
-		ctx = log.Context(ctx, log.WithDebug())
-		log.Debugf(ctx, "debug logging enabled")
-	}
-	return ctx
+    ctx := log.Context(context.Background(),
+        log.WithFormat(log.FormatJSON),
+        log.WithFunc(trace.Log))
+    ctx = log.With(ctx, log.KV{K: "svc", V: calc.ServiceName})
+    if debug {
+        ctx = log.Context(ctx, log.WithDebug())
+        log.Debugf(ctx, "debug logging enabled")
+    }
+    return ctx
 }
 
 func initTrace(ctx context.Context, grafanaAgentAddr string) context.Context {
-	log.Debugf(ctx, "connecting to Grafana agent %s", grafanaAgentAddr)
-	conn, err := grpc.DialContext(ctx, grafanaAgentAddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock())
-	if err != nil {
-		log.Errorf(ctx, err, "failed to connect to Grafana agent")
-		os.Exit(1)
-	}
-	log.Debugf(ctx, "connected to Grafana agent %s", grafanaAgentAddr)
-	ctx, err = trace.Context(ctx, calc.ServiceName, trace.WithGRPCExporter(conn))
-	if err != nil {
-		log.Errorf(ctx, err, "failed to initialize tracing")
-		os.Exit(1)
-	}
-	return ctx
+    log.Debugf(ctx, "connecting to Grafana agent %s", grafanaAgentAddr)
+    conn, err := grpc.DialContext(ctx, grafanaAgentAddr,
+        grpc.WithTransportCredentials(insecure.NewCredentials()),
+        grpc.WithBlock())
+    if err != nil {
+        log.Errorf(ctx, err, "failed to connect to Grafana agent")
+        os.Exit(1)
+    }
+    log.Debugf(ctx, "connected to Grafana agent %s", grafanaAgentAddr)
+    ctx, err = trace.Context(ctx, calc.ServiceName, trace.WithGRPCExporter(conn))
+    if err != nil {
+        log.Errorf(ctx, err, "failed to initialize tracing")
+        os.Exit(1)
+    }
+    return ctx
 }
 
 func initTransport(ctx context.Context, endpoints *calc.Endpoints) *grpc.Server {
-	server := calcsvr.New(endpoints, nil)
-	grpcServer := grpc.NewServer(
-		grpc_middleware.WithUnaryServerChain(
-			log.UnaryServerInterceptor(ctx),
-			trace.UnaryServerInterceptor(ctx),
-			middleware.UnaryRequestID(),
-			middleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
-			metrics.UnaryServerInterceptor(ctx),
-		))
-	calcpb.RegisterPastValuesServer(grpcServer, server)
-	reflection.Register(grpcServer)
-	for svc, info := range grpcServer.GetServiceInfo() {
-		for _, m := range info.Methods {
-			log.Print(ctx, log.KV{K: "method", V: svc + "/" + m.Name})
-		}
-	}
-	return grpcServer
+    server := calcsvr.New(endpoints, nil)
+    grpcServer := grpc.NewServer(
+        grpc_middleware.WithUnaryServerChain(
+            log.UnaryServerInterceptor(ctx),
+            trace.UnaryServerInterceptor(ctx),
+            middleware.UnaryRequestID(),
+            middleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
+            metrics.UnaryServerInterceptor(ctx),
+        ))
+    calcpb.RegisterCalcServer(grpcServer, server)
+    reflection.Register(grpcServer)
+    for svc, info := range grpcServer.GetServiceInfo() {
+        for _, m := range info.Methods {
+            log.Print(ctx, log.KV{K: "method", V: svc + "/" + m.Name})
+        }
+    }
+    return grpcServer
 }
 /**
 func initHealthCheck(ctx context.Context, httpAddr string) *http.Server {
-	check := log.HTTP(ctx)(health.Handler(health.NewChecker()))
-	http.Handle("/healthz", check)
-	http.Handle("/livez", check)
-	http.Handle("/metrics", metrics.Handler(ctx))
-	return &http.Server{Addr: httpAddr}
+    check := log.HTTP(ctx)(health.Handler(health.NewChecker()))
+    http.Handle("/healthz", check)
+    http.Handle("/livez", check)
+    http.Handle("/metrics", metrics.Handler(ctx))
+    return &http.Server{Addr: httpAddr}
 }
 */
+
 func main() {
 	// Define command line flags, add any other flag required to configure the
 	// service.
 	var (
+		
 		hostF     = flag.String("host", "localhost", "Server host (valid values: localhost)")
 		domainF   = flag.String("domain", "", "Host domain name (overrides host domain specified in service design)")
 		grpcPortF = flag.String("grpc-port", "", "gRPC port (overrides host gRPC port specified in service design)")
 		secureF   = flag.Bool("secure", false, "Use secure scheme (https or grpcs)")
 		dbgF      = flag.Bool("debug", false, "Log request and response bodies")
-
+	
 		chssl  = flag.Bool("ch-ssl", os.Getenv("CLICKHOUSE_SSL") != "", "ClickHouse connection SSL")
-
+	
 		env = resolveStringEnv("ENV", "dev", "facility environment")
-
+	
 		chaddr = resolveStringEnv("CH_ADDRESS", "127.0.0.1:8087", "click house server url") //different from poller/main.go
 		chuser = resolveStringEnv("CLICKHOUSE_USER", "atlas", "click house user name")
 		chpwd  = resolveStringEnv("CLICKHOUSE_PASSWORD", "atlas", "click house password")
 		chsec  = resolveBooleanEnv("CH_SECURE", false, "click house secure connection")
-
+	
 		debug            = resolveBooleanEnv("DEBUG", false, "enable debug logging")
 		grafanaAgentAddr = resolveStringEnv("GRAFANA_AGENT_ADDR", ":4317", "grafana agent address")
-
-	
-
 
 	)
 	flag.Parse()
 
 	// Setup logger. Replace logger with your own log package of choice.
-	ctx := initLogging(debug)
+	// Setup logger. Replace logger with your own log package of choice.
+    ctx := initLogging(debug)
 
-	ctx = initTrace(ctx, grafanaAgentAddr)
-	ctx = metrics.Context(ctx, calc.ServiceName)
-	
-	log.Printf(ctx, "starting %s service", calc.ServiceName)
-	
-	log.Print(ctx, log.KV{K: "creating", V: "report repositories"})
+    ctx = initTrace(ctx, grafanaAgentAddr)
+    ctx = metrics.Context(ctx, calc.ServiceName)
+    
+    log.Printf(ctx, "starting %s service", calc.ServiceName)
+    
+    log.Print(ctx, log.KV{K: "creating", V: "report repositories"})
 
-	//initialize the clients
-	//storage client is for power reports
-	//could initialize storage client like how roman did with the point values
+    //initialize the clients
+    //storage client is for power reports
+    //could initialize storage client like how roman did with the point values
 
-	//initialize clickhouse client
-	if chaddr == "" {
-		chaddr = "localhost:8088" // dev default
+    //initialize clickhouse client: storage
+    if chaddr == "" {
+        chaddr = "localhost:8088" // dev default
+    }
+    var tlsConfig *tls.Config
+    if *chssl {
+        tlsConfig = &tls.Config{InsecureSkipVerify: true}
+    }
+
+    options := &ch.Options{
+        TLS:  tlsConfig,
+        Addr: []string{chaddr},
+        Auth: ch.Auth{
+            Username: chuser,
+            Password: chpwd},
+    }
+
+    chcon, err := ch.Open(options)
+    retries := 0
+    for err != nil && retries < 10 {
+        // CH can take a few seconds before it accepts connection on start
+        time.Sleep(time.Second)
+        chcon, err = ch.Open(options)
+        retries++
+    }
+    con := clickhouse.New(chcon)
+    if err != nil {
+        log.Errorf(ctx, err, "could not connect to clickhouse")
+    }
+    defer con.Close()
+	//initialize storage client
+	dbc := storage.New(con)
+	if err := dbc.Init(ctx, true); err != nil {
+		log.Errorf(ctx, err, "could not initialize clickhouse")
 	}
-	var tlsConfig *tls.Config
-	if *chssl {
-		tlsConfig = &tls.Config{InsecureSkipVerify: true}
-	}
-
-	options := &ch.Options{
-		TLS:  tlsConfig,
-		Addr: []string{chaddr},
-		Auth: ch.Auth{
-			Username: chuser,
-			Password: chpwd},
-	}
-
-	chcon, err := ch.Open(options)
-	retries := 0
-	for err != nil && retries < 10 {
-		// CH can take a few seconds before it accepts connection on start
-		time.Sleep(time.Second)
-		chcon, err = ch.Open(options)
-		retries++
-	}
-	con := clickhouse.New(chcon)
-	if err != nil {
-		log.Errorf(ctx, err, "could not connect to clickhouse")
-	}
-	defer con.Close()
-
-	//initialize environment loader
-	//cpRepo := control_point.New(envloader.MustNew(env))
+    //initialize power_server repo with the env loader
+    powerRepo := power_server.New(envloader.MustNew(env))
+    
+	//initialize power client
+	pwc := power.New()
+	//initialize the power client
 	// Initialize the services.
+	log.Print(ctx, log.KV{K: "creating", V: "service endpoints"})
+
 	var (
 		calcSvc calc.Service
 	)
 	{
-		calcSvc = calcapi.NewCalc(logger)
+		calcSvc = calcapi.NewCalc(pwc, dbc, powerRepo)
 	}
 
 	// Wrap the services in endpoints that can be invoked from other services

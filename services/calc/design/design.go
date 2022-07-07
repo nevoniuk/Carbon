@@ -166,17 +166,20 @@ var DataPoint = Type("DataPoint", func() {
 //reports read from past-values
 var ElectricalReport = Type("ElectricalReport", func() {
 	Description("Energy Generation Report")
+	Field(1, "period", Period, "period", func() {
 
-	Field(1, "postalcode", String, "postalcode", func() {
+	})
+
+	Field(2, "postalcode", String, "postalcode", func() {
 		Format(FormatUUID)
 	})
-	Field(2, "facility", String, "facility", func() {
+	Field(3, "facility", String, "facility", func() {
 		Format(FormatUUID)
 	})
-	Field(3, "building", String, "building", func() {
+	Field(4, "building", String, "building", func() {
 		Format(FormatUUID)
 	})
-	Field(4, "stamp", ArrayOf(PowerStamp), "stamp", func() {
+	Field(5, "stamp", ArrayOf(PowerStamp), "stamp", func() {
 		
 	})
 	
@@ -184,9 +187,11 @@ var ElectricalReport = Type("ElectricalReport", func() {
 })
 
 var PowerStamp = Type("PowerStamp", func() {
-	Field(1, "period", Period, "period", func() {
 
+	Field(1, "time", String, "time", func() {
+		Format(FormatDateTime)
 	})
+	
 	Field(2, "genRate", Float64, "genRate", func() {
 		Description("power stamp in KW")
 	})

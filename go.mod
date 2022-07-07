@@ -67,10 +67,11 @@ require (
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.0.15
 	github.com/crossnokaye/facilityconfig v0.0.4
+	github.com/crossnokaye/past-values v0.0.5
 	github.com/go-pg/pg v8.0.7+incompatible
 	github.com/google/go-cmp v0.5.8 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20220104163920-15ed2e8cf2bd // indirect
+	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
-	github.com/smartystreets/assertions v1.2.1 // indirect
+	github.com/smartystreets/assertions v1.13.0 // indirect
 	goa.design/clue v0.7.0
 )

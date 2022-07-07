@@ -57,7 +57,8 @@ func NewCalculateReportsEndpoint(s Service) goa.Endpoint {
 // method "get_control_points" of service "calc".
 func NewGetControlPointsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.GetControlPoints(ctx)
+		p := req.(*PastValuesPayload)
+		return s.GetControlPoints(ctx, p)
 	}
 }
 
@@ -65,7 +66,8 @@ func NewGetControlPointsEndpoint(s Service) goa.Endpoint {
 // "get_power" of service "calc".
 func NewGetPowerEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.GetPower(ctx)
+		p := req.(*GetPowerPayload)
+		return s.GetPower(ctx, p)
 	}
 }
 
@@ -73,7 +75,7 @@ func NewGetPowerEndpoint(s Service) goa.Endpoint {
 // "get_emissions" of service "calc".
 func NewGetEmissionsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.GetEmissions(ctx)
+		return s.GetEmissions(ctx)
 	}
 }
 
@@ -81,7 +83,8 @@ func NewGetEmissionsEndpoint(s Service) goa.Endpoint {
 // "handle_requests" of service "calc".
 func NewHandleRequestsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.HandleRequests(ctx)
+		p := req.(*RequestPayload)
+		return nil, s.HandleRequests(ctx, p)
 	}
 }
 
