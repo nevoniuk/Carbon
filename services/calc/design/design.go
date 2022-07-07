@@ -13,8 +13,10 @@ var _ = API("Calc", func() {
 
 var _ = Service("calc", func() {
 	Description("Service to interpret CO2 emissions through power and carbon intensity data")
+	
 	Method("calculate_reports", func() {
-		
+		Payload(CarbonReport, ElectricalReport)
+		Result(TotalReport)
 		Description("helper method to make kW/lbs of Co2 report")
 		GRPC(func() {})
 	})
@@ -37,6 +39,7 @@ var _ = Service("calc", func() {
 
 	Method("get_emissions", func() {
 		//talks to storage client
+		Payload(EmissionsPayload)
 		Result(CarbonReport)
 		Description("This endpoint will retrieve the emissions data for a facility")
 		GRPC(func() {})
@@ -59,6 +62,14 @@ var _ = Service("calc", func() {
 })
 
 //payloads
+var EmissionsPayload = Type("EmissionsPayload", func() {
+	Description("Payload for the get_emissions function")
+	Field(1, "Period", Period, "Period")
+	Field(2, "interval", String, "interval", func() {
+		Example("hours, days, weeks, months, years")
+	})
+})
+
 var RequestPayload = Type("RequestPayload", func() {
 	Description("Payload for the handle_requests function")
 

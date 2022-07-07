@@ -10,11 +10,11 @@ package power
 import (
 	"context"
 	"time"
-	"fmt"
+	//"fmt"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc"
-	"github.com/google/uuid"
-	"strings"
+	//"github.com/google/uuid"
+	//"strings"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 	genvalues "github.com/crossnokaye/past-values/services/past-values/gen/past_values"
 	genvaluesc "github.com/crossnokaye/past-values/services/past-values/gen/grpc/past_values/client"
@@ -25,7 +25,7 @@ var dateFormat = "2006-01-02"
 type (
 	// Client interface to past-values service
 	Client interface {
-		GetPower(context.Context, string, []genvalues.UUID, int64, time.Time, time.Time) ([]*genvaluesc.HistoricalValues, error)
+		GetPower(context.Context, string, []genvalues.UUID, int64, time.Time, time.Time) (*gencalc.ElectricalReport, error)
 	}
 
 	// client implements the Client interface.
