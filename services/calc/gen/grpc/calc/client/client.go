@@ -36,8 +36,8 @@ func (c *Client) CalculateReports() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildCalculateReportsFunc(c.grpccli, c.opts...),
-			nil,
-			nil)
+			EncodeCalculateReportsRequest,
+			DecodeCalculateReportsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			return nil, goa.Fault(err.Error())
@@ -83,7 +83,7 @@ func (c *Client) GetEmissions() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildGetEmissionsFunc(c.grpccli, c.opts...),
-			nil,
+			EncodeGetEmissionsRequest,
 			DecodeGetEmissionsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {

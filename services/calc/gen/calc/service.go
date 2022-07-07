@@ -14,7 +14,7 @@ import (
 // Service to interpret CO2 emissions through power and carbon intensity data
 type Service interface {
 	// helper method to make kW/lbs of Co2 report
-	CalculateReports(context.Context) (err error)
+	CalculateReports(context.Context, *CarbonReport) (res *TotalReport, err error)
 	// wrapper for the power-service repo. gets the control points for the
 	// get_power function
 	GetControlPoints(context.Context, *PastValuesPayload) (res []string, err error)
@@ -22,7 +22,7 @@ type Service interface {
 	// get_control_points function
 	GetPower(context.Context, *GetPowerPayload) (res *ElectricalReport, err error)
 	// This endpoint will retrieve the emissions data for a facility
-	GetEmissions(context.Context) (res *CarbonReport, err error)
+	GetEmissions(context.Context, *EmissionsPayload) (res *CarbonReport, err error)
 	// This endpoint is used by a front end service to return energy usage
 	// information
 	HandleRequests(context.Context, *RequestPayload) (err error)
@@ -40,7 +40,8 @@ const ServiceName = "calc"
 // MethodKey key.
 var MethodNames = [6]string{"calculate_reports", "get_control_points", "get_power", "get_emissions", "handle_requests", "carbonreport"}
 
-// CarbonReport is the result type of the calc service get_emissions method.
+// CarbonReport is the payload type of the calc service calculate_reports
+// method.
 type CarbonReport struct {
 	// generated_rate
 	GeneratedRate float64
@@ -50,6 +51,14 @@ type CarbonReport struct {
 	DurationType string
 	// region
 	Region string
+}
+
+// Contains a time stamp with its respective x-y coordinates
+type DataPoint struct {
+	// time
+	Time string
+	// carbon_rate
+	CarbonRate float64
 }
 
 // ElectricalReport is the result type of the calc service get_power method.
@@ -64,6 +73,15 @@ type ElectricalReport struct {
 	Building string
 	// stamp
 	Stamp []*PowerStamp
+}
+
+// EmissionsPayload is the payload type of the calc service get_emissions
+// method.
+type EmissionsPayload struct {
+	// Period
+	Period *Period
+	// interval
+	Interval *string
 }
 
 // GetPowerPayload is the payload type of the calc service get_power method.
@@ -117,4 +135,16 @@ type RequestPayload struct {
 	Building string
 	// interval
 	Interval string
+}
+
+// TotalReport is the result type of the calc service calculate_reports method.
+type TotalReport struct {
+	// Duration
+	Duration *Period
+	// duration_type
+	DurationType string
+	// point
+	Point []*DataPoint
+	// facility
+	Facility string
 }

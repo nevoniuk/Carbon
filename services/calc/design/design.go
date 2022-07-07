@@ -178,10 +178,10 @@ var DataPoint = Type("DataPoint", func() {
 //reports read from past-values
 var ElectricalReport = Type("ElectricalReport", func() {
 	Description("Energy Generation Report")
+
 	Field(1, "period", Period, "period", func() {
 
 	})
-
 	Field(2, "postalcode", String, "postalcode", func() {
 		Format(FormatUUID)
 	})
@@ -194,8 +194,10 @@ var ElectricalReport = Type("ElectricalReport", func() {
 	Field(5, "stamp", ArrayOf(PowerStamp), "stamp", func() {
 		
 	})
+
+	Field(6, "intervalType", String, "intervalType")
 	
-	Required("postalcode", "facility", "stamp", "building")
+	Required("postalcode", "facility", "stamp", "building", "intervalType")
 })
 
 var PowerStamp = Type("PowerStamp", func() {

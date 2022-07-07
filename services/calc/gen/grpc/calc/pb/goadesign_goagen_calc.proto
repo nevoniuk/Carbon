@@ -31,9 +31,39 @@ service Calc {
 }
 
 message CalculateReportsRequest {
+	// generated_rate
+	double generated_rate = 1;
+	// Duration
+	Period duration = 2;
+	// duration_type
+	string duration_type = 3;
+	// region
+	string region = 4;
+}
+// Period of time from start to end of Forecast
+message Period {
+	// Start time
+	string start_time = 1;
+	// End time
+	string end_time = 2;
 }
 
 message CalculateReportsResponse {
+	// Duration
+	Period duration = 1;
+	// duration_type
+	string duration_type = 2;
+	// point
+	repeated DataPoint point = 3;
+	// facility
+	string facility = 4;
+}
+// Contains a time stamp with its respective x-y coordinates
+message DataPoint {
+	// time
+	string time = 1;
+	// carbon_rate
+	double carbon_rate = 2;
 }
 
 message GetControlPointsRequest {
@@ -45,13 +75,6 @@ message GetControlPointsRequest {
 	string building = 3;
 	// client
 	string client = 4;
-}
-// Period of time from start to end of Forecast
-message Period {
-	// Start time
-	string start_time = 1;
-	// End time
-	string end_time = 2;
 }
 
 message GetControlPointsResponse {
@@ -90,6 +113,10 @@ message PowerStamp {
 }
 
 message GetEmissionsRequest {
+	// Period
+	Period period = 1;
+	// interval
+	string interval = 2;
 }
 
 message GetEmissionsResponse {

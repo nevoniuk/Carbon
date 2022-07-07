@@ -15,6 +15,31 @@ import (
 	calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
 )
 
+// BuildCalculateReportsPayload builds the payload for the calc
+// calculate_reports endpoint from CLI flags.
+func BuildCalculateReportsPayload(calcCalculateReportsMessage string) (*calc.CarbonReport, error) {
+	var err error
+	var message calcpb.CalculateReportsRequest
+	{
+		if calcCalculateReportsMessage != "" {
+			err = json.Unmarshal([]byte(calcCalculateReportsMessage), &message)
+			if err != nil {
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Duration\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"duration_type\": \"Labore enim laudantium voluptatem non ratione.\",\n      \"generated_rate\": 37.8267,\n      \"region\": \"MISO, ISO...\"\n   }'")
+			}
+		}
+	}
+	v := &calc.CarbonReport{
+		GeneratedRate: message.GeneratedRate,
+		DurationType:  message.DurationType,
+		Region:        message.Region,
+	}
+	if message.Duration != nil {
+		v.Duration = protobufCalcpbPeriodToCalcPeriod(message.Duration)
+	}
+
+	return v, nil
+}
+
 // BuildGetControlPointsPayload builds the payload for the calc
 // get_control_points endpoint from CLI flags.
 func BuildGetControlPointsPayload(calcGetControlPointsMessage string) (*calc.PastValuesPayload, error) {
@@ -54,7 +79,7 @@ func BuildGetPowerPayload(calcGetPowerMessage string) (*calc.GetPowerPayload, er
 		if calcGetPowerMessage != "" {
 			err = json.Unmarshal([]byte(calcGetPowerMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"cps\": [\n         \"Cupiditate hic ipsum itaque ea.\",\n         \"Omnis nihil aut suscipit nesciunt culpa ullam.\"\n      ],\n      \"interval\": 6936316284768740641,\n      \"org\": \"76FB876C-96AC-91E7-BD21-B0C2988DDF65\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"cps\": [\n         \"Labore voluptates sed voluptatibus.\",\n         \"Sed provident omnis quisquam aliquam.\",\n         \"Commodi itaque.\",\n         \"At culpa et et.\"\n      ],\n      \"interval\": 7061356915507293268,\n      \"org\": \"76FB876C-96AC-91E7-BD21-B0C2988DDF65\"\n   }'")
 			}
 		}
 	}
@@ -70,6 +95,30 @@ func BuildGetPowerPayload(calcGetPowerMessage string) (*calc.GetPowerPayload, er
 		for i, val := range message.Cps {
 			v.Cps[i] = val
 		}
+	}
+
+	return v, nil
+}
+
+// BuildGetEmissionsPayload builds the payload for the calc get_emissions
+// endpoint from CLI flags.
+func BuildGetEmissionsPayload(calcGetEmissionsMessage string) (*calc.EmissionsPayload, error) {
+	var err error
+	var message calcpb.GetEmissionsRequest
+	{
+		if calcGetEmissionsMessage != "" {
+			err = json.Unmarshal([]byte(calcGetEmissionsMessage), &message)
+			if err != nil {
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"interval\": \"hours, days, weeks, months, years\"\n   }'")
+			}
+		}
+	}
+	v := &calc.EmissionsPayload{}
+	if message.Interval != "" {
+		v.Interval = &message.Interval
+	}
+	if message.Period != nil {
+		v.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)
 	}
 
 	return v, nil

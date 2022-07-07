@@ -49,7 +49,8 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 // method "calculate_reports" of service "calc".
 func NewCalculateReportsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.CalculateReports(ctx)
+		p := req.(*CarbonReport)
+		return s.CalculateReports(ctx, p)
 	}
 }
 
@@ -75,7 +76,8 @@ func NewGetPowerEndpoint(s Service) goa.Endpoint {
 // "get_emissions" of service "calc".
 func NewGetEmissionsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return s.GetEmissions(ctx)
+		p := req.(*EmissionsPayload)
+		return s.GetEmissions(ctx, p)
 	}
 }
 

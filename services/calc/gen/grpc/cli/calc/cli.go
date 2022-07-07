@@ -28,7 +28,15 @@ func UsageCommands() string {
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` calc calculate-reports` + "\n" +
+	return os.Args[0] + ` calc calculate-reports --message '{
+      "Duration": {
+         "endTime": "2020-01-01T00:00:00Z",
+         "startTime": "2020-01-01T00:00:00Z"
+      },
+      "duration_type": "Labore enim laudantium voluptatem non ratione.",
+      "generated_rate": 37.8267,
+      "region": "MISO, ISO..."
+   }'` + "\n" +
 		""
 }
 
@@ -38,7 +46,8 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	var (
 		calcFlags = flag.NewFlagSet("calc", flag.ContinueOnError)
 
-		calcCalculateReportsFlags = flag.NewFlagSet("calculate-reports", flag.ExitOnError)
+		calcCalculateReportsFlags       = flag.NewFlagSet("calculate-reports", flag.ExitOnError)
+		calcCalculateReportsMessageFlag = calcCalculateReportsFlags.String("message", "", "")
 
 		calcGetControlPointsFlags       = flag.NewFlagSet("get-control-points", flag.ExitOnError)
 		calcGetControlPointsMessageFlag = calcGetControlPointsFlags.String("message", "", "")
@@ -46,7 +55,8 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 		calcGetPowerFlags       = flag.NewFlagSet("get-power", flag.ExitOnError)
 		calcGetPowerMessageFlag = calcGetPowerFlags.String("message", "", "")
 
-		calcGetEmissionsFlags = flag.NewFlagSet("get-emissions", flag.ExitOnError)
+		calcGetEmissionsFlags       = flag.NewFlagSet("get-emissions", flag.ExitOnError)
+		calcGetEmissionsMessageFlag = calcGetEmissionsFlags.String("message", "", "")
 
 		calcHandleRequestsFlags       = flag.NewFlagSet("handle-requests", flag.ExitOnError)
 		calcHandleRequestsMessageFlag = calcHandleRequestsFlags.String("message", "", "")
@@ -140,7 +150,7 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			switch epn {
 			case "calculate-reports":
 				endpoint = c.CalculateReports()
-				data = nil
+				data, err = calcc.BuildCalculateReportsPayload(*calcCalculateReportsMessageFlag)
 			case "get-control-points":
 				endpoint = c.GetControlPoints()
 				data, err = calcc.BuildGetControlPointsPayload(*calcGetControlPointsMessageFlag)
@@ -149,7 +159,7 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 				data, err = calcc.BuildGetPowerPayload(*calcGetPowerMessageFlag)
 			case "get-emissions":
 				endpoint = c.GetEmissions()
-				data = nil
+				data, err = calcc.BuildGetEmissionsPayload(*calcGetEmissionsMessageFlag)
 			case "handle-requests":
 				endpoint = c.HandleRequests()
 				data, err = calcc.BuildHandleRequestsPayload(*calcHandleRequestsMessageFlag)
@@ -185,12 +195,21 @@ Additional help:
 `, os.Args[0])
 }
 func calcCalculateReportsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc calculate-reports
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc calculate-reports -message JSON
 
 helper method to make kW/lbs of Co2 report
+    -message JSON: 
 
 Example:
-    %[1]s calc calculate-reports
+    %[1]s calc calculate-reports --message '{
+      "Duration": {
+         "endTime": "2020-01-01T00:00:00Z",
+         "startTime": "2020-01-01T00:00:00Z"
+      },
+      "duration_type": "Labore enim laudantium voluptatem non ratione.",
+      "generated_rate": 37.8267,
+      "region": "MISO, ISO..."
+   }'
 `, os.Args[0])
 }
 
@@ -226,22 +245,31 @@ Example:
          "startTime": "2020-01-01T00:00:00Z"
       },
       "cps": [
-         "Cupiditate hic ipsum itaque ea.",
-         "Omnis nihil aut suscipit nesciunt culpa ullam."
+         "Labore voluptates sed voluptatibus.",
+         "Sed provident omnis quisquam aliquam.",
+         "Commodi itaque.",
+         "At culpa et et."
       ],
-      "interval": 6936316284768740641,
+      "interval": 7061356915507293268,
       "org": "76FB876C-96AC-91E7-BD21-B0C2988DDF65"
    }'
 `, os.Args[0])
 }
 
 func calcGetEmissionsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-emissions
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-emissions -message JSON
 
 This endpoint will retrieve the emissions data for a facility
+    -message JSON: 
 
 Example:
-    %[1]s calc get-emissions
+    %[1]s calc get-emissions --message '{
+      "Period": {
+         "endTime": "2020-01-01T00:00:00Z",
+         "startTime": "2020-01-01T00:00:00Z"
+      },
+      "interval": "hours, days, weeks, months, years"
+   }'
 `, os.Args[0])
 }
 

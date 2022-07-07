@@ -52,6 +52,10 @@ func GetControlPoints(context.Context, *gencalc.PastValuesPayload) ([]string, er
 }
 
 //wrapper function for talking to power client
+//power meters at riverside, oxnard
+//0's more than a minute resemble blackout
+
+
 func GetPower(context.Context, *gencalc.GetPowerPayload) (*gencalc.ElectricalReport, error) {
 
 }

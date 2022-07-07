@@ -68,38 +68,79 @@ func (c *client) GetPower(ctx context.Context, orgID string, controlPoints []gen
 	if err != nil {
 		return nil, err
 	}
-
-	return toPower(res), nil
+	newRes, err := toPower(res)
+	if err != nil {
+		return nil, err
+	}
+	return newRes, nil
 }
 
-func toPower(r interface{}) *gencalc.ElectricalReport {
+func toPower(r interface{}) (*gencalc.ElectricalReport, error) {
 	//casting the response
 	res := r.([]*genvalues.HistoricalValues)
 	//making an array of the reports I want to return
 	var report *gencalc.ElectricalReport
 	stamps := make([]*gencalc.PowerStamp, len(res))
 	//each analog point contains an ID and an array of values
-	var start string
-	var end string
+	var startReport time.Time
+	var endReport time.Time
 
 	var analogPoint int
 	//iterate over historical values
 	for i, historicalValues := range res {
 		//i == 1 should be analog points
 		if i == 1 {
+
 			for j, analog := range historicalValues.Analog {
+
 				if j == analogPoint {
+
+					var minCounter time.Time
+					var previousPoint float64
+					var counter = 0
+
 					for p, point := range analog.Values {
+
 						if p == 0 {
-							start = *point.Timestamp
+							var err error
+							startReport, err = time.Parse(timeFormat, *point.Timestamp)
+							if err != nil {
+								return nil , err
+							}
+							minCounter = startReport
 						}
+
 						if p == (len(analog.Values) - 1) {
-							end = *point.Timestamp
+							var err error
+							endReport, err = time.Parse(timeFormat, *point.Timestamp)
+							if err != nil {
+								return nil , err
+							}
+							
 						}
-						stamps[p] = &gencalc.PowerStamp{
-							Time: point.Timestamp,
-							GenRate: point.Value,
+						//if new time is 1 minute  or more greater than the counter and is not 0
+						
+						pointTime, errpoint := time.Parse(timeFormat, *point.Timestamp)
+						if errpoint != nil  {
+							return nil, errpoint
 						}
+
+						 if pointTime.After(minCounter.Add(time.Minute)) && (previousPoint != 0) {
+
+							var temp = minCounter.Add(time.Minute).Format(timeFormat)
+
+							stamps[counter] = &gencalc.PowerStamp{
+								Time: &temp,
+								GenRate: &previousPoint,
+							}
+							counter += 1
+							//set to point time in case that elapsed time is greater than a minute
+							minCounter = pointTime
+						 }
+						//read in values that aren't 0
+						//values are per second
+						previousPoint = *point.Value
+						
 					}
 					
 				}
@@ -108,9 +149,12 @@ func toPower(r interface{}) *gencalc.ElectricalReport {
 		}
 		
 	}
+
 	report = &gencalc.ElectricalReport{
-		Period: &gencalc.Period{StartTime: start, EndTime: end},
+		Period: &gencalc.Period{StartTime: startReport.Format(timeFormat), EndTime: endReport.Format(timeFormat)},
 		Stamp: stamps,
+		IntervalType: "minute",
 	}
-	return report
+
+	return report, nil
 }

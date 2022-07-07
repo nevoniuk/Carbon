@@ -37,9 +37,13 @@ func NewClient(calculateReports, getControlPoints, getPower, getEmissions, handl
 
 // CalculateReports calls the "calculate_reports" endpoint of the "calc"
 // service.
-func (c *Client) CalculateReports(ctx context.Context) (err error) {
-	_, err = c.CalculateReportsEndpoint(ctx, nil)
-	return
+func (c *Client) CalculateReports(ctx context.Context, p *CarbonReport) (res *TotalReport, err error) {
+	var ires interface{}
+	ires, err = c.CalculateReportsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*TotalReport), nil
 }
 
 // GetControlPoints calls the "get_control_points" endpoint of the "calc"
@@ -64,9 +68,9 @@ func (c *Client) GetPower(ctx context.Context, p *GetPowerPayload) (res *Electri
 }
 
 // GetEmissions calls the "get_emissions" endpoint of the "calc" service.
-func (c *Client) GetEmissions(ctx context.Context) (res *CarbonReport, err error) {
+func (c *Client) GetEmissions(ctx context.Context, p *EmissionsPayload) (res *CarbonReport, err error) {
 	var ires interface{}
-	ires, err = c.GetEmissionsEndpoint(ctx, nil)
+	ires, err = c.GetEmissionsEndpoint(ctx, p)
 	if err != nil {
 		return
 	}

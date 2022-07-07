@@ -13,10 +13,39 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
+// NewCalculateReportsPayload builds the payload of the "calculate_reports"
+// endpoint of the "calc" service from the gRPC request type.
+func NewCalculateReportsPayload(message *calcpb.CalculateReportsRequest) *calc.CarbonReport {
+	v := &calc.CarbonReport{
+		GeneratedRate: message.GeneratedRate,
+		DurationType:  message.DurationType,
+		Region:        message.Region,
+	}
+	if message.Duration != nil {
+		v.Duration = protobufCalcpbPeriodToCalcPeriod(message.Duration)
+	}
+	return v
+}
+
 // NewProtoCalculateReportsResponse builds the gRPC response type from the
 // result of the "calculate_reports" endpoint of the "calc" service.
-func NewProtoCalculateReportsResponse() *calcpb.CalculateReportsResponse {
-	message := &calcpb.CalculateReportsResponse{}
+func NewProtoCalculateReportsResponse(result *calc.TotalReport) *calcpb.CalculateReportsResponse {
+	message := &calcpb.CalculateReportsResponse{
+		DurationType: result.DurationType,
+		Facility:     result.Facility,
+	}
+	if result.Duration != nil {
+		message.Duration = svcCalcPeriodToCalcpbPeriod(result.Duration)
+	}
+	if result.Point != nil {
+		message.Point = make([]*calcpb.DataPoint, len(result.Point))
+		for i, val := range result.Point {
+			message.Point[i] = &calcpb.DataPoint{
+				Time:       val.Time,
+				CarbonRate: val.CarbonRate,
+			}
+		}
+	}
 	return message
 }
 
@@ -95,6 +124,19 @@ func NewProtoGetPowerResponse(result *calc.ElectricalReport) *calcpb.GetPowerRes
 	return message
 }
 
+// NewGetEmissionsPayload builds the payload of the "get_emissions" endpoint of
+// the "calc" service from the gRPC request type.
+func NewGetEmissionsPayload(message *calcpb.GetEmissionsRequest) *calc.EmissionsPayload {
+	v := &calc.EmissionsPayload{}
+	if message.Interval != "" {
+		v.Interval = &message.Interval
+	}
+	if message.Period != nil {
+		v.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)
+	}
+	return v
+}
+
 // NewProtoGetEmissionsResponse builds the gRPC response type from the result
 // of the "get_emissions" endpoint of the "calc" service.
 func NewProtoGetEmissionsResponse(result *calc.CarbonReport) *calcpb.GetEmissionsResponse {
@@ -137,6 +179,29 @@ func NewProtoCarbonreportResponse() *calcpb.CarbonreportResponse {
 	return message
 }
 
+// ValidateCalculateReportsRequest runs the validations defined on
+// CalculateReportsRequest.
+func ValidateCalculateReportsRequest(message *calcpb.CalculateReportsRequest) (err error) {
+	if message.Duration == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("Duration", "message"))
+	}
+	if message.Duration != nil {
+		if err2 := ValidatePeriod(message.Duration); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidatePeriod runs the validations defined on Period.
+func ValidatePeriod(message *calcpb.Period) (err error) {
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.startTime", message.StartTime, goa.FormatDateTime))
+
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.endTime", message.EndTime, goa.FormatDateTime))
+
+	return
+}
+
 // ValidateGetControlPointsRequest runs the validations defined on
 // GetControlPointsRequest.
 func ValidateGetControlPointsRequest(message *calcpb.GetControlPointsRequest) (err error) {
@@ -157,15 +222,6 @@ func ValidateGetControlPointsRequest(message *calcpb.GetControlPointsRequest) (e
 	return
 }
 
-// ValidatePeriod runs the validations defined on Period.
-func ValidatePeriod(message *calcpb.Period) (err error) {
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.startTime", message.StartTime, goa.FormatDateTime))
-
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.endTime", message.EndTime, goa.FormatDateTime))
-
-	return
-}
-
 // ValidateGetPowerRequest runs the validations defined on GetPowerRequest.
 func ValidateGetPowerRequest(message *calcpb.GetPowerRequest) (err error) {
 	if message.Period == nil {
@@ -176,6 +232,17 @@ func ValidateGetPowerRequest(message *calcpb.GetPowerRequest) (err error) {
 	}
 	err = goa.MergeErrors(err, goa.ValidateFormat("message.org", message.Org, goa.FormatUUID))
 
+	if message.Period != nil {
+		if err2 := ValidatePeriod(message.Period); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateGetEmissionsRequest runs the validations defined on
+// GetEmissionsRequest.
+func ValidateGetEmissionsRequest(message *calcpb.GetEmissionsRequest) (err error) {
 	if message.Period != nil {
 		if err2 := ValidatePeriod(message.Period); err2 != nil {
 			err = goa.MergeErrors(err, err2)
@@ -205,9 +272,6 @@ func ValidateHandleRequestsRequest(message *calcpb.HandleRequestsRequest) (err e
 // protobufCalcpbPeriodToCalcPeriod builds a value of type *calc.Period from a
 // value of type *calcpb.Period.
 func protobufCalcpbPeriodToCalcPeriod(v *calcpb.Period) *calc.Period {
-	if v == nil {
-		return nil
-	}
 	res := &calc.Period{
 		StartTime: v.StartTime,
 		EndTime:   v.EndTime,
@@ -219,9 +283,6 @@ func protobufCalcpbPeriodToCalcPeriod(v *calcpb.Period) *calc.Period {
 // svcCalcPeriodToCalcpbPeriod builds a value of type *calcpb.Period from a
 // value of type *calc.Period.
 func svcCalcPeriodToCalcpbPeriod(v *calc.Period) *calcpb.Period {
-	if v == nil {
-		return nil
-	}
 	res := &calcpb.Period{
 		StartTime: v.StartTime,
 		EndTime:   v.EndTime,

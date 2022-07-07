@@ -15,9 +15,38 @@ import (
 
 // NewProtoCalculateReportsRequest builds the gRPC request type from the
 // payload of the "calculate_reports" endpoint of the "calc" service.
-func NewProtoCalculateReportsRequest() *calcpb.CalculateReportsRequest {
-	message := &calcpb.CalculateReportsRequest{}
+func NewProtoCalculateReportsRequest(payload *calc.CarbonReport) *calcpb.CalculateReportsRequest {
+	message := &calcpb.CalculateReportsRequest{
+		GeneratedRate: payload.GeneratedRate,
+		DurationType:  payload.DurationType,
+		Region:        payload.Region,
+	}
+	if payload.Duration != nil {
+		message.Duration = svcCalcPeriodToCalcpbPeriod(payload.Duration)
+	}
 	return message
+}
+
+// NewCalculateReportsResult builds the result type of the "calculate_reports"
+// endpoint of the "calc" service from the gRPC response type.
+func NewCalculateReportsResult(message *calcpb.CalculateReportsResponse) *calc.TotalReport {
+	result := &calc.TotalReport{
+		DurationType: message.DurationType,
+		Facility:     message.Facility,
+	}
+	if message.Duration != nil {
+		result.Duration = protobufCalcpbPeriodToCalcPeriod(message.Duration)
+	}
+	if message.Point != nil {
+		result.Point = make([]*calc.DataPoint, len(message.Point))
+		for i, val := range message.Point {
+			result.Point[i] = &calc.DataPoint{
+				Time:       val.Time,
+				CarbonRate: val.CarbonRate,
+			}
+		}
+	}
+	return result
 }
 
 // NewProtoGetControlPointsRequest builds the gRPC request type from the
@@ -96,8 +125,14 @@ func NewGetPowerResult(message *calcpb.GetPowerResponse) *calc.ElectricalReport 
 
 // NewProtoGetEmissionsRequest builds the gRPC request type from the payload of
 // the "get_emissions" endpoint of the "calc" service.
-func NewProtoGetEmissionsRequest() *calcpb.GetEmissionsRequest {
+func NewProtoGetEmissionsRequest(payload *calc.EmissionsPayload) *calcpb.GetEmissionsRequest {
 	message := &calcpb.GetEmissionsRequest{}
+	if payload.Interval != nil {
+		message.Interval = *payload.Interval
+	}
+	if payload.Period != nil {
+		message.Period = svcCalcPeriodToCalcpbPeriod(payload.Period)
+	}
 	return message
 }
 
@@ -141,6 +176,37 @@ func ValidatePeriod(message *calcpb.Period) (err error) {
 	err = goa.MergeErrors(err, goa.ValidateFormat("message.startTime", message.StartTime, goa.FormatDateTime))
 
 	err = goa.MergeErrors(err, goa.ValidateFormat("message.endTime", message.EndTime, goa.FormatDateTime))
+
+	return
+}
+
+// ValidateCalculateReportsResponse runs the validations defined on
+// CalculateReportsResponse.
+func ValidateCalculateReportsResponse(message *calcpb.CalculateReportsResponse) (err error) {
+	if message.Duration == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("Duration", "message"))
+	}
+	if message.Point == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("point", "message"))
+	}
+	if message.Duration != nil {
+		if err2 := ValidatePeriod(message.Duration); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	for _, e := range message.Point {
+		if e != nil {
+			if err2 := ValidateDataPoint(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateDataPoint runs the validations defined on DataPoint.
+func ValidateDataPoint(message *calcpb.DataPoint) (err error) {
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.time", message.Time, goa.FormatDateTime))
 
 	return
 }
@@ -196,9 +262,6 @@ func ValidateGetEmissionsResponse(message *calcpb.GetEmissionsResponse) (err err
 // protobufCalcpbPeriodToCalcPeriod builds a value of type *calc.Period from a
 // value of type *calcpb.Period.
 func protobufCalcpbPeriodToCalcPeriod(v *calcpb.Period) *calc.Period {
-	if v == nil {
-		return nil
-	}
 	res := &calc.Period{
 		StartTime: v.StartTime,
 		EndTime:   v.EndTime,
@@ -210,9 +273,6 @@ func protobufCalcpbPeriodToCalcPeriod(v *calcpb.Period) *calc.Period {
 // svcCalcPeriodToCalcpbPeriod builds a value of type *calcpb.Period from a
 // value of type *calc.Period.
 func svcCalcPeriodToCalcpbPeriod(v *calc.Period) *calcpb.Period {
-	if v == nil {
-		return nil
-	}
 	res := &calcpb.Period{
 		StartTime: v.StartTime,
 		EndTime:   v.EndTime,

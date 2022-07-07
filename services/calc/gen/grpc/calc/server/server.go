@@ -49,7 +49,7 @@ func New(e *calc.Endpoints, uh goagrpc.UnaryHandler) *Server {
 // service "calculate_reports" endpoint.
 func NewCalculateReportsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeCalculateReportsResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeCalculateReportsRequest, EncodeCalculateReportsResponse)
 	}
 	return h
 }
@@ -111,7 +111,7 @@ func (s *Server) GetPower(ctx context.Context, message *calcpb.GetPowerRequest) 
 // service "get_emissions" endpoint.
 func NewGetEmissionsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeGetEmissionsResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeGetEmissionsRequest, EncodeGetEmissionsResponse)
 	}
 	return h
 }
