@@ -206,9 +206,9 @@ Example:
          "endTime": "2020-01-01T00:00:00Z",
          "startTime": "2020-01-01T00:00:00Z"
       },
-      "building": "5E3B665E-1239-9C12-9643-FFC1E6C04697",
-      "client": "1265498D-5A84-134A-1C7A-ED5B4B92788E",
-      "org": "773F4E7F-A748-DF6D-4355-233071D2534A"
+      "building": "1265498D-5A84-134A-1C7A-ED5B4B92788E",
+      "client": "7D80331A-7620-D09D-7CCB-2EF87B797732",
+      "org": "5E3B665E-1239-9C12-9643-FFC1E6C04697"
    }'
 `, os.Args[0])
 }
@@ -226,12 +226,11 @@ Example:
          "startTime": "2020-01-01T00:00:00Z"
       },
       "cps": [
-         "Odit modi fugiat alias minima iste.",
-         "Et aspernatur consequatur vitae.",
-         "Natus inventore eos perspiciatis."
+         "Cupiditate hic ipsum itaque ea.",
+         "Omnis nihil aut suscipit nesciunt culpa ullam."
       ],
-      "interval": 4987969451329189843,
-      "org": "7D80331A-7620-D09D-7CCB-2EF87B797732"
+      "interval": 6936316284768740641,
+      "org": "76FB876C-96AC-91E7-BD21-B0C2988DDF65"
    }'
 `, os.Args[0])
 }
@@ -258,9 +257,9 @@ Example:
          "endTime": "2020-01-01T00:00:00Z",
          "startTime": "2020-01-01T00:00:00Z"
       },
-      "building": "A129B534-C1FC-F09D-BF29-3DA5781E0ECB",
+      "building": "4CCDE767-7648-444F-D09F-4B4FFE4EB36B",
       "interval": "hours, days, weeks, months, years",
-      "org": "AC77D914-0A36-9917-2BA7-F519556A50B8"
+      "org": "A129B534-C1FC-F09D-BF29-3DA5781E0ECB"
    }'
 `, os.Args[0])
 }

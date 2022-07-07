@@ -76,15 +76,18 @@ func NewGetPowerResult(message *calcpb.GetPowerResponse) *calc.ElectricalReport 
 		Facility:   message.Facility,
 		Building:   message.Building,
 	}
+	if message.Period != nil {
+		result.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)
+	}
 	if message.Stamp != nil {
 		result.Stamp = make([]*calc.PowerStamp, len(message.Stamp))
 		for i, val := range message.Stamp {
 			result.Stamp[i] = &calc.PowerStamp{}
+			if val.Time != "" {
+				result.Stamp[i].Time = &val.Time
+			}
 			if val.GenRate != 0 {
 				result.Stamp[i].GenRate = &val.GenRate
-			}
-			if val.Period != nil {
-				result.Stamp[i].Period = protobufCalcpbPeriodToCalcPeriod(val.Period)
 			}
 		}
 	}
@@ -147,6 +150,11 @@ func ValidateGetPowerResponse(message *calcpb.GetPowerResponse) (err error) {
 	if message.Stamp == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("stamp", "message"))
 	}
+	if message.Period != nil {
+		if err2 := ValidatePeriod(message.Period); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
 	err = goa.MergeErrors(err, goa.ValidateFormat("message.postalcode", message.Postalcode, goa.FormatUUID))
 
 	err = goa.MergeErrors(err, goa.ValidateFormat("message.facility", message.Facility, goa.FormatUUID))
@@ -165,10 +173,8 @@ func ValidateGetPowerResponse(message *calcpb.GetPowerResponse) (err error) {
 
 // ValidatePowerStamp runs the validations defined on PowerStamp.
 func ValidatePowerStamp(message *calcpb.PowerStamp) (err error) {
-	if message.Period != nil {
-		if err2 := ValidatePeriod(message.Period); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
+	if message.Time != "" {
+		err = goa.MergeErrors(err, goa.ValidateFormat("message.time", message.Time, goa.FormatDateTime))
 	}
 	return
 }

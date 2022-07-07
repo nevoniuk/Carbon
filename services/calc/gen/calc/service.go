@@ -54,6 +54,8 @@ type CarbonReport struct {
 
 // ElectricalReport is the result type of the calc service get_power method.
 type ElectricalReport struct {
+	// period
+	Period *Period
 	// postalcode
 	Postalcode string
 	// facility
@@ -98,8 +100,8 @@ type Period struct {
 }
 
 type PowerStamp struct {
-	// period
-	Period *Period
+	// time
+	Time *string
 	// power stamp in KW
 	GenRate *float64
 }

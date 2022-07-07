@@ -50,7 +50,7 @@ func New(conn *grpc.ClientConn) Client {
 }
 
 func (c *client) GetPower(ctx context.Context, orgID string, controlPoints []genvalues.UUID, interval int64,
-	 start time.Time, end time.Time) ([]*genvalues.HistoricalValues, error) {
+	 start time.Time, end time.Time) (*gencalc.ElectricalReport, error) {
 	
 	var startTime = start.Format(timeFormat)
 	var endTime = end.Format(timeFormat)
@@ -69,21 +69,48 @@ func (c *client) GetPower(ctx context.Context, orgID string, controlPoints []gen
 		return nil, err
 	}
 
-	return res, nil
+	return toPower(res), nil
 }
 
-func toPower(r interface{}) []*gencalc.ElectricalReport {
+func toPower(r interface{}) *gencalc.ElectricalReport {
 	//casting the response
 	res := r.([]*genvalues.HistoricalValues)
 	//making an array of the reports I want to return
-	reports := make([]*gencalc.ElectricalReport, len(res))
-	for i, r := range res {
-		//read r.Analog[i].Values into stamps
-		reports[i] = &gencalc.ElectricalReport{
-			stamps := make([]*gencalc.PowerStamp, len(res))
-			Stamp: r.Analog[i].Values
-		}
-	}
+	var report *gencalc.ElectricalReport
+	stamps := make([]*gencalc.PowerStamp, len(res))
+	//each analog point contains an ID and an array of values
+	var start string
+	var end string
 
-	return rates
+	var analogPoint int
+	//iterate over historical values
+	for i, historicalValues := range res {
+		//i == 1 should be analog points
+		if i == 1 {
+			for j, analog := range historicalValues.Analog {
+				if j == analogPoint {
+					for p, point := range analog.Values {
+						if p == 0 {
+							start = *point.Timestamp
+						}
+						if p == (len(analog.Values) - 1) {
+							end = *point.Timestamp
+						}
+						stamps[p] = &gencalc.PowerStamp{
+							Time: point.Timestamp,
+							GenRate: point.Value,
+						}
+					}
+					
+				}
+				
+			}
+		}
+		
+	}
+	report = &gencalc.ElectricalReport{
+		Period: &gencalc.Period{StartTime: start, EndTime: end},
+		Stamp: stamps,
+	}
+	return report
 }

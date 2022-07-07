@@ -70,19 +70,21 @@ message GetPowerRequest {
 }
 
 message GetPowerResponse {
+	// period
+	Period period = 1;
 	// postalcode
-	string postalcode = 1;
+	string postalcode = 2;
 	// facility
-	string facility = 2;
+	string facility = 3;
 	// building
-	string building = 3;
+	string building = 4;
 	// stamp
-	repeated PowerStamp stamp = 4;
+	repeated PowerStamp stamp = 5;
 }
 
 message PowerStamp {
-	// period
-	Period period = 1;
+	// time
+	string time = 1;
 	// power stamp in KW
 	double gen_rate = 2;
 }

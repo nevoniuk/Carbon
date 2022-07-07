@@ -24,7 +24,7 @@ func BuildGetControlPointsPayload(calcGetControlPointsMessage string) (*calc.Pas
 		if calcGetControlPointsMessage != "" {
 			err = json.Unmarshal([]byte(calcGetControlPointsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"5E3B665E-1239-9C12-9643-FFC1E6C04697\",\n      \"client\": \"1265498D-5A84-134A-1C7A-ED5B4B92788E\",\n      \"org\": \"773F4E7F-A748-DF6D-4355-233071D2534A\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"1265498D-5A84-134A-1C7A-ED5B4B92788E\",\n      \"client\": \"7D80331A-7620-D09D-7CCB-2EF87B797732\",\n      \"org\": \"5E3B665E-1239-9C12-9643-FFC1E6C04697\"\n   }'")
 			}
 		}
 	}
@@ -54,7 +54,7 @@ func BuildGetPowerPayload(calcGetPowerMessage string) (*calc.GetPowerPayload, er
 		if calcGetPowerMessage != "" {
 			err = json.Unmarshal([]byte(calcGetPowerMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"cps\": [\n         \"Odit modi fugiat alias minima iste.\",\n         \"Et aspernatur consequatur vitae.\",\n         \"Natus inventore eos perspiciatis.\"\n      ],\n      \"interval\": 4987969451329189843,\n      \"org\": \"7D80331A-7620-D09D-7CCB-2EF87B797732\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"cps\": [\n         \"Cupiditate hic ipsum itaque ea.\",\n         \"Omnis nihil aut suscipit nesciunt culpa ullam.\"\n      ],\n      \"interval\": 6936316284768740641,\n      \"org\": \"76FB876C-96AC-91E7-BD21-B0C2988DDF65\"\n   }'")
 			}
 		}
 	}
@@ -84,7 +84,7 @@ func BuildHandleRequestsPayload(calcHandleRequestsMessage string) (*calc.Request
 		if calcHandleRequestsMessage != "" {
 			err = json.Unmarshal([]byte(calcHandleRequestsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"A129B534-C1FC-F09D-BF29-3DA5781E0ECB\",\n      \"interval\": \"hours, days, weeks, months, years\",\n      \"org\": \"AC77D914-0A36-9917-2BA7-F519556A50B8\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"4CCDE767-7648-444F-D09F-4B4FFE4EB36B\",\n      \"interval\": \"hours, days, weeks, months, years\",\n      \"org\": \"A129B534-C1FC-F09D-BF29-3DA5781E0ECB\"\n   }'")
 			}
 		}
 	}

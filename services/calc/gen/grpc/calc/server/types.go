@@ -77,15 +77,18 @@ func NewProtoGetPowerResponse(result *calc.ElectricalReport) *calcpb.GetPowerRes
 		Facility:   result.Facility,
 		Building:   result.Building,
 	}
+	if result.Period != nil {
+		message.Period = svcCalcPeriodToCalcpbPeriod(result.Period)
+	}
 	if result.Stamp != nil {
 		message.Stamp = make([]*calcpb.PowerStamp, len(result.Stamp))
 		for i, val := range result.Stamp {
 			message.Stamp[i] = &calcpb.PowerStamp{}
+			if val.Time != nil {
+				message.Stamp[i].Time = *val.Time
+			}
 			if val.GenRate != nil {
 				message.Stamp[i].GenRate = *val.GenRate
-			}
-			if val.Period != nil {
-				message.Stamp[i].Period = svcCalcPeriodToCalcpbPeriod(val.Period)
 			}
 		}
 	}
