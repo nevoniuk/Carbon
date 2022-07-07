@@ -126,17 +126,18 @@ var GetPowerPayload = Type("GetPowerPayload", func() {
 var TotalReport = Type("TotalReport", func() {
 	Description("Carbon/Energy Generation Report")
 	
-	Field(1, "Interval", Period, "Interval", func() {
+	Field(1, "Duration", Period, "Duration")
+
+	Field(2, "duration_type", String, "duration_type")
+
+	Field(3, "point", ArrayOf(DataPoint), "point", func() {
 		
 	})
-	Field(2, "point", ArrayOf(DataPoint), "point", func() {
-		
-	})
-	Field(3, "facility", String, "facility", func() {
+	Field(4, "facility", String, "facility", func() {
 		
 	})
 	
-	Required("Intervals", "point", "facility")
+	Required("Duration", "point", "facility", "duration_type")
 })
 
 //reports read from clickhouse
