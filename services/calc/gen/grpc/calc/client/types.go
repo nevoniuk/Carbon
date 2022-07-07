@@ -32,7 +32,7 @@ func NewProtoCalculateReportsRequest(payload *calc.CarbonReport) *calcpb.Calcula
 func NewCalculateReportsResult(message *calcpb.CalculateReportsResponse) *calc.TotalReport {
 	result := &calc.TotalReport{
 		DurationType: message.DurationType,
-		Facility:     message.Facility,
+		Facility:     calc.UUID(message.Facility),
 	}
 	if message.Duration != nil {
 		result.Duration = protobufCalcpbPeriodToCalcPeriod(message.Duration)
@@ -52,15 +52,9 @@ func NewCalculateReportsResult(message *calcpb.CalculateReportsResponse) *calc.T
 // NewProtoGetControlPointsRequest builds the gRPC request type from the
 // payload of the "get_control_points" endpoint of the "calc" service.
 func NewProtoGetControlPointsRequest(payload *calc.PastValuesPayload) *calcpb.GetControlPointsRequest {
-	message := &calcpb.GetControlPointsRequest{}
-	if payload.Org != nil {
-		message.Org = *payload.Org
-	}
-	if payload.Building != nil {
-		message.Building = *payload.Building
-	}
-	if payload.Client != nil {
-		message.Client = *payload.Client
+	message := &calcpb.GetControlPointsRequest{
+		Org:      string(payload.Org),
+		Building: string(payload.Building),
 	}
 	if payload.Period != nil {
 		message.Period = svcCalcPeriodToCalcpbPeriod(payload.Period)
@@ -82,16 +76,16 @@ func NewGetControlPointsResult(message *calcpb.GetControlPointsResponse) []strin
 // "get_power" endpoint of the "calc" service.
 func NewProtoGetPowerRequest(payload *calc.GetPowerPayload) *calcpb.GetPowerRequest {
 	message := &calcpb.GetPowerRequest{
-		Org:      payload.Org,
+		Org:      string(payload.Org),
 		Interval: payload.Interval,
 	}
 	if payload.Period != nil {
 		message.Period = svcCalcPeriodToCalcpbPeriod(payload.Period)
 	}
 	if payload.Cps != nil {
-		message.Cps = make([]string, len(payload.Cps))
+		message.Cps = make([]calcpb.UUID, len(payload.Cps))
 		for i, val := range payload.Cps {
-			message.Cps[i] = val
+			message.Cps[i] = string(val)
 		}
 	}
 	return message
@@ -102,8 +96,8 @@ func NewProtoGetPowerRequest(payload *calc.GetPowerPayload) *calcpb.GetPowerRequ
 func NewGetPowerResult(message *calcpb.GetPowerResponse) *calc.ElectricalReport {
 	result := &calc.ElectricalReport{
 		Postalcode:   message.Postalcode,
-		Facility:     message.Facility,
-		Building:     message.Building,
+		Facility:     calc.UUID(message.Facility),
+		Building:     calc.UUID(message.Building),
 		IntervalType: message.IntervalType,
 	}
 	if message.Period != nil {
@@ -155,8 +149,8 @@ func NewGetEmissionsResult(message *calcpb.GetEmissionsResponse) *calc.CarbonRep
 // of the "handle_requests" endpoint of the "calc" service.
 func NewProtoHandleRequestsRequest(payload *calc.RequestPayload) *calcpb.HandleRequestsRequest {
 	message := &calcpb.HandleRequestsRequest{
-		Org:      payload.Org,
-		Building: payload.Building,
+		Org:      string(payload.Org),
+		Building: string(payload.Building),
 		Interval: payload.Interval,
 	}
 	if payload.Period != nil {
@@ -202,12 +196,21 @@ func ValidateCalculateReportsResponse(message *calcpb.CalculateReportsResponse) 
 			}
 		}
 	}
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.Facility), goa.FormatUUID))
+
 	return
 }
 
 // ValidateDataPoint runs the validations defined on DataPoint.
 func ValidateDataPoint(message *calcpb.DataPoint) (err error) {
 	err = goa.MergeErrors(err, goa.ValidateFormat("message.time", message.Time, goa.FormatDateTime))
+
+	return
+}
+
+// ValidateUUID runs the validations defined on UUID.
+func ValidateUUID(message string) (err error) {
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", message, goa.FormatUUID))
 
 	return
 }
@@ -222,11 +225,9 @@ func ValidateGetPowerResponse(message *calcpb.GetPowerResponse) (err error) {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.postalcode", message.Postalcode, goa.FormatUUID))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.Facility), goa.FormatUUID))
 
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.facility", message.Facility, goa.FormatUUID))
-
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.building", message.Building, goa.FormatUUID))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.Building), goa.FormatUUID))
 
 	for _, e := range message.Stamp {
 		if e != nil {

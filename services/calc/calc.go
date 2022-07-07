@@ -14,7 +14,7 @@ import (
 	"github.com/crossnokaye/carbon/services/calc/clients/storage"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 )
-
+//only works for oxnard and riverside
 type calcSvc struct {
 	psc power.Client
 	dbc storage.Client

@@ -33,7 +33,7 @@ func UsageExamples() string {
          "endTime": "2020-01-01T00:00:00Z",
          "startTime": "2020-01-01T00:00:00Z"
       },
-      "duration_type": "Quis sed.",
+      "duration_type": "Quaerat repudiandae.",
       "generated_rate": 37.8267,
       "region": "MISO, ISO..."
    }'` + "\n" +
@@ -206,7 +206,7 @@ Example:
          "endTime": "2020-01-01T00:00:00Z",
          "startTime": "2020-01-01T00:00:00Z"
       },
-      "duration_type": "Quis sed.",
+      "duration_type": "Quaerat repudiandae.",
       "generated_rate": 37.8267,
       "region": "MISO, ISO..."
    }'
@@ -225,9 +225,8 @@ Example:
          "endTime": "2020-01-01T00:00:00Z",
          "startTime": "2020-01-01T00:00:00Z"
       },
-      "building": "1265498D-5A84-134A-1C7A-ED5B4B92788E",
-      "client": "7D80331A-7620-D09D-7CCB-2EF87B797732",
-      "org": "5E3B665E-1239-9C12-9643-FFC1E6C04697"
+      "building": "Voluptatem ipsa nesciunt.",
+      "org": "Voluptatem ipsa nesciunt."
    }'
 `, os.Args[0])
 }
@@ -245,13 +244,13 @@ Example:
          "startTime": "2020-01-01T00:00:00Z"
       },
       "cps": [
-         "Labore voluptates sed voluptatibus.",
-         "Sed provident omnis quisquam aliquam.",
-         "Commodi itaque.",
-         "At culpa et et."
+         "Voluptatem ipsa nesciunt.",
+         "Voluptatem ipsa nesciunt.",
+         "Voluptatem ipsa nesciunt.",
+         "Voluptatem ipsa nesciunt."
       ],
-      "interval": 7061356915507293268,
-      "org": "76FB876C-96AC-91E7-BD21-B0C2988DDF65"
+      "interval": 766901085469061942,
+      "org": "Voluptatem ipsa nesciunt."
    }'
 `, os.Args[0])
 }
@@ -285,9 +284,9 @@ Example:
          "endTime": "2020-01-01T00:00:00Z",
          "startTime": "2020-01-01T00:00:00Z"
       },
-      "building": "4CCDE767-7648-444F-D09F-4B4FFE4EB36B",
+      "building": "Voluptatem ipsa nesciunt.",
       "interval": "hours, days, weeks, months, years",
-      "org": "A129B534-C1FC-F09D-BF29-3DA5781E0ECB"
+      "org": "Voluptatem ipsa nesciunt."
    }'
 `, os.Args[0])
 }

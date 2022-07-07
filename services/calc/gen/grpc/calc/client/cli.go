@@ -24,7 +24,7 @@ func BuildCalculateReportsPayload(calcCalculateReportsMessage string) (*calc.Car
 		if calcCalculateReportsMessage != "" {
 			err = json.Unmarshal([]byte(calcCalculateReportsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Duration\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"duration_type\": \"Quis sed.\",\n      \"generated_rate\": 37.8267,\n      \"region\": \"MISO, ISO...\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Duration\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"duration_type\": \"Quaerat repudiandae.\",\n      \"generated_rate\": 37.8267,\n      \"region\": \"MISO, ISO...\"\n   }'")
 			}
 		}
 	}
@@ -49,19 +49,13 @@ func BuildGetControlPointsPayload(calcGetControlPointsMessage string) (*calc.Pas
 		if calcGetControlPointsMessage != "" {
 			err = json.Unmarshal([]byte(calcGetControlPointsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"1265498D-5A84-134A-1C7A-ED5B4B92788E\",\n      \"client\": \"7D80331A-7620-D09D-7CCB-2EF87B797732\",\n      \"org\": \"5E3B665E-1239-9C12-9643-FFC1E6C04697\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"Voluptatem ipsa nesciunt.\",\n      \"org\": \"Voluptatem ipsa nesciunt.\"\n   }'")
 			}
 		}
 	}
-	v := &calc.PastValuesPayload{}
-	if message.Org != "" {
-		v.Org = &message.Org
-	}
-	if message.Building != "" {
-		v.Building = &message.Building
-	}
-	if message.Client != "" {
-		v.Client = &message.Client
+	v := &calc.PastValuesPayload{
+		Org:      calc.UUID(message.Org),
+		Building: calc.UUID(message.Building),
 	}
 	if message.Period != nil {
 		v.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)
@@ -79,21 +73,21 @@ func BuildGetPowerPayload(calcGetPowerMessage string) (*calc.GetPowerPayload, er
 		if calcGetPowerMessage != "" {
 			err = json.Unmarshal([]byte(calcGetPowerMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"cps\": [\n         \"Labore voluptates sed voluptatibus.\",\n         \"Sed provident omnis quisquam aliquam.\",\n         \"Commodi itaque.\",\n         \"At culpa et et.\"\n      ],\n      \"interval\": 7061356915507293268,\n      \"org\": \"76FB876C-96AC-91E7-BD21-B0C2988DDF65\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"cps\": [\n         \"Voluptatem ipsa nesciunt.\",\n         \"Voluptatem ipsa nesciunt.\",\n         \"Voluptatem ipsa nesciunt.\",\n         \"Voluptatem ipsa nesciunt.\"\n      ],\n      \"interval\": 766901085469061942,\n      \"org\": \"Voluptatem ipsa nesciunt.\"\n   }'")
 			}
 		}
 	}
 	v := &calc.GetPowerPayload{
-		Org:      message.Org,
+		Org:      calc.UUID(message.Org),
 		Interval: message.Interval,
 	}
 	if message.Period != nil {
 		v.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)
 	}
 	if message.Cps != nil {
-		v.Cps = make([]string, len(message.Cps))
+		v.Cps = make([]calc.UUID, len(message.Cps))
 		for i, val := range message.Cps {
-			v.Cps[i] = val
+			v.Cps[i] = calc.UUID(val)
 		}
 	}
 
@@ -133,13 +127,13 @@ func BuildHandleRequestsPayload(calcHandleRequestsMessage string) (*calc.Request
 		if calcHandleRequestsMessage != "" {
 			err = json.Unmarshal([]byte(calcHandleRequestsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"4CCDE767-7648-444F-D09F-4B4FFE4EB36B\",\n      \"interval\": \"hours, days, weeks, months, years\",\n      \"org\": \"A129B534-C1FC-F09D-BF29-3DA5781E0ECB\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"Voluptatem ipsa nesciunt.\",\n      \"interval\": \"hours, days, weeks, months, years\",\n      \"org\": \"Voluptatem ipsa nesciunt.\"\n   }'")
 			}
 		}
 	}
 	v := &calc.RequestPayload{
-		Org:      message.Org,
-		Building: message.Building,
+		Org:      calc.UUID(message.Org),
+		Building: calc.UUID(message.Building),
 		Interval: message.Interval,
 	}
 	if message.Period != nil {

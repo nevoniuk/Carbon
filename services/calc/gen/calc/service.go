@@ -68,9 +68,9 @@ type ElectricalReport struct {
 	// postalcode
 	Postalcode string
 	// facility
-	Facility string
+	Facility UUID
 	// building
-	Building string
+	Building UUID
 	// stamp
 	Stamp []*PowerStamp
 	// intervalType
@@ -89,11 +89,11 @@ type EmissionsPayload struct {
 // GetPowerPayload is the payload type of the calc service get_power method.
 type GetPowerPayload struct {
 	// org
-	Org string
+	Org UUID
 	// Period
 	Period *Period
 	// cps
-	Cps []string
+	Cps []UUID
 	// samping interval
 	Interval int64
 }
@@ -102,13 +102,11 @@ type GetPowerPayload struct {
 // method.
 type PastValuesPayload struct {
 	// org
-	Org *string
+	Org UUID
 	// Period
 	Period *Period
 	// building
-	Building *string
-	// client
-	Client *string
+	Building UUID
 }
 
 // Period of time from start to end of Forecast
@@ -130,11 +128,11 @@ type PowerStamp struct {
 // method.
 type RequestPayload struct {
 	// org
-	Org string
+	Org UUID
 	// Period
 	Period *Period
 	// building
-	Building string
+	Building UUID
 	// interval
 	Interval string
 }
@@ -148,5 +146,8 @@ type TotalReport struct {
 	// point
 	Point []*DataPoint
 	// facility
-	Facility string
+	Facility UUID
 }
+
+// Universally unique identifier
+type UUID string

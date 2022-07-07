@@ -73,8 +73,6 @@ message GetControlPointsRequest {
 	Period period = 2;
 	// building
 	string building = 3;
-	// client
-	string client = 4;
 }
 
 message GetControlPointsResponse {

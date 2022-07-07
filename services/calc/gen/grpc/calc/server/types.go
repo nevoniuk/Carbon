@@ -32,7 +32,7 @@ func NewCalculateReportsPayload(message *calcpb.CalculateReportsRequest) *calc.C
 func NewProtoCalculateReportsResponse(result *calc.TotalReport) *calcpb.CalculateReportsResponse {
 	message := &calcpb.CalculateReportsResponse{
 		DurationType: result.DurationType,
-		Facility:     result.Facility,
+		Facility:     string(result.Facility),
 	}
 	if result.Duration != nil {
 		message.Duration = svcCalcPeriodToCalcpbPeriod(result.Duration)
@@ -52,15 +52,9 @@ func NewProtoCalculateReportsResponse(result *calc.TotalReport) *calcpb.Calculat
 // NewGetControlPointsPayload builds the payload of the "get_control_points"
 // endpoint of the "calc" service from the gRPC request type.
 func NewGetControlPointsPayload(message *calcpb.GetControlPointsRequest) *calc.PastValuesPayload {
-	v := &calc.PastValuesPayload{}
-	if message.Org != "" {
-		v.Org = &message.Org
-	}
-	if message.Building != "" {
-		v.Building = &message.Building
-	}
-	if message.Client != "" {
-		v.Client = &message.Client
+	v := &calc.PastValuesPayload{
+		Org:      calc.UUID(message.Org),
+		Building: calc.UUID(message.Building),
 	}
 	if message.Period != nil {
 		v.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)
@@ -83,16 +77,16 @@ func NewProtoGetControlPointsResponse(result []string) *calcpb.GetControlPointsR
 // "calc" service from the gRPC request type.
 func NewGetPowerPayload(message *calcpb.GetPowerRequest) *calc.GetPowerPayload {
 	v := &calc.GetPowerPayload{
-		Org:      message.Org,
+		Org:      calc.UUID(message.Org),
 		Interval: message.Interval,
 	}
 	if message.Period != nil {
 		v.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)
 	}
 	if message.Cps != nil {
-		v.Cps = make([]string, len(message.Cps))
+		v.Cps = make([]calc.UUID, len(message.Cps))
 		for i, val := range message.Cps {
-			v.Cps[i] = val
+			v.Cps[i] = calc.UUID(val)
 		}
 	}
 	return v
@@ -103,8 +97,8 @@ func NewGetPowerPayload(message *calcpb.GetPowerRequest) *calc.GetPowerPayload {
 func NewProtoGetPowerResponse(result *calc.ElectricalReport) *calcpb.GetPowerResponse {
 	message := &calcpb.GetPowerResponse{
 		Postalcode:   result.Postalcode,
-		Facility:     result.Facility,
-		Building:     result.Building,
+		Facility:     string(result.Facility),
+		Building:     string(result.Building),
 		IntervalType: result.IntervalType,
 	}
 	if result.Period != nil {
@@ -156,8 +150,8 @@ func NewProtoGetEmissionsResponse(result *calc.CarbonReport) *calcpb.GetEmission
 // endpoint of the "calc" service from the gRPC request type.
 func NewHandleRequestsPayload(message *calcpb.HandleRequestsRequest) *calc.RequestPayload {
 	v := &calc.RequestPayload{
-		Org:      message.Org,
-		Building: message.Building,
+		Org:      calc.UUID(message.Org),
+		Building: calc.UUID(message.Building),
 		Interval: message.Interval,
 	}
 	if message.Period != nil {
@@ -203,23 +197,28 @@ func ValidatePeriod(message *calcpb.Period) (err error) {
 	return
 }
 
+// ValidateUUID runs the validations defined on UUID.
+func ValidateUUID(message string) (err error) {
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", message, goa.FormatUUID))
+
+	return
+}
+
 // ValidateGetControlPointsRequest runs the validations defined on
 // GetControlPointsRequest.
 func ValidateGetControlPointsRequest(message *calcpb.GetControlPointsRequest) (err error) {
-	if message.Org != "" {
-		err = goa.MergeErrors(err, goa.ValidateFormat("message.org", message.Org, goa.FormatUUID))
+	if message.Period == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("Period", "message"))
 	}
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.Org), goa.FormatUUID))
+
 	if message.Period != nil {
 		if err2 := ValidatePeriod(message.Period); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
-	if message.Building != "" {
-		err = goa.MergeErrors(err, goa.ValidateFormat("message.building", message.Building, goa.FormatUUID))
-	}
-	if message.Client != "" {
-		err = goa.MergeErrors(err, goa.ValidateFormat("message.client", message.Client, goa.FormatUUID))
-	}
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.Building), goa.FormatUUID))
+
 	return
 }
 
@@ -231,12 +230,16 @@ func ValidateGetPowerRequest(message *calcpb.GetPowerRequest) (err error) {
 	if message.Cps == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("cps", "message"))
 	}
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.org", message.Org, goa.FormatUUID))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.Org), goa.FormatUUID))
 
 	if message.Period != nil {
 		if err2 := ValidatePeriod(message.Period); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
+	}
+	for _, e := range message.Cps {
+		err = goa.MergeErrors(err, goa.ValidateFormat("message.cps[*]", string(e), goa.FormatUUID))
+
 	}
 	return
 }
@@ -258,14 +261,14 @@ func ValidateHandleRequestsRequest(message *calcpb.HandleRequestsRequest) (err e
 	if message.Period == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("Period", "message"))
 	}
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.org", message.Org, goa.FormatUUID))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.Org), goa.FormatUUID))
 
 	if message.Period != nil {
 		if err2 := ValidatePeriod(message.Period); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.building", message.Building, goa.FormatUUID))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.Building), goa.FormatUUID))
 
 	return
 }
