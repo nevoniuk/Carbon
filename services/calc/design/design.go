@@ -73,14 +73,11 @@ var EmissionsPayload = Type("EmissionsPayload", func() {
 var RequestPayload = Type("RequestPayload", func() {
 	Description("Payload for the handle_requests function")
 
-	Field(1, "org", String, "org", func() {
-		Format(FormatUUID)
-	})
+	Field(1, "org", UUID, "org")
+
 	Field(2, "Period", Period, "Period")
 
-	Field(3, "building", String, "building", func() {
-		Format(FormatUUID)
-	})
+	Field(3, "building", UUID, "building")
 
 	Field(4, "interval", String, "interval", func() {
 		Example("hours, days, weeks, months, years")
@@ -89,34 +86,25 @@ var RequestPayload = Type("RequestPayload", func() {
 })
 
 var PastValuesPayload = Type("PastValuesPayload", func() {
-	Description("Payload for the past values get-values function")
+	Description("Payload to get the control points")
 
-	Field(1, "org", String, "org", func() {
-		Format(FormatUUID)
-	})
+	Field(1, "org", UUID, "org")
+
 	Field(2, "Period", Period, "Period")
 
-	Field(3, "building", String, "building", func() {
-		Format(FormatUUID)
-	})
+	Field(3, "building", UUID, "building")
 
-	Field(4, "client", String, "client", func() {
-		Format(FormatUUID)
-	})
+	Required("org", "Period", "building")
 })
 
 var GetPowerPayload = Type("GetPowerPayload", func() {
 	Description("Payload for the past values get-values function")
 
-	Field(1, "org", String, "org", func() {
-		Format(FormatUUID)
-	})
+	Field(1, "org", UUID, "org")
 
 	Field(2, "Period", Period, "Period")
 
-	Field(3, "cps", ArrayOf(String), "cps", func() {
-		//Format(FormatUUID)
-	})
+	Field(3, "cps", ArrayOf(UUID), "cps")
 
 	Field(4, "interval", Int64, "samping interval")
 
@@ -133,9 +121,7 @@ var TotalReport = Type("TotalReport", func() {
 	Field(3, "point", ArrayOf(DataPoint), "point", func() {
 		
 	})
-	Field(4, "facility", String, "facility", func() {
-		
-	})
+	Field(4, "facility", UUID, "facility")
 	
 	Required("Duration", "point", "facility", "duration_type")
 })
@@ -183,14 +169,12 @@ var ElectricalReport = Type("ElectricalReport", func() {
 
 	})
 	Field(2, "postalcode", String, "postalcode", func() {
-		Format(FormatUUID)
+		
 	})
-	Field(3, "facility", String, "facility", func() {
-		Format(FormatUUID)
-	})
-	Field(4, "building", String, "building", func() {
-		Format(FormatUUID)
-	})
+	Field(3, "facility", UUID, "facility")
+
+	Field(4, "building", UUID, "building")
+
 	Field(5, "stamp", ArrayOf(PowerStamp), "stamp", func() {
 		
 	})
@@ -223,6 +207,11 @@ var Period = Type("Period", func() {
 		Example("2020-01-01T00:00:00Z")
 	})
 	Required("startTime", "endTime")
+})
+
+var UUID = Type("UUID", String, func() {
+	Description("Universally unique identifier")
+	Format(FormatUUID)
 })
 
 

@@ -73,6 +73,8 @@ type ElectricalReport struct {
 	Building string
 	// stamp
 	Stamp []*PowerStamp
+	// intervalType
+	IntervalType string
 }
 
 // EmissionsPayload is the payload type of the calc service get_emissions

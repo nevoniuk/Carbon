@@ -6,7 +6,9 @@ import (
 	//"fmt"
 	//"sync"
 	"time"
-
+	"github.com/google/uuid"
+	"github.com/satori/go.uuid"
+	"github.com/crossnokaye/facilityconfig"
 	"github.com/crossnokaye/carbon/services/calc/clients/power"
 	"github.com/crossnokaye/carbon/services/calc/clients/power_server"
 	"github.com/crossnokaye/carbon/services/calc/clients/storage"
@@ -24,6 +26,7 @@ type calcSvc struct {
 var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
 
+
 var reportdurations [6]string
 func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, psr power_server.Repository) *calcSvc {
 	ctx, cancel := context.WithCancel(ctx)
@@ -35,6 +38,8 @@ func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, psr powe
 		cancel: 			cancel,
 	}
 	reportdurations = [...]string{ "minute", "hourly", "daily", "weekly", "monthly", "yearly"}
+	
+	
 	return s
 }
 
@@ -47,8 +52,8 @@ func CalculateReports(context.Context, *gencalc.CarbonReport, *gencalc.Electrica
 }
 
 //uses store to get input for past-values service
-func GetControlPoints(context.Context, *gencalc.PastValuesPayload) ([]string, error) {
-
+func (s *calcSvc) GetControlPoints(context.Context, *gencalc.PastValuesPayload) ([]string, error) {
+	
 }
 
 //wrapper function for talking to power client
@@ -56,12 +61,12 @@ func GetControlPoints(context.Context, *gencalc.PastValuesPayload) ([]string, er
 //0's more than a minute resemble blackout
 
 
-func GetPower(context.Context, *gencalc.GetPowerPayload) (*gencalc.ElectricalReport, error) {
+func (s *calcSvc) GetPower(context.Context, *gencalc.GetPowerPayload) (*gencalc.ElectricalReport, error) {
 
 }
 
 //wrapper function for talking to storage client
-func GetEmissions(context.Context, *gencalc.RequestPayload) (*gencalc.CarbonReport, error) {
+func (s *calcSvc) GetEmissions(context.Context, *gencalc.RequestPayload) (*gencalc.CarbonReport, error) {
 
 }
 

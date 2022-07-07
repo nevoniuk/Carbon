@@ -101,9 +101,10 @@ func NewProtoGetPowerRequest(payload *calc.GetPowerPayload) *calcpb.GetPowerRequ
 // "calc" service from the gRPC response type.
 func NewGetPowerResult(message *calcpb.GetPowerResponse) *calc.ElectricalReport {
 	result := &calc.ElectricalReport{
-		Postalcode: message.Postalcode,
-		Facility:   message.Facility,
-		Building:   message.Building,
+		Postalcode:   message.Postalcode,
+		Facility:     message.Facility,
+		Building:     message.Building,
+		IntervalType: message.IntervalType,
 	}
 	if message.Period != nil {
 		result.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)

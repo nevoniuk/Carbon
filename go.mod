@@ -72,6 +72,7 @@ require (
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/satori/go.uuid v1.2.0
 	github.com/smartystreets/assertions v1.13.0 // indirect
 	goa.design/clue v0.7.0
 )

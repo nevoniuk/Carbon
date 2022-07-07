@@ -102,9 +102,10 @@ func NewGetPowerPayload(message *calcpb.GetPowerRequest) *calc.GetPowerPayload {
 // the "get_power" endpoint of the "calc" service.
 func NewProtoGetPowerResponse(result *calc.ElectricalReport) *calcpb.GetPowerResponse {
 	message := &calcpb.GetPowerResponse{
-		Postalcode: result.Postalcode,
-		Facility:   result.Facility,
-		Building:   result.Building,
+		Postalcode:   result.Postalcode,
+		Facility:     result.Facility,
+		Building:     result.Building,
+		IntervalType: result.IntervalType,
 	}
 	if result.Period != nil {
 		message.Period = svcCalcPeriodToCalcpbPeriod(result.Period)

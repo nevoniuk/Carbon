@@ -103,6 +103,8 @@ message GetPowerResponse {
 	string building = 4;
 	// stamp
 	repeated PowerStamp stamp = 5;
+	// intervalType
+	string interval_type = 6;
 }
 
 message PowerStamp {

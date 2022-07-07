@@ -24,7 +24,7 @@ func BuildCalculateReportsPayload(calcCalculateReportsMessage string) (*calc.Car
 		if calcCalculateReportsMessage != "" {
 			err = json.Unmarshal([]byte(calcCalculateReportsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Duration\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"duration_type\": \"Labore enim laudantium voluptatem non ratione.\",\n      \"generated_rate\": 37.8267,\n      \"region\": \"MISO, ISO...\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Duration\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"duration_type\": \"Quis sed.\",\n      \"generated_rate\": 37.8267,\n      \"region\": \"MISO, ISO...\"\n   }'")
 			}
 		}
 	}

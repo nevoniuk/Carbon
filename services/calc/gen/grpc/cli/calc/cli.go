@@ -33,7 +33,7 @@ func UsageExamples() string {
          "endTime": "2020-01-01T00:00:00Z",
          "startTime": "2020-01-01T00:00:00Z"
       },
-      "duration_type": "Labore enim laudantium voluptatem non ratione.",
+      "duration_type": "Quis sed.",
       "generated_rate": 37.8267,
       "region": "MISO, ISO..."
    }'` + "\n" +
@@ -206,7 +206,7 @@ Example:
          "endTime": "2020-01-01T00:00:00Z",
          "startTime": "2020-01-01T00:00:00Z"
       },
-      "duration_type": "Labore enim laudantium voluptatem non ratione.",
+      "duration_type": "Quis sed.",
       "generated_rate": 37.8267,
       "region": "MISO, ISO..."
    }'
