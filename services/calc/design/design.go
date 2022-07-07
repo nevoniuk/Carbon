@@ -172,7 +172,7 @@ var DataPoint = Type("DataPoint", func() {
 		//pounds of CO2
 	})
 
-	Required("Time", "carbon_rate",)
+	Required("time", "carbon_rate")
 })
 
 //reports read from past-values
