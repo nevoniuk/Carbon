@@ -19,20 +19,14 @@ type (
 		Init(context.Context, bool) error
 		// Retrieve last date there is available data in clickhouse
 		CheckDB(context.Context, string) (string, error)
-		// Save report for carbon intensity event only
+		
 		SaveCarbonReports(context.Context, []*genpoller.CarbonForecast) (error)
 
-		//GetCarbonReports(context.Context, string, genpoller.Period, string) ([]*genpoller.CarbonForecast)
-
-		//SaveFuelReports(ctx context.Context, reports []*FuelsForecast)
 		
 		Ping(context.Context) error
 		
-		//query data then update tables with aggregate information(generated data only)
-		//carbon data only
 		GetAggregateReports(context.Context, []*genpoller.Period, string, string) ([]*genpoller.CarbonForecast, error)
 
-		//SaveAggregateReports(context.Context, []*genpoller.AggregateData) (error)
 	}
 
 	client struct {

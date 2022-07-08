@@ -12,8 +12,7 @@ import (
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
-// Poller service example implementation.
-// The example methods log the requests and return zero values.
+
 type pollersrvc struct {
 	csc carbonara.Client
 	dbc storage.Client
@@ -27,7 +26,7 @@ var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
 //var regionstartdates map[string]string
 var regions [13]string
-var reportdurations [6]string
+var reportdurations [5]string
 	//ensurepastdata
 // NewPoller returns the Poller service implementation.
 func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *pollersrvc {
@@ -41,6 +40,7 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		minuteReports:		[][]*genpoller.CarbonForecast{},
 		
 	}
+
 	regions = [...]string{ "CAISO", "AESO", "BPA", "ERCO", "IESO",
        "ISONE", "MISO",
         "NYISO", "NYISO.NYCW",
@@ -62,7 +62,8 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		"PJM": "2020-01-1T00:00:00+00:00",
 		"SPP": "2020-01-1T00:00:00+00:00",
 	}
-	reportdurations = [...]string{ "minute", "hourly", "daily", "weekly", "monthly", "yearly"}
+
+	reportdurations = [...]string{ "minute", "hourly", "daily", "weekly", "monthly"}
 	
 	times := s.Ensurepastdata(ctx, regionstartdates)
 	fmt.Println("READ DATES")
@@ -80,7 +81,8 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 }
 
 func (s *pollersrvc) Ensurepastdata(ctx context.Context, regionstartdates map[string]string) (startDates []string) {
-	//configure start dates for each region 
+	//configure dates for each region where data is last available to make API call
+	//if no data is found for a region, return a default date from regionstartdates
 	var dates []string
 
 	for i := 0; i < len(regions); i++ {
@@ -224,10 +226,12 @@ func (ser *pollersrvc) AggregateData(ctx context.Context, input *genpoller.Aggre
 
 //NOTE: need function to get the dates from minute reports because some data may have not been available
 func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
+	
 	if minutereports == nil {
 		var err = fmt.Errorf("no reports for get dates")
 		return nil, err
 	}
+
 	var initialstart, err = time.Parse(timeFormat, minutereports[0].Duration.StartTime)
 
 	if err != nil {
@@ -239,32 +243,36 @@ func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 	var dailyDates []*genpoller.Period
 	var weeklyDates []*genpoller.Period
 	var monthlyDates []*genpoller.Period
-	var yearlyDates []*genpoller.Period
-
-	var hourstart = initialstart
-	//var hourend = initialstart
-
-	var daystart = initialstart
-	//var dayend = initialstart
-
-	var weekstart = initialstart
-	//var weekend = initialstart
-
-	var monthstart = initialstart
-	//var monthend = initialstart
-
-	var yearstart = initialstart
-	//var yearend = initialstart
 	
+
+//will always be the begginning of the hour
+	var hourstart = initialstart
+	
+//will always be the beginning of the day
+	var daystart = initialstart
+	
+//will always be the beginning of the week
+	var weekstart = initialstart
+
+	year, month, day := initialstart.Date()
+
+	var monthstart time.Time
+	//adjust to be the beginning of the month
+	if day != 1 {
+		monthstart = time.Date(year, month, 1 ,0,0,0,0, initialstart.Location())
+	} else {
+		monthstart = initialstart
+	}
+
 	var previous = initialstart
 	
 
 	var hourcounter = time.Time.Hour(initialstart)
 	var daycounter = time.Time.Day(initialstart)
 	var weekcounter = 0
-	//fmt.Printf("day counter is %d\n", daycounter)
+	
 	var monthcounter = time.Time.Month(initialstart)
-	var yearcounter = time.Time.Year(initialstart)
+	
 
 	
 	for _, event := range minutereports {
@@ -274,7 +282,7 @@ func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 			return nil, fmt.Errorf("parsing error")
 		}
 	
-		var year = time.Year()
+		
 		var month = time.Month()
 		var day = time.Day()
 		var hour = time.Hour()
@@ -286,31 +294,18 @@ func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 				
 				monthcounter = month
 				monthlyDates = append(monthlyDates, &genpoller.Period{monthstart.Format(timeFormat), previous.Format(timeFormat)})
-				//fmt.Println("MONTHLY DATE")
-				//fmt.Println(&genpoller.Period{monthstart.Format(timeFormat), previous.Format(timeFormat)})
 				monthstart = time
-			}
-
-			if year != yearcounter {
-				
-				yearcounter = year
-				yearlyDates = append(yearlyDates, &genpoller.Period{yearstart.Format(timeFormat), previous.Format(timeFormat)})
-				yearstart = time
 			}
 
 			if day != daycounter {
 				daycounter = day
 				weekcounter += 1
-				//fmt.Println("DAILY DATE")
 				dailyDates = append(dailyDates, &genpoller.Period{daystart.Format(timeFormat), previous.Format(timeFormat)})
-				///fmt.Println(&genpoller.Period{daystart.Format(timeFormat), previous.Format(timeFormat)})
 				
 				daystart = time
-				//might be 8 instead
+				
 				if weekcounter == 7 {
 					weeklyDates = append(weeklyDates, &genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
-					//fmt.Println("WEEKLYDATE")
-					//fmt.Println(&genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
 					weekstart = time
 					weekcounter = 0
 				}
@@ -318,32 +313,32 @@ func getdates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 
 			hourcounter = hour
 			hourlyDates = append(hourlyDates, &genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
-			//fmt.Println("HOURLYDATE")
-			//fmt.Println(&genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
-			//fmt.Println(&genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
 			hourstart = time
 		}
 
 		previous = time
 
 	}
-	//handle the case where only one day was returned
+
+	
 	if daycounter == time.Time.Day(initialstart) {
-		//fmt.Println("day counter is the same")
+		
 		dailyDates = append(dailyDates, &genpoller.Period{daystart.Format(timeFormat),previous.Format(timeFormat)})
-		//fmt.Println(dailyDates[0])
 	}
-	//finalDates = append(finalDates, hourlyDates, dailyDates, weeklyDates, monthlyDates, yearlyDates)
+	
 	finalDates = append(finalDates, hourlyDates)
 	finalDates = append(finalDates, dailyDates)
 	finalDates = append(finalDates, weeklyDates)
 	finalDates = append(finalDates, monthlyDates)
-	finalDates = append(finalDates, yearlyDates)
+	
+
 	for _, date := range finalDates {
 		fmt.Println("DATE")
 		fmt.Println(date)
 	}
 	return finalDates, nil
 }
+
+
 
 
