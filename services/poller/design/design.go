@@ -15,8 +15,10 @@ var _ = Service("Poller", func() {
 
 	Method("update", func() {
 		Description("query Singularity's search endpoint and convert 5 min interval reports into averages")
+		Error("server_error", ErrorResult, "Error with Singularity Server.")
+		//Error("no_data", ErrorResult, "No new data available for any region")
 		GRPC(func() {
-			Response("no_data", CodeOutOfRange)
+			//Response("no_data", CodeOutOfRange)
 			Response("server_error", CodeNotFound)
 		})
 	})
@@ -25,6 +27,9 @@ var _ = Service("Poller", func() {
 		Description("query search endpoint for a region.")
 		Payload(CarbonPayload)
 		Result(CarbonForecast)
+		Error("server_error", ErrorResult, "Error with Singularity Server.")
+		Error("no_data", ErrorResult, "No new data available for any region")
+		Error("region_not_found", ErrorResult, "The given region is not represented by Singularity")
 		GRPC(func() {
 			Response("no_data", CodeOutOfRange)
 			Response("region_not_found", CodeNotFound)
