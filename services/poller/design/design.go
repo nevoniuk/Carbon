@@ -15,12 +15,21 @@ var _ = Service("Poller", func() {
 
 	Method("update", func() {
 		Description("query Singularity's search endpoint and convert 5 min interval reports into averages")
+		GRPC(func() {
+			Response("no_data", CodeOutOfRange)
+			Response("server_error", CodeNotFound)
+		})
 	})
 
 	Method("get_emissions_for_region", func() {
 		Description("query search endpoint for a region.")
 		Payload(CarbonPayload)
 		Result(CarbonForecast)
+		GRPC(func() {
+			Response("no_data", CodeOutOfRange)
+			Response("region_not_found", CodeNotFound)
+			Response("server_error", CodeNotFound)
+		})
 	})
 	
 })
