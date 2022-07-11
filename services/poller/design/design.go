@@ -13,32 +13,14 @@ var _ = API("Poller", func() {
 var _ = Service("Poller", func() {
 	Description("Service that provides forecasts to clickhouse from Carbonara API")
 
-	Method("carbon_emissions", func() {
-		Description("query api getting search data for carbon_intensity event. Return reports in 5 minute intervals")
-		Payload(CarbonPayload)
-		Result(ArrayOf(CarbonForecast))
-		//payload is region and start time
-		//result is minute reports
-		
-		//Error("data_not_available", ErrorResult, "The data is not available or server error")
-		//Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
-		GRPC(func() {
-			//Response("data_not_available", CodeDataLoss)
-			//Response("missing-required-parameter", CodeNotFound)
-		})
+	Method("update", func() {
+		Description("query Singularity's search endpoint and convert 5 min interval reports into averages")
 	})
-	Method("aggregate_data", func() {
-		Description("convert 5 minute reports into hourly, daily, monthly, yearly reports using clickhouse aggregate queries")
-		Payload(AggregatePayload)
-		//region and dates to get reports for
 
-		//Error("data_not_available", ErrorResult, "The data is not available or server error")
-		//Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
-		Error("missing-required-parameter", ErrorResult, "missing-required-parameter")
-		GRPC(func() {
-			//Response("data_not_available", CodeDataLoss)
-			//Response("missing-required-parameter", CodeNotFound)
-		})
+	Method("get_emissions_for_region", func() {
+		Description("query search endpoint for a region.")
+		Payload(CarbonPayload)
+		Result(CarbonForecast)
 	})
 	
 })
@@ -68,34 +50,6 @@ var CarbonForecast = Type("CarbonForecast", func() {
 	Required("generated_rate", "marginal_rate", "consumed_rate", "generated_source", "region", "Duration", "duration_type")
 })
 
-/**
-var AggregateData = Type("aggregateData", func() {
-
-	Field(1, "average", Float64, "average", func() {
-		Example(37.8267)
-	})
-	Field(2, "min", Float64, "min", func() {
-		Example(37.8267)
-	})
-	Field(3, "max", Float64, "max", func() {
-		Example(37.8267)
-	})
-	Field(4, "sum", Float64, "sum", func() {
-		Example(37.8267)
-	})
-	Field(5, "count", Int, "count", func() {
-		Example(50)
-	})
-	Field(6, "duration", Period, "duration", func() {
-		//Example(37.8267)
-	})
-	Field(7, "report_type", String, "report_type", func() {
-		Example("hourly")
-	})
-
-	Required("average", "count", "max", "min", "sum", "duration", "report_type")
-})
-*/
 
 var Period = Type("Period", func() {
 	Description("Period of time from start to end of Forecast")
@@ -117,8 +71,12 @@ var CarbonPayload = Type("CarbonPayload", func() {
 		Format(FormatDateTime)
 		Example("2020-01-01T00:00:00Z")
 	})
+	Field(3, "end", String, "end", func() {
+		Format(FormatDateTime)
+		Example("2020-01-01T00:00:00Z")
+	})
 })
-
+/**
 var AggregatePayload = Type("AggregatePayload", func() {
 	Field(1, "region", String, "region", func() {
 	})
@@ -129,3 +87,4 @@ var AggregatePayload = Type("AggregatePayload", func() {
 	
 	})
 })
+*/
