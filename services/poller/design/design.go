@@ -26,7 +26,7 @@ var _ = Service("Poller", func() {
 	Method("get_emissions_for_region", func() {
 		Description("query search endpoint for a region.")
 		Payload(CarbonPayload)
-		Result(CarbonForecast)
+		Result(ArrayOf(CarbonForecast))
 		Error("server_error", ErrorResult, "Error with Singularity Server.")
 		Error("no_data", ErrorResult, "No new data available for any region")
 		Error("region_not_found", ErrorResult, "The given region is not represented by Singularity")
