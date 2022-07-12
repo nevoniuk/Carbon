@@ -17,7 +17,7 @@ var _ = Service("calc", func() {
 	Method("handle_requests", func() {
 		Description("This endpoint is used by a front end service to return energy usage information")
 		Payload(RequestPayload)
-		Result(EmissionsReport)
+		Result(AllReports)
 		GRPC(func() {})
 	})
 
