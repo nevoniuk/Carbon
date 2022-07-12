@@ -17,11 +17,11 @@ var _ = Service("calc", func() {
 	Method("handle_requests", func() {
 		Description("This endpoint is used by a front end service to return energy usage information")
 		Payload(RequestPayload)
-		Result(ArrayOf(CarbonReport), ArrayOf(ElectricalReport), ArrayOf(TotalReport))
+		Result(EmissionsReport)
 		GRPC(func() {})
 	})
 
-	Method("carbonreport", func() {
+	Method("carbon_report", func() {
 		Description("Make reports available to external/R&D clients")
 		GRPC(func() {})
 	})
@@ -35,6 +35,14 @@ var EmissionsPayload = Type("EmissionsPayload", func() {
 	Field(2, "interval", String, "interval", func() {
 		Example("hours, days, weeks, months, years")
 	})
+})
+
+var AllReports = Type("AllReports", func() {
+	Description("CO2 intensity reports, power reports, and CO2 emission reports")
+	Field(1, "carbon_intensity_reports", ArrayOf(CarbonReport), "carbon_intensity_reports")
+	Field(2, "power_reports", ArrayOf(ElectricalReport), "power_reports")
+	Field(3, "total_emission_reports", ArrayOf(EmissionsReport), "total_emission_reports")
+	Required("carbon_intensity_reports", "power_reports", "total_emission_reports")
 })
 
 var RequestPayload = Type("RequestPayload", func() {
@@ -52,35 +60,7 @@ var RequestPayload = Type("RequestPayload", func() {
 	Required("org", "Period", "building", "interval")
 })
 
-
-
-var PastValuesPayload = Type("PastValuesPayload", func() {
-	Description("Payload to get the control points")
-
-	Field(1, "org", UUID, "org")
-
-	Field(2, "Period", Period, "Period")
-
-	Field(3, "building", UUID, "building")
-
-	Required("org", "Period", "building")
-})
-
-var GetPowerPayload = Type("GetPowerPayload", func() {
-	Description("Payload for the past values get-values function")
-
-	Field(1, "org", UUID, "org")
-
-	Field(2, "Period", Period, "Period")
-
-	Field(3, "cps", ArrayOf(UUID), "cps")
-
-	Field(4, "interval", Int64, "samping interval")
-
-	Required("org", "Period", "cps", "interval")
-})
-
-var TotalReport = Type("TotalReport", func() {
+var EmissionsReport = Type("EmissionsReport", func() {
 	Description("Carbon/Energy Generation Report")
 	
 	Field(1, "Duration", Period, "Duration")
