@@ -55,13 +55,10 @@ var CarbonForecast = Type("CarbonForecast", func() {
 
 	Field(5, "duration_type", String, "duration_type")
 
-	Field(6, "generated_source", String, "generated_source", func() {
-		Example("EGRID_2019")
-	})
 	Field(7, "region", String, "region", func() {
 		Example("MISO, ISO...")
 	})
-	Required("generated_rate", "marginal_rate", "consumed_rate", "generated_source", "region", "Duration", "duration_type")
+	Required("generated_rate", "marginal_rate", "consumed_rate", "region", "Duration", "duration_type")
 })
 
 
@@ -90,15 +87,3 @@ var CarbonPayload = Type("CarbonPayload", func() {
 		Example("2020-01-01T00:00:00Z")
 	})
 })
-/**
-var AggregatePayload = Type("AggregatePayload", func() {
-	Field(1, "region", String, "region", func() {
-	})
-	Field(2, "periods", ArrayOf(Period), "periods", func() {
-	
-	})
-	Field(3, "duration", String, "duration", func() {
-	
-	})
-})
-*/
