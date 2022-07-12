@@ -67,8 +67,11 @@ func (c *client) Init(ctx context.Context, test bool) error {
 	*/
 
 	err = c.chcon.Exec(ctx, `
-			CREATE TABLE IF NOT EXISTS carbondb.carbon_reports (
-					
+			CREATE TABLE IF NOT EXISTS carbondb.power_reports (
+				start DateTime,
+				end DateTime,
+				generatedrate Float64,
+				
 				) Engine =  MergeTree()
 				ORDER BY (start)
 	`) 

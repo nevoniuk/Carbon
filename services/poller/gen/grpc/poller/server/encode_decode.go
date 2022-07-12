@@ -16,64 +16,42 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// EncodeCarbonEmissionsResponse encodes responses from the "Poller" service
-// "carbon_emissions" endpoint.
-func EncodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.([]*poller.CarbonForecast)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "[]*poller.CarbonForecast", v)
-	}
-	resp := NewProtoCarbonEmissionsResponse(result)
+// EncodeUpdateResponse encodes responses from the "Poller" service "update"
+// endpoint.
+func EncodeUpdateResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
+	resp := NewProtoUpdateResponse()
 	return resp, nil
 }
 
-// DecodeCarbonEmissionsRequest decodes requests sent to "Poller" service
-// "carbon_emissions" endpoint.
-func DecodeCarbonEmissionsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+// EncodeGetEmissionsForRegionResponse encodes responses from the "Poller"
+// service "get_emissions_for_region" endpoint.
+func EncodeGetEmissionsForRegionResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
+	result, ok := v.([]*poller.CarbonForecast)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("Poller", "get_emissions_for_region", "[]*poller.CarbonForecast", v)
+	}
+	resp := NewProtoGetEmissionsForRegionResponse(result)
+	return resp, nil
+}
+
+// DecodeGetEmissionsForRegionRequest decodes requests sent to "Poller" service
+// "get_emissions_for_region" endpoint.
+func DecodeGetEmissionsForRegionRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
 	var (
-		message *pollerpb.CarbonEmissionsRequest
+		message *pollerpb.GetEmissionsForRegionRequest
 		ok      bool
 	)
 	{
-		if message, ok = v.(*pollerpb.CarbonEmissionsRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "*pollerpb.CarbonEmissionsRequest", v)
+		if message, ok = v.(*pollerpb.GetEmissionsForRegionRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("Poller", "get_emissions_for_region", "*pollerpb.GetEmissionsForRegionRequest", v)
 		}
-		if err := ValidateCarbonEmissionsRequest(message); err != nil {
+		if err := ValidateGetEmissionsForRegionRequest(message); err != nil {
 			return nil, err
 		}
 	}
 	var payload *poller.CarbonPayload
 	{
-		payload = NewCarbonEmissionsPayload(message)
-	}
-	return payload, nil
-}
-
-// EncodeAggregateDataResponse encodes responses from the "Poller" service
-// "aggregate_data" endpoint.
-func EncodeAggregateDataResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	resp := NewProtoAggregateDataResponse()
-	return resp, nil
-}
-
-// DecodeAggregateDataRequest decodes requests sent to "Poller" service
-// "aggregate_data" endpoint.
-func DecodeAggregateDataRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
-	var (
-		message *pollerpb.AggregateDataRequest
-		ok      bool
-	)
-	{
-		if message, ok = v.(*pollerpb.AggregateDataRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "*pollerpb.AggregateDataRequest", v)
-		}
-		if err := ValidateAggregateDataRequest(message); err != nil {
-			return nil, err
-		}
-	}
-	var payload *poller.AggregatePayload
-	{
-		payload = NewAggregateDataPayload(message)
+		payload = NewGetEmissionsForRegionPayload(message)
 	}
 	return payload, nil
 }

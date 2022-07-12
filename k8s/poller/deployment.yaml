@@ -33,9 +33,9 @@ spec:
           args:
             - "-agent-addr=grafana-agent-deployment.monitoring.svc.cluster.local.:4317"
           ports:
-            - containerPort: 12200
+            - containerPort: 12500
               name: grpc
-            - containerPort: 12201
+            - containerPort: 12501
               name: http-metrics
           readinessProbe:
             httpGet:

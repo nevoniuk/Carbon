@@ -10,7 +10,7 @@ package power
 import (
 	"context"
 	"time"
-	//"fmt"
+	"fmt"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc"
 	//"github.com/google/uuid"
@@ -158,3 +158,6 @@ func toPower(r interface{}) (*gencalc.ElectricalReport, error) {
 
 	return report, nil
 }
+
+
+

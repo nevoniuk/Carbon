@@ -18,12 +18,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PollerClient interface {
-	// query api getting search data for carbon_intensity event. Return reports in
-	// 5 minute intervals
-	CarbonEmissions(ctx context.Context, in *CarbonEmissionsRequest, opts ...grpc.CallOption) (*CarbonEmissionsResponse, error)
-	// convert 5 minute reports into hourly, daily, monthly, yearly reports using
-	// clickhouse aggregate queries
-	AggregateData(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error)
+	// query Singularity's search endpoint and convert 5 min interval reports into
+	// averages
+	Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error)
+	// query search endpoint for a region.
+	GetEmissionsForRegion(ctx context.Context, in *GetEmissionsForRegionRequest, opts ...grpc.CallOption) (*GetEmissionsForRegionResponse, error)
 }
 
 type pollerClient struct {
@@ -34,18 +33,18 @@ func NewPollerClient(cc grpc.ClientConnInterface) PollerClient {
 	return &pollerClient{cc}
 }
 
-func (c *pollerClient) CarbonEmissions(ctx context.Context, in *CarbonEmissionsRequest, opts ...grpc.CallOption) (*CarbonEmissionsResponse, error) {
-	out := new(CarbonEmissionsResponse)
-	err := c.cc.Invoke(ctx, "/poller.Poller/CarbonEmissions", in, out, opts...)
+func (c *pollerClient) Update(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateResponse, error) {
+	out := new(UpdateResponse)
+	err := c.cc.Invoke(ctx, "/poller.Poller/Update", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *pollerClient) AggregateData(ctx context.Context, in *AggregateDataRequest, opts ...grpc.CallOption) (*AggregateDataResponse, error) {
-	out := new(AggregateDataResponse)
-	err := c.cc.Invoke(ctx, "/poller.Poller/AggregateData", in, out, opts...)
+func (c *pollerClient) GetEmissionsForRegion(ctx context.Context, in *GetEmissionsForRegionRequest, opts ...grpc.CallOption) (*GetEmissionsForRegionResponse, error) {
+	out := new(GetEmissionsForRegionResponse)
+	err := c.cc.Invoke(ctx, "/poller.Poller/GetEmissionsForRegion", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +55,11 @@ func (c *pollerClient) AggregateData(ctx context.Context, in *AggregateDataReque
 // All implementations must embed UnimplementedPollerServer
 // for forward compatibility
 type PollerServer interface {
-	// query api getting search data for carbon_intensity event. Return reports in
-	// 5 minute intervals
-	CarbonEmissions(context.Context, *CarbonEmissionsRequest) (*CarbonEmissionsResponse, error)
-	// convert 5 minute reports into hourly, daily, monthly, yearly reports using
-	// clickhouse aggregate queries
-	AggregateData(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error)
+	// query Singularity's search endpoint and convert 5 min interval reports into
+	// averages
+	Update(context.Context, *UpdateRequest) (*UpdateResponse, error)
+	// query search endpoint for a region.
+	GetEmissionsForRegion(context.Context, *GetEmissionsForRegionRequest) (*GetEmissionsForRegionResponse, error)
 	mustEmbedUnimplementedPollerServer()
 }
 
@@ -69,11 +67,11 @@ type PollerServer interface {
 type UnimplementedPollerServer struct {
 }
 
-func (UnimplementedPollerServer) CarbonEmissions(context.Context, *CarbonEmissionsRequest) (*CarbonEmissionsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CarbonEmissions not implemented")
+func (UnimplementedPollerServer) Update(context.Context, *UpdateRequest) (*UpdateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
-func (UnimplementedPollerServer) AggregateData(context.Context, *AggregateDataRequest) (*AggregateDataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AggregateData not implemented")
+func (UnimplementedPollerServer) GetEmissionsForRegion(context.Context, *GetEmissionsForRegionRequest) (*GetEmissionsForRegionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEmissionsForRegion not implemented")
 }
 func (UnimplementedPollerServer) mustEmbedUnimplementedPollerServer() {}
 
@@ -88,38 +86,38 @@ func RegisterPollerServer(s grpc.ServiceRegistrar, srv PollerServer) {
 	s.RegisterService(&Poller_ServiceDesc, srv)
 }
 
-func _Poller_CarbonEmissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CarbonEmissionsRequest)
+func _Poller_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PollerServer).CarbonEmissions(ctx, in)
+		return srv.(PollerServer).Update(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/poller.Poller/CarbonEmissions",
+		FullMethod: "/poller.Poller/Update",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PollerServer).CarbonEmissions(ctx, req.(*CarbonEmissionsRequest))
+		return srv.(PollerServer).Update(ctx, req.(*UpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Poller_AggregateData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AggregateDataRequest)
+func _Poller_GetEmissionsForRegion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEmissionsForRegionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PollerServer).AggregateData(ctx, in)
+		return srv.(PollerServer).GetEmissionsForRegion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/poller.Poller/AggregateData",
+		FullMethod: "/poller.Poller/GetEmissionsForRegion",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PollerServer).AggregateData(ctx, req.(*AggregateDataRequest))
+		return srv.(PollerServer).GetEmissionsForRegion(ctx, req.(*GetEmissionsForRegionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -132,12 +130,12 @@ var Poller_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*PollerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CarbonEmissions",
-			Handler:    _Poller_CarbonEmissions_Handler,
+			MethodName: "Update",
+			Handler:    _Poller_Update_Handler,
 		},
 		{
-			MethodName: "AggregateData",
-			Handler:    _Poller_AggregateData_Handler,
+			MethodName: "GetEmissionsForRegion",
+			Handler:    _Poller_GetEmissionsForRegion_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -12,6 +12,7 @@ import (
 
 	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
 	goagrpc "goa.design/goa/v3/grpc"
+	goapb "goa.design/goa/v3/grpc/pb"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc"
 )
@@ -30,33 +31,44 @@ func NewClient(cc *grpc.ClientConn, opts ...grpc.CallOption) *Client {
 	}
 }
 
-// CarbonEmissions calls the "CarbonEmissions" function in
-// pollerpb.PollerClient interface.
-func (c *Client) CarbonEmissions() goa.Endpoint {
+// Update calls the "Update" function in pollerpb.PollerClient interface.
+func (c *Client) Update() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
-			BuildCarbonEmissionsFunc(c.grpccli, c.opts...),
-			EncodeCarbonEmissionsRequest,
-			DecodeCarbonEmissionsResponse)
+			BuildUpdateFunc(c.grpccli, c.opts...),
+			nil,
+			nil)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
-			return nil, goa.Fault(err.Error())
+			resp := goagrpc.DecodeError(err)
+			switch message := resp.(type) {
+			case *goapb.ErrorResponse:
+				return nil, goagrpc.NewServiceError(message)
+			default:
+				return nil, goa.Fault(err.Error())
+			}
 		}
 		return res, nil
 	}
 }
 
-// AggregateData calls the "AggregateData" function in pollerpb.PollerClient
-// interface.
-func (c *Client) AggregateData() goa.Endpoint {
+// GetEmissionsForRegion calls the "GetEmissionsForRegion" function in
+// pollerpb.PollerClient interface.
+func (c *Client) GetEmissionsForRegion() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
-			BuildAggregateDataFunc(c.grpccli, c.opts...),
-			EncodeAggregateDataRequest,
-			nil)
+			BuildGetEmissionsForRegionFunc(c.grpccli, c.opts...),
+			EncodeGetEmissionsForRegionRequest,
+			DecodeGetEmissionsForRegionResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
-			return nil, goa.Fault(err.Error())
+			resp := goagrpc.DecodeError(err)
+			switch message := resp.(type) {
+			case *goapb.ErrorResponse:
+				return nil, goagrpc.NewServiceError(message)
+			default:
+				return nil, goa.Fault(err.Error())
+			}
 		}
 		return res, nil
 	}

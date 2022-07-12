@@ -25,8 +25,8 @@ go install goa.design/model/cmd/mdl@latest
 go install goa.design/goa/v3/...@v3
 go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
-go install github.com/DarthSim/overmind/v2@v2.2.2
-
+#go install github.com/DarthSim/overmind/v2@latest
+go install github.com/vektra/mockery/v2@latest
 
 ./scripts/build
 

@@ -15,16 +15,16 @@ import (
 	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
-// BuildCarbonEmissionsPayload builds the payload for the Poller
-// carbon_emissions endpoint from CLI flags.
-func BuildCarbonEmissionsPayload(pollerCarbonEmissionsMessage string) (*poller.CarbonPayload, error) {
+// BuildGetEmissionsForRegionPayload builds the payload for the Poller
+// get_emissions_for_region endpoint from CLI flags.
+func BuildGetEmissionsForRegionPayload(pollerGetEmissionsForRegionMessage string) (*poller.CarbonPayload, error) {
 	var err error
-	var message pollerpb.CarbonEmissionsRequest
+	var message pollerpb.GetEmissionsForRegionRequest
 	{
-		if pollerCarbonEmissionsMessage != "" {
-			err = json.Unmarshal([]byte(pollerCarbonEmissionsMessage), &message)
+		if pollerGetEmissionsForRegionMessage != "" {
+			err = json.Unmarshal([]byte(pollerGetEmissionsForRegionMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"region\": \"Minus dolores.\",\n      \"start\": \"2020-01-01T00:00:00Z\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"end\": \"2020-01-01T00:00:00Z\",\n      \"region\": \"Aut sit inventore itaque est.\",\n      \"start\": \"2020-01-01T00:00:00Z\"\n   }'")
 			}
 		}
 	}
@@ -35,38 +35,8 @@ func BuildCarbonEmissionsPayload(pollerCarbonEmissionsMessage string) (*poller.C
 	if message.Start != "" {
 		v.Start = &message.Start
 	}
-
-	return v, nil
-}
-
-// BuildAggregateDataPayload builds the payload for the Poller aggregate_data
-// endpoint from CLI flags.
-func BuildAggregateDataPayload(pollerAggregateDataMessage string) (*poller.AggregatePayload, error) {
-	var err error
-	var message pollerpb.AggregateDataRequest
-	{
-		if pollerAggregateDataMessage != "" {
-			err = json.Unmarshal([]byte(pollerAggregateDataMessage), &message)
-			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"duration\": \"Dolores quia magni veniam quidem sapiente architecto.\",\n      \"periods\": [\n         {\n            \"endTime\": \"2020-01-01T00:00:00Z\",\n            \"startTime\": \"2020-01-01T00:00:00Z\"\n         },\n         {\n            \"endTime\": \"2020-01-01T00:00:00Z\",\n            \"startTime\": \"2020-01-01T00:00:00Z\"\n         }\n      ],\n      \"region\": \"Rerum nisi quisquam reiciendis aliquam pariatur sit.\"\n   }'")
-			}
-		}
-	}
-	v := &poller.AggregatePayload{}
-	if message.Region != "" {
-		v.Region = &message.Region
-	}
-	if message.Duration != "" {
-		v.Duration = &message.Duration
-	}
-	if message.Periods != nil {
-		v.Periods = make([]*poller.Period, len(message.Periods))
-		for i, val := range message.Periods {
-			v.Periods[i] = &poller.Period{
-				StartTime: val.StartTime,
-				EndTime:   val.EndTime,
-			}
-		}
+	if message.End != "" {
+		v.End = &message.End
 	}
 
 	return v, nil

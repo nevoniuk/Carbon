@@ -15,12 +15,11 @@ import (
 
 // Service that provides forecasts to clickhouse from Carbonara API
 type Service interface {
-	// query api getting search data for carbon_intensity event. Return reports in
-	// 5 minute intervals
-	CarbonEmissions(context.Context, *CarbonPayload) (res []*CarbonForecast, err error)
-	// convert 5 minute reports into hourly, daily, monthly, yearly reports using
-	// clickhouse aggregate queries
-	AggregateData(context.Context, *AggregatePayload) (err error)
+	// query Singularity's search endpoint and convert 5 min interval reports into
+	// averages
+	Update(context.Context) (err error)
+	// query search endpoint for a region.
+	GetEmissionsForRegion(context.Context, *CarbonPayload) (res []*CarbonForecast, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -31,18 +30,7 @@ const ServiceName = "Poller"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"carbon_emissions", "aggregate_data"}
-
-// AggregatePayload is the payload type of the Poller service aggregate_data
-// method.
-type AggregatePayload struct {
-	// region
-	Region *string
-	// periods
-	Periods []*Period
-	// duration
-	Duration *string
-}
+var MethodNames = [2]string{"update", "get_emissions_for_region"}
 
 // Emissions Forecast
 type CarbonForecast struct {
@@ -56,19 +44,19 @@ type CarbonForecast struct {
 	Duration *Period
 	// duration_type
 	DurationType string
-	// generated_source
-	GeneratedSource string
 	// region
 	Region string
 }
 
-// CarbonPayload is the payload type of the Poller service carbon_emissions
-// method.
+// CarbonPayload is the payload type of the Poller service
+// get_emissions_for_region method.
 type CarbonPayload struct {
 	// region
 	Region *string
 	// start
 	Start *string
+	// end
+	End *string
 }
 
 // Period of time from start to end of Forecast
@@ -79,10 +67,28 @@ type Period struct {
 	EndTime string
 }
 
-// MakeMissingRequiredParameter builds a goa.ServiceError from an error.
-func MakeMissingRequiredParameter(err error) *goa.ServiceError {
+// MakeServerError builds a goa.ServiceError from an error.
+func MakeServerError(err error) *goa.ServiceError {
 	return &goa.ServiceError{
-		Name:    "missing-required-parameter",
+		Name:    "server_error",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
+	}
+}
+
+// MakeNoData builds a goa.ServiceError from an error.
+func MakeNoData(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "no_data",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
+	}
+}
+
+// MakeRegionNotFound builds a goa.ServiceError from an error.
+func MakeRegionNotFound(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "region_not_found",
 		ID:      goa.NewErrorID(),
 		Message: err.Error(),
 	}

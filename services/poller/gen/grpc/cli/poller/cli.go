@@ -22,16 +22,13 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `poller (carbon-emissions|aggregate-data)
+	return `poller (update|get-emissions-for-region)
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` poller carbon-emissions --message '{
-      "region": "Minus dolores.",
-      "start": "2020-01-01T00:00:00Z"
-   }'` + "\n" +
+	return os.Args[0] + ` poller update` + "\n" +
 		""
 }
 
@@ -41,15 +38,14 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	var (
 		pollerFlags = flag.NewFlagSet("poller", flag.ContinueOnError)
 
-		pollerCarbonEmissionsFlags       = flag.NewFlagSet("carbon-emissions", flag.ExitOnError)
-		pollerCarbonEmissionsMessageFlag = pollerCarbonEmissionsFlags.String("message", "", "")
+		pollerUpdateFlags = flag.NewFlagSet("update", flag.ExitOnError)
 
-		pollerAggregateDataFlags       = flag.NewFlagSet("aggregate-data", flag.ExitOnError)
-		pollerAggregateDataMessageFlag = pollerAggregateDataFlags.String("message", "", "")
+		pollerGetEmissionsForRegionFlags       = flag.NewFlagSet("get-emissions-for-region", flag.ExitOnError)
+		pollerGetEmissionsForRegionMessageFlag = pollerGetEmissionsForRegionFlags.String("message", "", "")
 	)
 	pollerFlags.Usage = pollerUsage
-	pollerCarbonEmissionsFlags.Usage = pollerCarbonEmissionsUsage
-	pollerAggregateDataFlags.Usage = pollerAggregateDataUsage
+	pollerUpdateFlags.Usage = pollerUpdateUsage
+	pollerGetEmissionsForRegionFlags.Usage = pollerGetEmissionsForRegionUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -85,11 +81,11 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 		switch svcn {
 		case "poller":
 			switch epn {
-			case "carbon-emissions":
-				epf = pollerCarbonEmissionsFlags
+			case "update":
+				epf = pollerUpdateFlags
 
-			case "aggregate-data":
-				epf = pollerAggregateDataFlags
+			case "get-emissions-for-region":
+				epf = pollerGetEmissionsForRegionFlags
 
 			}
 
@@ -116,12 +112,12 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 		case "poller":
 			c := pollerc.NewClient(cc, opts...)
 			switch epn {
-			case "carbon-emissions":
-				endpoint = c.CarbonEmissions()
-				data, err = pollerc.BuildCarbonEmissionsPayload(*pollerCarbonEmissionsMessageFlag)
-			case "aggregate-data":
-				endpoint = c.AggregateData()
-				data, err = pollerc.BuildAggregateDataPayload(*pollerAggregateDataMessageFlag)
+			case "update":
+				endpoint = c.Update()
+				data = nil
+			case "get-emissions-for-region":
+				endpoint = c.GetEmissionsForRegion()
+				data, err = pollerc.BuildGetEmissionsForRegionPayload(*pollerGetEmissionsForRegionMessageFlag)
 			}
 		}
 	}
@@ -139,47 +135,34 @@ Usage:
     %[1]s [globalflags] poller COMMAND [flags]
 
 COMMAND:
-    carbon-emissions: query api getting search data for carbon_intensity event. Return reports in 5 minute intervals
-    aggregate-data: convert 5 minute reports into hourly, daily, monthly, yearly reports using clickhouse aggregate queries
+    update: query Singularity's search endpoint and convert 5 min interval reports into averages
+    get-emissions-for-region: query search endpoint for a region.
 
 Additional help:
     %[1]s poller COMMAND --help
 `, os.Args[0])
 }
-func pollerCarbonEmissionsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller carbon-emissions -message JSON
+func pollerUpdateUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller update
 
-query api getting search data for carbon_intensity event. Return reports in 5 minute intervals
-    -message JSON: 
+query Singularity's search endpoint and convert 5 min interval reports into averages
 
 Example:
-    %[1]s poller carbon-emissions --message '{
-      "region": "Minus dolores.",
-      "start": "2020-01-01T00:00:00Z"
-   }'
+    %[1]s poller update
 `, os.Args[0])
 }
 
-func pollerAggregateDataUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller aggregate-data -message JSON
+func pollerGetEmissionsForRegionUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller get-emissions-for-region -message JSON
 
-convert 5 minute reports into hourly, daily, monthly, yearly reports using clickhouse aggregate queries
+query search endpoint for a region.
     -message JSON: 
 
 Example:
-    %[1]s poller aggregate-data --message '{
-      "duration": "Dolores quia magni veniam quidem sapiente architecto.",
-      "periods": [
-         {
-            "endTime": "2020-01-01T00:00:00Z",
-            "startTime": "2020-01-01T00:00:00Z"
-         },
-         {
-            "endTime": "2020-01-01T00:00:00Z",
-            "startTime": "2020-01-01T00:00:00Z"
-         }
-      ],
-      "region": "Rerum nisi quisquam reiciendis aliquam pariatur sit."
+    %[1]s poller get-emissions-for-region --message '{
+      "end": "2020-01-01T00:00:00Z",
+      "region": "Aut sit inventore itaque est.",
+      "start": "2020-01-01T00:00:00Z"
    }'
 `, os.Args[0])
 }

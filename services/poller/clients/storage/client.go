@@ -10,23 +10,13 @@ import (
 )
 
 type (
-
-
 	Client interface {
-		// Init development database
 		Name() string
-
 		Init(context.Context, bool) error
-		// Retrieve last date there is available data in clickhouse
+		Ping(ctx context.Context) error
 		CheckDB(context.Context, string) (string, error)
-		
 		SaveCarbonReports(context.Context, []*genpoller.CarbonForecast) (error)
-
-		
-		Ping(context.Context) error
-		
 		GetAggregateReports(context.Context, []*genpoller.Period, string, string) ([]*genpoller.CarbonForecast, error)
-
 	}
 
 	client struct {
@@ -34,10 +24,9 @@ type (
 	}
 )
 const(
+	//timeFormat is used to parse times in order to store time as ISO8601 format
 	timeFormat = "2006-01-02T15:04:05-07:00"
-	dateFormat = "2006-01-02"
 )
-
 
 func (c *client) Name() string {
 	var name = "Clickhouse"
@@ -48,17 +37,13 @@ func New(chcon clickhouse.Conn) Client {
 	return &client{chcon}
 }
 
-//ping is the time it takes for a small data set to be transmitted from the device to a server on the internet 
 func (c *client) Ping(ctx context.Context) error {
 	return c.chcon.Ping(ctx)
 }
-
-//meant to return a "start" time for query to begin
-//returns a time if previous reports are found, otherwise nil
+//CheckDB returns a time if previous reports are found, otherwise nil
 func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 	var start time.Time
 	var err error
-	
 	if err = c.chcon.QueryRow(ctx, `
 			SELECT
 					MAX(start) as max_start
@@ -69,21 +54,20 @@ func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 					region = $1
 			`, region).Scan(&start); err != nil {
 
-				return "", fmt.Errorf("Error in checkDB: [%s]\n")
+				return "", fmt.Errorf("Error in CheckDB: [%s]\n")
 			}
+	
 	fmt.Println("START IS")
 	fmt.Println(start)
+
 	if start.Year() < 2000 {
 		err = fmt.Errorf("No records for given region")
 		return "", err
 	}
-	return convertTimeString(ctx, start.UTC()), err
-}
+	start = start.UTC()
 
-func convertTimeString(ctx context.Context, t time.Time) (string) {
-	return t.Format("2006-01-02T15:04:05-07:00")
+	return start.Format("2006-01-02T15:04:05-07:00"), err
 }
-
 
 func (c *client) Init(ctx context.Context, test bool) error {
 	if err := c.chcon.Ping(ctx); err != nil {
@@ -92,20 +76,16 @@ func (c *client) Init(ctx context.Context, test bool) error {
 		}
 		return err
 	}
-
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
 		return err
 	}
-
 	var err error 
-		
-	/**
-	err = c.chcon.Exec(ctx, `
+	if err = c.chcon.Exec(ctx, `
 			DROP TABLE carbondb.carbon_reports
-	`)
-	*/
-
-	err = c.chcon.Exec(ctx, `
+	`); err != nil {
+		return fmt.Errorf("Error initializing clickhouse[%s]", err)
+	}
+	if err = c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS carbondb.carbon_reports (
 					start DateTime,
 					end DateTime,
@@ -117,14 +97,14 @@ func (c *client) Init(ctx context.Context, test bool) error {
 					duration String
 				) Engine =  MergeTree()
 				ORDER BY (start)
-	`) 
-	
+	`); err != nil {
+		return fmt.Errorf("Error initializing clickhouse[%s]", err)
+	}
 	return err
-	
-		
 }
-
+//SaveCarbonReports saves CO2 intensity reports in clickhouse
 func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.CarbonForecast) (error) {
+	
 	res, err := c.chcon.PrepareBatch(ctx, `Insert INTO carbondb.carbon_reports (start,
 		 end, generatedrate, marginalrate, consumedrate, generatedsource, region, duration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`)
 	if err != nil {
@@ -132,41 +112,38 @@ func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.Car
 	}
 
 	for _, report := range reports {
+		
 		var startTime, err1 = time.Parse(timeFormat, report.Duration.StartTime)
 		fmt.Println("save reports start time is")
 		fmt.Println(startTime)
 		if err1 != nil {
-
 			return fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
 			report.Duration.StartTime, report, err1)
 		}
-		
+	
 		var endTime, err2 = time.Parse(timeFormat, report.Duration.EndTime)
 		fmt.Println("save reports endtime is ")
 		fmt.Println(endTime)
 		if err2 != nil {
-
 			return fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
 			report.Duration.EndTime, report, err2)
 		}
+
 		if err := res.Append(startTime.UTC(),
 			 endTime.UTC(), report.GeneratedRate, report.MarginalRate,
-			  report.ConsumedRate, report.GeneratedSource, report.Region, report.DurationType); err != nil {
+			  report.ConsumedRate, report.Region, report.DurationType); err != nil {
 				return fmt.Errorf("Error saving carbon reports: [%s]", err)
 			}
 	}
 
 	return res.Send()
 }
-
+//GetAggregateReports queries clickhouse for average CO2 intensity data
 func (c *client) GetAggregateReports(ctx context.Context,
 	 periods []*genpoller.Period, region string, duration string) ([]*genpoller.CarbonForecast, error) {
 	
 	var finalaggdata []*genpoller.CarbonForecast
-	
 	var aggdata *genpoller.CarbonForecast
-	
-	
 	var averagegen float64
 	var averagemarg float64
 	var averagecons float64
@@ -194,7 +171,6 @@ func (c *client) GetAggregateReports(ctx context.Context,
 			region = $1 AND start >= $2 AND end <= $3
 		GROUP BY region
 				`, region, newstart.UTC(), newend.UTC())
-		
 		err := rows.Scan(&averagegen, &averagemarg, &averagecons)
 
 		if err != nil {
@@ -202,7 +178,7 @@ func (c *client) GetAggregateReports(ctx context.Context,
 		}
 
 		aggdata = &genpoller.CarbonForecast{GeneratedRate: averagegen, MarginalRate: averagemarg, ConsumedRate: averagecons,
-			Duration: period, DurationType: duration, GeneratedSource: "", Region: region}
+			Duration: period, DurationType: duration, Region: region}
 		finalaggdata = append(finalaggdata, aggdata)	
 	}
 

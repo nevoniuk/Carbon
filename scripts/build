@@ -10,8 +10,9 @@ echo "Rebuilding services..."
 
 mkdir -p bin
 #for svc in poller calc; do
+#fix -X goa.design/clue/health.Version=$GIT_COMMIT for health checks purposes
 for svc in poller; do
-  go build -o bin/${svc} -ldflags "-X github.com/crossnokaye/carbon/health.GitCommit=$GIT_COMMIT" github.com/crossnokaye/carbon/services/${svc}/cmd/${svc}
+  go build -o bin/${svc} -ldflags "-X goa.design/clue/health.Version=$GIT_COMMIT" github.com/crossnokaye/carbon/services/${svc}/cmd/${svc}
 done
 
 popd

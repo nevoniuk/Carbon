@@ -13,9 +13,17 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// NewCarbonEmissionsPayload builds the payload of the "carbon_emissions"
-// endpoint of the "Poller" service from the gRPC request type.
-func NewCarbonEmissionsPayload(message *pollerpb.CarbonEmissionsRequest) *poller.CarbonPayload {
+// NewProtoUpdateResponse builds the gRPC response type from the result of the
+// "update" endpoint of the "Poller" service.
+func NewProtoUpdateResponse() *pollerpb.UpdateResponse {
+	message := &pollerpb.UpdateResponse{}
+	return message
+}
+
+// NewGetEmissionsForRegionPayload builds the payload of the
+// "get_emissions_for_region" endpoint of the "Poller" service from the gRPC
+// request type.
+func NewGetEmissionsForRegionPayload(message *pollerpb.GetEmissionsForRegionRequest) *poller.CarbonPayload {
 	v := &poller.CarbonPayload{}
 	if message.Region != "" {
 		v.Region = &message.Region
@@ -23,22 +31,24 @@ func NewCarbonEmissionsPayload(message *pollerpb.CarbonEmissionsRequest) *poller
 	if message.Start != "" {
 		v.Start = &message.Start
 	}
+	if message.End != "" {
+		v.End = &message.End
+	}
 	return v
 }
 
-// NewProtoCarbonEmissionsResponse builds the gRPC response type from the
-// result of the "carbon_emissions" endpoint of the "Poller" service.
-func NewProtoCarbonEmissionsResponse(result []*poller.CarbonForecast) *pollerpb.CarbonEmissionsResponse {
-	message := &pollerpb.CarbonEmissionsResponse{}
+// NewProtoGetEmissionsForRegionResponse builds the gRPC response type from the
+// result of the "get_emissions_for_region" endpoint of the "Poller" service.
+func NewProtoGetEmissionsForRegionResponse(result []*poller.CarbonForecast) *pollerpb.GetEmissionsForRegionResponse {
+	message := &pollerpb.GetEmissionsForRegionResponse{}
 	message.Field = make([]*pollerpb.CarbonForecast, len(result))
 	for i, val := range result {
 		message.Field[i] = &pollerpb.CarbonForecast{
-			GeneratedRate:   val.GeneratedRate,
-			MarginalRate:    val.MarginalRate,
-			ConsumedRate:    val.ConsumedRate,
-			DurationType:    val.DurationType,
-			GeneratedSource: val.GeneratedSource,
-			Region:          val.Region,
+			GeneratedRate: val.GeneratedRate,
+			MarginalRate:  val.MarginalRate,
+			ConsumedRate:  val.ConsumedRate,
+			DurationType:  val.DurationType,
+			Region:        val.Region,
 		}
 		if val.Duration != nil {
 			message.Field[i].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
@@ -47,62 +57,14 @@ func NewProtoCarbonEmissionsResponse(result []*poller.CarbonForecast) *pollerpb.
 	return message
 }
 
-// NewAggregateDataPayload builds the payload of the "aggregate_data" endpoint
-// of the "Poller" service from the gRPC request type.
-func NewAggregateDataPayload(message *pollerpb.AggregateDataRequest) *poller.AggregatePayload {
-	v := &poller.AggregatePayload{}
-	if message.Region != "" {
-		v.Region = &message.Region
-	}
-	if message.Duration != "" {
-		v.Duration = &message.Duration
-	}
-	if message.Periods != nil {
-		v.Periods = make([]*poller.Period, len(message.Periods))
-		for i, val := range message.Periods {
-			v.Periods[i] = &poller.Period{
-				StartTime: val.StartTime,
-				EndTime:   val.EndTime,
-			}
-		}
-	}
-	return v
-}
-
-// NewProtoAggregateDataResponse builds the gRPC response type from the result
-// of the "aggregate_data" endpoint of the "Poller" service.
-func NewProtoAggregateDataResponse() *pollerpb.AggregateDataResponse {
-	message := &pollerpb.AggregateDataResponse{}
-	return message
-}
-
-// ValidateCarbonEmissionsRequest runs the validations defined on
-// CarbonEmissionsRequest.
-func ValidateCarbonEmissionsRequest(message *pollerpb.CarbonEmissionsRequest) (err error) {
+// ValidateGetEmissionsForRegionRequest runs the validations defined on
+// GetEmissionsForRegionRequest.
+func ValidateGetEmissionsForRegionRequest(message *pollerpb.GetEmissionsForRegionRequest) (err error) {
 	if message.Start != "" {
 		err = goa.MergeErrors(err, goa.ValidateFormat("message.start", message.Start, goa.FormatDateTime))
 	}
-	return
-}
-
-// ValidatePeriod runs the validations defined on Period.
-func ValidatePeriod(message *pollerpb.Period) (err error) {
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.startTime", message.StartTime, goa.FormatDateTime))
-
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.endTime", message.EndTime, goa.FormatDateTime))
-
-	return
-}
-
-// ValidateAggregateDataRequest runs the validations defined on
-// AggregateDataRequest.
-func ValidateAggregateDataRequest(message *pollerpb.AggregateDataRequest) (err error) {
-	for _, e := range message.Periods {
-		if e != nil {
-			if err2 := ValidatePeriod(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
+	if message.End != "" {
+		err = goa.MergeErrors(err, goa.ValidateFormat("message.end", message.End, goa.FormatDateTime))
 	}
 	return
 }

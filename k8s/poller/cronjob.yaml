@@ -30,7 +30,7 @@ spec:
             - -vv
             - -max-time=30.0
             - poller.carbon.svc.cluster.local.:12500
-            - poller.Poller.Start
+            - poller.Poller.Update
             securityContext:
               readOnlyRootFilesystem: true
             resources:
