@@ -13,14 +13,16 @@ import (
 )
 
 //only works for oxnard and riverside
-type calcSvc struct {
+type (
+	calcSvc struct {
 	psc power.Client
 	dbc storage.Client
 	psr power_server.Repository
 	ctx context.Context
 	cancel context.CancelFunc
-	
-}
+	}
+	uuidArray []struct{}
+)
 var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
 
@@ -48,19 +50,19 @@ func CalculateReports(context.Context, *gencalc.CarbonReport, *gencalc.Electrica
 }
 
 //uses store to get input for past-values service
-func (s *calcSvc) GetPowerControlPoint(ctx context.Context, org uuid.UUID, agent string, pointName string) (uuid.UUID, error) {
-	nullid := uuid.Nil
+func (s *calcSvc) GetPowerControlPoint(ctx context.Context, org uuid.UUID, agent string, pointName string) ([]uuid.UUID, error) {
+	var temp []uuid.UUID
 	if org == uuid.Nil {
-		return nullid, fmt.Errorf("Org ID is null\n")
+		return temp, fmt.Errorf("Org ID is null\n")
 	}
 	
 	if agent == "" {
-		return nullid, fmt.Errorf("Agent ID is null\n")
+		return temp, fmt.Errorf("Agent ID is null\n")
 	}
 
-	point, err := s.psr.FindControlPointIDByName(org, agent, pointName)
+	point, err := s.psr.FindControlPointIDsByName(org, agent, pointName)
 	if err != nil {
-		return nullid, fmt.Errorf("Error finding control point: [%s]\n", err)
+		return temp, fmt.Errorf("Error finding control point: [%s]\n", err)
 	}
 	return point, nil
 }
