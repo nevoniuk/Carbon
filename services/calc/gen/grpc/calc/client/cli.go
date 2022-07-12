@@ -3,7 +3,7 @@
 // calc gRPC client CLI support package
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package client
 
@@ -15,109 +15,6 @@ import (
 	calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
 )
 
-// BuildCalculateReportsPayload builds the payload for the calc
-// calculate_reports endpoint from CLI flags.
-func BuildCalculateReportsPayload(calcCalculateReportsMessage string) (*calc.CarbonReport, error) {
-	var err error
-	var message calcpb.CalculateReportsRequest
-	{
-		if calcCalculateReportsMessage != "" {
-			err = json.Unmarshal([]byte(calcCalculateReportsMessage), &message)
-			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Duration\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"duration_type\": \"Quaerat repudiandae.\",\n      \"generated_rate\": 37.8267,\n      \"region\": \"MISO, ISO...\"\n   }'")
-			}
-		}
-	}
-	v := &calc.CarbonReport{
-		GeneratedRate: message.GeneratedRate,
-		DurationType:  message.DurationType,
-		Region:        message.Region,
-	}
-	if message.Duration != nil {
-		v.Duration = protobufCalcpbPeriodToCalcPeriod(message.Duration)
-	}
-
-	return v, nil
-}
-
-// BuildGetControlPointsPayload builds the payload for the calc
-// get_control_points endpoint from CLI flags.
-func BuildGetControlPointsPayload(calcGetControlPointsMessage string) (*calc.PastValuesPayload, error) {
-	var err error
-	var message calcpb.GetControlPointsRequest
-	{
-		if calcGetControlPointsMessage != "" {
-			err = json.Unmarshal([]byte(calcGetControlPointsMessage), &message)
-			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"Voluptatem ipsa nesciunt.\",\n      \"org\": \"Voluptatem ipsa nesciunt.\"\n   }'")
-			}
-		}
-	}
-	v := &calc.PastValuesPayload{
-		Org:      calc.UUID(message.Org),
-		Building: calc.UUID(message.Building),
-	}
-	if message.Period != nil {
-		v.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)
-	}
-
-	return v, nil
-}
-
-// BuildGetPowerPayload builds the payload for the calc get_power endpoint from
-// CLI flags.
-func BuildGetPowerPayload(calcGetPowerMessage string) (*calc.GetPowerPayload, error) {
-	var err error
-	var message calcpb.GetPowerRequest
-	{
-		if calcGetPowerMessage != "" {
-			err = json.Unmarshal([]byte(calcGetPowerMessage), &message)
-			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"cps\": [\n         \"Voluptatem ipsa nesciunt.\",\n         \"Voluptatem ipsa nesciunt.\",\n         \"Voluptatem ipsa nesciunt.\",\n         \"Voluptatem ipsa nesciunt.\"\n      ],\n      \"interval\": 766901085469061942,\n      \"org\": \"Voluptatem ipsa nesciunt.\"\n   }'")
-			}
-		}
-	}
-	v := &calc.GetPowerPayload{
-		Org:      calc.UUID(message.Org),
-		Interval: message.Interval,
-	}
-	if message.Period != nil {
-		v.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)
-	}
-	if message.Cps != nil {
-		v.Cps = make([]calc.UUID, len(message.Cps))
-		for i, val := range message.Cps {
-			v.Cps[i] = calc.UUID(val)
-		}
-	}
-
-	return v, nil
-}
-
-// BuildGetEmissionsPayload builds the payload for the calc get_emissions
-// endpoint from CLI flags.
-func BuildGetEmissionsPayload(calcGetEmissionsMessage string) (*calc.EmissionsPayload, error) {
-	var err error
-	var message calcpb.GetEmissionsRequest
-	{
-		if calcGetEmissionsMessage != "" {
-			err = json.Unmarshal([]byte(calcGetEmissionsMessage), &message)
-			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"interval\": \"hours, days, weeks, months, years\"\n   }'")
-			}
-		}
-	}
-	v := &calc.EmissionsPayload{}
-	if message.Interval != "" {
-		v.Interval = &message.Interval
-	}
-	if message.Period != nil {
-		v.Period = protobufCalcpbPeriodToCalcPeriod(message.Period)
-	}
-
-	return v, nil
-}
-
 // BuildHandleRequestsPayload builds the payload for the calc handle_requests
 // endpoint from CLI flags.
 func BuildHandleRequestsPayload(calcHandleRequestsMessage string) (*calc.RequestPayload, error) {
@@ -127,7 +24,7 @@ func BuildHandleRequestsPayload(calcHandleRequestsMessage string) (*calc.Request
 		if calcHandleRequestsMessage != "" {
 			err = json.Unmarshal([]byte(calcHandleRequestsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"Voluptatem ipsa nesciunt.\",\n      \"interval\": \"hours, days, weeks, months, years\",\n      \"org\": \"Voluptatem ipsa nesciunt.\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Period\": {\n         \"endTime\": \"2020-01-01T00:00:00Z\",\n         \"startTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"building\": \"Facere reiciendis.\",\n      \"interval\": \"hours, days, weeks, months, years\",\n      \"org\": \"Facere reiciendis.\"\n   }'")
 			}
 		}
 	}

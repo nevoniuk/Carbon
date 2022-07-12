@@ -3,7 +3,7 @@
 // calc client
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package calc
 
@@ -15,76 +15,31 @@ import (
 
 // Client is the "calc" service client.
 type Client struct {
-	CalculateReportsEndpoint goa.Endpoint
-	GetControlPointsEndpoint goa.Endpoint
-	GetPowerEndpoint         goa.Endpoint
-	GetEmissionsEndpoint     goa.Endpoint
-	HandleRequestsEndpoint   goa.Endpoint
-	CarbonreportEndpoint     goa.Endpoint
+	HandleRequestsEndpoint       goa.Endpoint
+	CarbonReportEndpointEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "calc" service client given the endpoints.
-func NewClient(calculateReports, getControlPoints, getPower, getEmissions, handleRequests, carbonreport goa.Endpoint) *Client {
+func NewClient(handleRequests, carbonReportEndpoint goa.Endpoint) *Client {
 	return &Client{
-		CalculateReportsEndpoint: calculateReports,
-		GetControlPointsEndpoint: getControlPoints,
-		GetPowerEndpoint:         getPower,
-		GetEmissionsEndpoint:     getEmissions,
-		HandleRequestsEndpoint:   handleRequests,
-		CarbonreportEndpoint:     carbonreport,
+		HandleRequestsEndpoint:       handleRequests,
+		CarbonReportEndpointEndpoint: carbonReportEndpoint,
 	}
-}
-
-// CalculateReports calls the "calculate_reports" endpoint of the "calc"
-// service.
-func (c *Client) CalculateReports(ctx context.Context, p *CarbonReport) (res *TotalReport, err error) {
-	var ires interface{}
-	ires, err = c.CalculateReportsEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.(*TotalReport), nil
-}
-
-// GetControlPoints calls the "get_control_points" endpoint of the "calc"
-// service.
-func (c *Client) GetControlPoints(ctx context.Context, p *PastValuesPayload) (res []string, err error) {
-	var ires interface{}
-	ires, err = c.GetControlPointsEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.([]string), nil
-}
-
-// GetPower calls the "get_power" endpoint of the "calc" service.
-func (c *Client) GetPower(ctx context.Context, p *GetPowerPayload) (res *ElectricalReport, err error) {
-	var ires interface{}
-	ires, err = c.GetPowerEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.(*ElectricalReport), nil
-}
-
-// GetEmissions calls the "get_emissions" endpoint of the "calc" service.
-func (c *Client) GetEmissions(ctx context.Context, p *EmissionsPayload) (res *CarbonReport, err error) {
-	var ires interface{}
-	ires, err = c.GetEmissionsEndpoint(ctx, p)
-	if err != nil {
-		return
-	}
-	return ires.(*CarbonReport), nil
 }
 
 // HandleRequests calls the "handle_requests" endpoint of the "calc" service.
-func (c *Client) HandleRequests(ctx context.Context, p *RequestPayload) (err error) {
-	_, err = c.HandleRequestsEndpoint(ctx, p)
-	return
+func (c *Client) HandleRequests(ctx context.Context, p *RequestPayload) (res *AllReports, err error) {
+	var ires interface{}
+	ires, err = c.HandleRequestsEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*AllReports), nil
 }
 
-// Carbonreport calls the "carbonreport" endpoint of the "calc" service.
-func (c *Client) Carbonreport(ctx context.Context) (err error) {
-	_, err = c.CarbonreportEndpoint(ctx, nil)
+// CarbonReportEndpoint calls the "carbon_report" endpoint of the "calc"
+// service.
+func (c *Client) CarbonReportEndpoint(ctx context.Context) (err error) {
+	_, err = c.CarbonReportEndpointEndpoint(ctx, nil)
 	return
 }

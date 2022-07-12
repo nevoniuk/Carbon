@@ -3,7 +3,7 @@
 // calc gRPC client encoders and decoders
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package client
 
@@ -16,153 +16,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
-
-// BuildCalculateReportsFunc builds the remote method to invoke for "calc"
-// service "calculate_reports" endpoint.
-func BuildCalculateReportsFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
-	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
-		for _, opt := range cliopts {
-			opts = append(opts, opt)
-		}
-		if reqpb != nil {
-			return grpccli.CalculateReports(ctx, reqpb.(*calcpb.CalculateReportsRequest), opts...)
-		}
-		return grpccli.CalculateReports(ctx, &calcpb.CalculateReportsRequest{}, opts...)
-	}
-}
-
-// EncodeCalculateReportsRequest encodes requests sent to calc
-// calculate_reports endpoint.
-func EncodeCalculateReportsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
-	payload, ok := v.(*calc.CarbonReport)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "calculate_reports", "*calc.CarbonReport", v)
-	}
-	return NewProtoCalculateReportsRequest(payload), nil
-}
-
-// DecodeCalculateReportsResponse decodes responses from the calc
-// calculate_reports endpoint.
-func DecodeCalculateReportsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*calcpb.CalculateReportsResponse)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "calculate_reports", "*calcpb.CalculateReportsResponse", v)
-	}
-	if err := ValidateCalculateReportsResponse(message); err != nil {
-		return nil, err
-	}
-	res := NewCalculateReportsResult(message)
-	return res, nil
-}
-
-// BuildGetControlPointsFunc builds the remote method to invoke for "calc"
-// service "get_control_points" endpoint.
-func BuildGetControlPointsFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
-	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
-		for _, opt := range cliopts {
-			opts = append(opts, opt)
-		}
-		if reqpb != nil {
-			return grpccli.GetControlPoints(ctx, reqpb.(*calcpb.GetControlPointsRequest), opts...)
-		}
-		return grpccli.GetControlPoints(ctx, &calcpb.GetControlPointsRequest{}, opts...)
-	}
-}
-
-// EncodeGetControlPointsRequest encodes requests sent to calc
-// get_control_points endpoint.
-func EncodeGetControlPointsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
-	payload, ok := v.(*calc.PastValuesPayload)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "get_control_points", "*calc.PastValuesPayload", v)
-	}
-	return NewProtoGetControlPointsRequest(payload), nil
-}
-
-// DecodeGetControlPointsResponse decodes responses from the calc
-// get_control_points endpoint.
-func DecodeGetControlPointsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*calcpb.GetControlPointsResponse)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "get_control_points", "*calcpb.GetControlPointsResponse", v)
-	}
-	res := NewGetControlPointsResult(message)
-	return res, nil
-}
-
-// BuildGetPowerFunc builds the remote method to invoke for "calc" service
-// "get_power" endpoint.
-func BuildGetPowerFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
-	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
-		for _, opt := range cliopts {
-			opts = append(opts, opt)
-		}
-		if reqpb != nil {
-			return grpccli.GetPower(ctx, reqpb.(*calcpb.GetPowerRequest), opts...)
-		}
-		return grpccli.GetPower(ctx, &calcpb.GetPowerRequest{}, opts...)
-	}
-}
-
-// EncodeGetPowerRequest encodes requests sent to calc get_power endpoint.
-func EncodeGetPowerRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
-	payload, ok := v.(*calc.GetPowerPayload)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "get_power", "*calc.GetPowerPayload", v)
-	}
-	return NewProtoGetPowerRequest(payload), nil
-}
-
-// DecodeGetPowerResponse decodes responses from the calc get_power endpoint.
-func DecodeGetPowerResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*calcpb.GetPowerResponse)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "get_power", "*calcpb.GetPowerResponse", v)
-	}
-	if err := ValidateGetPowerResponse(message); err != nil {
-		return nil, err
-	}
-	res := NewGetPowerResult(message)
-	return res, nil
-}
-
-// BuildGetEmissionsFunc builds the remote method to invoke for "calc" service
-// "get_emissions" endpoint.
-func BuildGetEmissionsFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
-	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
-		for _, opt := range cliopts {
-			opts = append(opts, opt)
-		}
-		if reqpb != nil {
-			return grpccli.GetEmissions(ctx, reqpb.(*calcpb.GetEmissionsRequest), opts...)
-		}
-		return grpccli.GetEmissions(ctx, &calcpb.GetEmissionsRequest{}, opts...)
-	}
-}
-
-// EncodeGetEmissionsRequest encodes requests sent to calc get_emissions
-// endpoint.
-func EncodeGetEmissionsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
-	payload, ok := v.(*calc.EmissionsPayload)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "get_emissions", "*calc.EmissionsPayload", v)
-	}
-	return NewProtoGetEmissionsRequest(payload), nil
-}
-
-// DecodeGetEmissionsResponse decodes responses from the calc get_emissions
-// endpoint.
-func DecodeGetEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*calcpb.GetEmissionsResponse)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "get_emissions", "*calcpb.GetEmissionsResponse", v)
-	}
-	if err := ValidateGetEmissionsResponse(message); err != nil {
-		return nil, err
-	}
-	res := NewGetEmissionsResult(message)
-	return res, nil
-}
 
 // BuildHandleRequestsFunc builds the remote method to invoke for "calc"
 // service "handle_requests" endpoint.
@@ -188,16 +41,30 @@ func EncodeHandleRequestsRequest(ctx context.Context, v interface{}, md *metadat
 	return NewProtoHandleRequestsRequest(payload), nil
 }
 
-// BuildCarbonreportFunc builds the remote method to invoke for "calc" service
-// "carbonreport" endpoint.
-func BuildCarbonreportFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
+// DecodeHandleRequestsResponse decodes responses from the calc handle_requests
+// endpoint.
+func DecodeHandleRequestsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*calcpb.HandleRequestsResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "handle_requests", "*calcpb.HandleRequestsResponse", v)
+	}
+	if err := ValidateHandleRequestsResponse(message); err != nil {
+		return nil, err
+	}
+	res := NewHandleRequestsResult(message)
+	return res, nil
+}
+
+// BuildCarbonReportEndpointFunc builds the remote method to invoke for "calc"
+// service "carbon_report" endpoint.
+func BuildCarbonReportEndpointFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
 	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
 		for _, opt := range cliopts {
 			opts = append(opts, opt)
 		}
 		if reqpb != nil {
-			return grpccli.Carbonreport(ctx, reqpb.(*calcpb.CarbonreportRequest), opts...)
+			return grpccli.CarbonReportEndpoint(ctx, reqpb.(*calcpb.CarbonReportRequest), opts...)
 		}
-		return grpccli.Carbonreport(ctx, &calcpb.CarbonreportRequest{}, opts...)
+		return grpccli.CarbonReportEndpoint(ctx, &calcpb.CarbonReportRequest{}, opts...)
 	}
 }

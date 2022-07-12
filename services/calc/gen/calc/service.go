@@ -3,7 +3,7 @@
 // calc service
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package calc
 
@@ -13,21 +13,11 @@ import (
 
 // Service to interpret CO2 emissions through power and carbon intensity data
 type Service interface {
-	// helper method to make kW/lbs of Co2 report
-	CalculateReports(context.Context, *CarbonReport) (res *TotalReport, err error)
-	// wrapper for the power-service repo. gets the control points for the
-	// get_power function
-	GetControlPoints(context.Context, *PastValuesPayload) (res []string, err error)
-	// This endpoint will retrieve the power data using control points from the
-	// get_control_points function
-	GetPower(context.Context, *GetPowerPayload) (res *ElectricalReport, err error)
-	// This endpoint will retrieve the emissions data for a facility
-	GetEmissions(context.Context, *EmissionsPayload) (res *CarbonReport, err error)
 	// This endpoint is used by a front end service to return energy usage
 	// information
-	HandleRequests(context.Context, *RequestPayload) (err error)
+	HandleRequests(context.Context, *RequestPayload) (res *AllReports, err error)
 	// Make reports available to external/R&D clients
-	Carbonreport(context.Context) (err error)
+	CarbonReportEndpoint(context.Context) (err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -38,10 +28,19 @@ const ServiceName = "calc"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [6]string{"calculate_reports", "get_control_points", "get_power", "get_emissions", "handle_requests", "carbonreport"}
+var MethodNames = [2]string{"handle_requests", "carbon_report"}
 
-// CarbonReport is the payload type of the calc service calculate_reports
-// method.
+// AllReports is the result type of the calc service handle_requests method.
+type AllReports struct {
+	// carbon_intensity_reports
+	CarbonIntensityReports []*CarbonReport
+	// power_reports
+	PowerReports []*ElectricalReport
+	// total_emission_reports
+	TotalEmissionReports []*EmissionsReport
+}
+
+// Carbon Report from clickhouse
 type CarbonReport struct {
 	// generated_rate
 	GeneratedRate float64
@@ -61,7 +60,7 @@ type DataPoint struct {
 	CarbonRate float64
 }
 
-// ElectricalReport is the result type of the calc service get_power method.
+// Energy Generation Report
 type ElectricalReport struct {
 	// period
 	Period *Period
@@ -77,36 +76,16 @@ type ElectricalReport struct {
 	IntervalType string
 }
 
-// EmissionsPayload is the payload type of the calc service get_emissions
-// method.
-type EmissionsPayload struct {
-	// Period
-	Period *Period
-	// interval
-	Interval *string
-}
-
-// GetPowerPayload is the payload type of the calc service get_power method.
-type GetPowerPayload struct {
-	// org
-	Org UUID
-	// Period
-	Period *Period
-	// cps
-	Cps []UUID
-	// samping interval
-	Interval int64
-}
-
-// PastValuesPayload is the payload type of the calc service get_control_points
-// method.
-type PastValuesPayload struct {
-	// org
-	Org UUID
-	// Period
-	Period *Period
-	// building
-	Building UUID
+// Carbon/Energy Generation Report
+type EmissionsReport struct {
+	// Duration
+	Duration *Period
+	// duration_type
+	DurationType string
+	// point
+	Point []*DataPoint
+	// facility
+	Facility UUID
 }
 
 // Period of time from start to end of Forecast
@@ -135,18 +114,6 @@ type RequestPayload struct {
 	Building UUID
 	// interval
 	Interval string
-}
-
-// TotalReport is the result type of the calc service calculate_reports method.
-type TotalReport struct {
-	// Duration
-	Duration *Period
-	// duration_type
-	DurationType string
-	// point
-	Point []*DataPoint
-	// facility
-	Facility UUID
 }
 
 // Universally unique identifier

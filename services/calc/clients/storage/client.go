@@ -1,12 +1,10 @@
 package storage
-//method to retrieve values from clickhouse
 import (
 	"context"
 	"fmt"
-	//"time"
+	"time"
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/crossnokaye/carbon/clients/clickhouse"
-	//gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 )
 
 type (
@@ -62,7 +60,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 		
 	/**
 	err = c.chcon.Exec(ctx, `
-			DROP TABLE carbondb.carbon_reports
+			DROP TABLE carbondb.power_reports
 	`)
 	*/
 

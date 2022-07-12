@@ -3,7 +3,7 @@
 // calc gRPC client
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package client
 
@@ -30,69 +30,6 @@ func NewClient(cc *grpc.ClientConn, opts ...grpc.CallOption) *Client {
 	}
 }
 
-// CalculateReports calls the "CalculateReports" function in calcpb.CalcClient
-// interface.
-func (c *Client) CalculateReports() goa.Endpoint {
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		inv := goagrpc.NewInvoker(
-			BuildCalculateReportsFunc(c.grpccli, c.opts...),
-			EncodeCalculateReportsRequest,
-			DecodeCalculateReportsResponse)
-		res, err := inv.Invoke(ctx, v)
-		if err != nil {
-			return nil, goa.Fault(err.Error())
-		}
-		return res, nil
-	}
-}
-
-// GetControlPoints calls the "GetControlPoints" function in calcpb.CalcClient
-// interface.
-func (c *Client) GetControlPoints() goa.Endpoint {
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		inv := goagrpc.NewInvoker(
-			BuildGetControlPointsFunc(c.grpccli, c.opts...),
-			EncodeGetControlPointsRequest,
-			DecodeGetControlPointsResponse)
-		res, err := inv.Invoke(ctx, v)
-		if err != nil {
-			return nil, goa.Fault(err.Error())
-		}
-		return res, nil
-	}
-}
-
-// GetPower calls the "GetPower" function in calcpb.CalcClient interface.
-func (c *Client) GetPower() goa.Endpoint {
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		inv := goagrpc.NewInvoker(
-			BuildGetPowerFunc(c.grpccli, c.opts...),
-			EncodeGetPowerRequest,
-			DecodeGetPowerResponse)
-		res, err := inv.Invoke(ctx, v)
-		if err != nil {
-			return nil, goa.Fault(err.Error())
-		}
-		return res, nil
-	}
-}
-
-// GetEmissions calls the "GetEmissions" function in calcpb.CalcClient
-// interface.
-func (c *Client) GetEmissions() goa.Endpoint {
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		inv := goagrpc.NewInvoker(
-			BuildGetEmissionsFunc(c.grpccli, c.opts...),
-			EncodeGetEmissionsRequest,
-			DecodeGetEmissionsResponse)
-		res, err := inv.Invoke(ctx, v)
-		if err != nil {
-			return nil, goa.Fault(err.Error())
-		}
-		return res, nil
-	}
-}
-
 // HandleRequests calls the "HandleRequests" function in calcpb.CalcClient
 // interface.
 func (c *Client) HandleRequests() goa.Endpoint {
@@ -100,7 +37,7 @@ func (c *Client) HandleRequests() goa.Endpoint {
 		inv := goagrpc.NewInvoker(
 			BuildHandleRequestsFunc(c.grpccli, c.opts...),
 			EncodeHandleRequestsRequest,
-			nil)
+			DecodeHandleRequestsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
 			return nil, goa.Fault(err.Error())
@@ -109,12 +46,12 @@ func (c *Client) HandleRequests() goa.Endpoint {
 	}
 }
 
-// Carbonreport calls the "Carbonreport" function in calcpb.CalcClient
-// interface.
-func (c *Client) Carbonreport() goa.Endpoint {
+// CarbonReportEndpoint calls the "CarbonReportEndpoint" function in
+// calcpb.CalcClient interface.
+func (c *Client) CarbonReportEndpoint() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
-			BuildCarbonreportFunc(c.grpccli, c.opts...),
+			BuildCarbonReportEndpointFunc(c.grpccli, c.opts...),
 			nil,
 			nil)
 		res, err := inv.Invoke(ctx, v)

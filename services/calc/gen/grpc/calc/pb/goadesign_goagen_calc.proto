@@ -3,7 +3,7 @@
 // calc protocol buffer definition
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 syntax = "proto3";
 
@@ -13,32 +13,22 @@ option go_package = "/calcpb";
 
 // Service to interpret CO2 emissions through power and carbon intensity data
 service Calc {
-	// helper method to make kW/lbs of Co2 report
-	rpc CalculateReports (CalculateReportsRequest) returns (CalculateReportsResponse);
-	// wrapper for the power-service repo. gets the control points for the
-// get_power function
-	rpc GetControlPoints (GetControlPointsRequest) returns (GetControlPointsResponse);
-	// This endpoint will retrieve the power data using control points from the
-// get_control_points function
-	rpc GetPower (GetPowerRequest) returns (GetPowerResponse);
-	// This endpoint will retrieve the emissions data for a facility
-	rpc GetEmissions (GetEmissionsRequest) returns (GetEmissionsResponse);
 	// This endpoint is used by a front end service to return energy usage
 // information
 	rpc HandleRequests (HandleRequestsRequest) returns (HandleRequestsResponse);
 	// Make reports available to external/R&D clients
-	rpc Carbonreport (CarbonreportRequest) returns (CarbonreportResponse);
+	rpc CarbonReportEndpoint (CarbonReportRequest) returns (CarbonReportResponse);
 }
 
-message CalculateReportsRequest {
-	// generated_rate
-	double generated_rate = 1;
-	// Duration
-	Period duration = 2;
-	// duration_type
-	string duration_type = 3;
-	// region
-	string region = 4;
+message HandleRequestsRequest {
+	// org
+	string org = 1;
+	// Period
+	Period period = 2;
+	// building
+	string building = 3;
+	// interval
+	string interval = 4;
 }
 // Period of time from start to end of Forecast
 message Period {
@@ -48,49 +38,27 @@ message Period {
 	string end_time = 2;
 }
 
-message CalculateReportsResponse {
+message HandleRequestsResponse {
+	// carbon_intensity_reports
+	repeated CarbonReport carbon_intensity_reports = 1;
+	// power_reports
+	repeated ElectricalReport power_reports = 2;
+	// total_emission_reports
+	repeated EmissionsReport total_emission_reports = 3;
+}
+// Carbon Report from clickhouse
+message CarbonReport {
+	// generated_rate
+	double generated_rate = 1;
 	// Duration
-	Period duration = 1;
+	Period duration = 2;
 	// duration_type
-	string duration_type = 2;
-	// point
-	repeated DataPoint point = 3;
-	// facility
-	string facility = 4;
+	string duration_type = 3;
+	// region
+	string region = 4;
 }
-// Contains a time stamp with its respective x-y coordinates
-message DataPoint {
-	// time
-	string time = 1;
-	// carbon_rate
-	double carbon_rate = 2;
-}
-
-message GetControlPointsRequest {
-	// org
-	string org = 1;
-	// Period
-	Period period = 2;
-	// building
-	string building = 3;
-}
-
-message GetControlPointsResponse {
-	repeated string field = 1;
-}
-
-message GetPowerRequest {
-	// org
-	string org = 1;
-	// Period
-	Period period = 2;
-	// cps
-	repeated string cps = 3;
-	// samping interval
-	sint64 interval = 4;
-}
-
-message GetPowerResponse {
+// Energy Generation Report
+message ElectricalReport {
 	// period
 	Period period = 1;
 	// postalcode
@@ -111,41 +79,27 @@ message PowerStamp {
 	// power stamp in KW
 	double gen_rate = 2;
 }
-
-message GetEmissionsRequest {
-	// Period
-	Period period = 1;
-	// interval
-	string interval = 2;
-}
-
-message GetEmissionsResponse {
-	// generated_rate
-	double generated_rate = 1;
+// Carbon/Energy Generation Report
+message EmissionsReport {
 	// Duration
-	Period duration = 2;
+	Period duration = 1;
 	// duration_type
-	string duration_type = 3;
-	// region
-	string region = 4;
+	string duration_type = 2;
+	// point
+	repeated DataPoint point = 3;
+	// facility
+	string facility = 4;
+}
+// Contains a time stamp with its respective x-y coordinates
+message DataPoint {
+	// time
+	string time = 1;
+	// carbon_rate
+	double carbon_rate = 2;
 }
 
-message HandleRequestsRequest {
-	// org
-	string org = 1;
-	// Period
-	Period period = 2;
-	// building
-	string building = 3;
-	// interval
-	string interval = 4;
+message CarbonReportRequest {
 }
 
-message HandleRequestsResponse {
-}
-
-message CarbonreportRequest {
-}
-
-message CarbonreportResponse {
+message CarbonReportResponse {
 }

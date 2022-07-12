@@ -1,20 +1,10 @@
 package power
-//this file will client the past-values service
-//similar to the control points client
-//method for getting control points
-//method for using control points as input to service
-
-//1. get control points using fc store
-//2. make calls to past-values service
-//3. store power data in structures defined here
 import (
 	"context"
-	"time"
 	"fmt"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc"
-	//"github.com/google/uuid"
-	//"strings"
+	"github.com/google/uuid"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 	genvalues "github.com/crossnokaye/past-values/services/past-values/gen/past_values"
 	genvaluesc "github.com/crossnokaye/past-values/services/past-values/gen/grpc/past_values/client"
@@ -23,22 +13,13 @@ var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
 
 type (
-	// Client interface to past-values service
 	Client interface {
-		GetPower(context.Context, string, []genvalues.UUID, int64, time.Time, time.Time) (*gencalc.ElectricalReport, error)
+		GetPower(context.Context, string, []uuid.UUID, int64, string, string) (*gencalc.ElectricalReport, error)
 	}
-
-	// client implements the Client interface.
 	client struct {
 		getPower goa.Endpoint
 	}
-
-	// Rate is the energy rate for a given hour.
 	
-	
-
-	// ErrNotFound is returned when an org or facility is not found.
-	ErrNotFound struct{ Err error }
 )
 
 func New(conn *grpc.ClientConn) Client {
@@ -49,113 +30,51 @@ func New(conn *grpc.ClientConn) Client {
 	}
 }
 
-func (c *client) GetPower(ctx context.Context, orgID string, controlPoints []genvalues.UUID, interval int64,
-	 start time.Time, end time.Time) (*gencalc.ElectricalReport, error) {
-	
-	var startTime = start.Format(timeFormat)
-	var endTime = end.Format(timeFormat)
+func (c *client) GetPower(ctx context.Context, orgID string, controlPoints []uuid.UUID, interval int64,
+	 start string, end string) (*gencalc.ElectricalReport, error) {
+	var cps []genvalues.UUID
+	for _,point := range controlPoints {
+		newPoint := genvalues.UUID(point.ID())
+		cps = append(cps, newPoint)
+	}
+
 	p := genvalues.ValuesQuery{
 		OrgID: genvalues.UUID(orgID),
-		PointIds: controlPoints,
-		Start: startTime,
-		End: endTime,
+		PointIds: cps,
+		Start: start,
+		End: end,
 		Interval: interval,
 	}
 
-	res, err := c.getPower(ctx, p)
+	res, err := c.getPower(ctx, &p)
 	//res is historical values
 	//historical values = discrete points, analog points and structures
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error in GetPower: %s\n", err)
 	}
 	newRes, err := toPower(res)
+	//analyze error
+	//wrong ordID
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error in GetPower: %s\n", err)
 	}
 	return newRes, nil
 }
 
+//ToPower will cast the response from GetValues and return 5 minute interval reports to match the ones
+//returned from the Poller service
 func toPower(r interface{}) (*gencalc.ElectricalReport, error) {
-	//casting the response
+	//knowing that the client name and agent name were already passed in
 	res := r.([]*genvalues.HistoricalValues)
-	//making an array of the reports I want to return
 	var report *gencalc.ElectricalReport
-	stamps := make([]*gencalc.PowerStamp, len(res))
-	//each analog point contains an ID and an array of values
-	var startReport time.Time
-	var endReport time.Time
-
-	var analogPoint int
-	//iterate over historical values
-	for i, historicalValues := range res {
-		//i == 1 should be analog points
-		if i == 1 {
-
-			for j, analog := range historicalValues.Analog {
-
-				if j == analogPoint {
-
-					var minCounter time.Time
-					var previousPoint float64
-					var counter = 0
-
-					for p, point := range analog.Values {
-
-						if p == 0 {
-							var err error
-							startReport, err = time.Parse(timeFormat, *point.Timestamp)
-							if err != nil {
-								return nil , err
-							}
-							minCounter = startReport
-						}
-
-						if p == (len(analog.Values) - 1) {
-							var err error
-							endReport, err = time.Parse(timeFormat, *point.Timestamp)
-							if err != nil {
-								return nil , err
-							}
-							
-						}
-						//if new time is 1 minute  or more greater than the counter and is not 0
-						
-						pointTime, errpoint := time.Parse(timeFormat, *point.Timestamp)
-						if errpoint != nil  {
-							return nil, errpoint
-						}
-
-						 if pointTime.After(minCounter.Add(time.Minute)) && (previousPoint != 0) {
-
-							var temp = minCounter.Add(time.Minute).Format(timeFormat)
-
-							stamps[counter] = &gencalc.PowerStamp{
-								Time: &temp,
-								GenRate: &previousPoint,
-							}
-							counter += 1
-							//set to point time in case that elapsed time is greater than a minute
-							minCounter = pointTime
-						 }
-						//read in values that aren't 0
-						//values are per second
-						previousPoint = *point.Value
-						
-					}
-					
-				}
-				
-			}
-		}
-		
+	var analogPoints = res[1] //Array of Analog Points
+	var analog = analogPoints.Analog
+	for _, cp := range analog {
+		fmt.Printf("control point id is %d\n", cp.ID)
 	}
-
-	report = &gencalc.ElectricalReport{
-		Period: &gencalc.Period{StartTime: startReport.Format(timeFormat), EndTime: endReport.Format(timeFormat)},
-		Stamp: stamps,
-		IntervalType: "minute",
-	}
-
+ 	//historical values->ArrayOf(Analog points){id, array of analogpoint}->analogpoint: timestamp and value
+	//historical values->ArrayOf(devices)->array of control points per device->each control point contains a timestamp and a value
 	return report, nil
 }
 

@@ -1,17 +1,17 @@
 package calcapi
+
 //something
 import (
 	"context"
 	"fmt"
 	"time"
-	"github.com/google/uuid"
-	"github.com/satori/go.uuid"
-	"github.com/crossnokaye/facilityconfig"
 	"github.com/crossnokaye/carbon/services/calc/clients/power"
 	"github.com/crossnokaye/carbon/services/calc/clients/power_server"
 	"github.com/crossnokaye/carbon/services/calc/clients/storage"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
+	"github.com/google/uuid"
 )
+
 //only works for oxnard and riverside
 type calcSvc struct {
 	psc power.Client
@@ -23,7 +23,6 @@ type calcSvc struct {
 }
 var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
-
 
 var reportdurations [5]string = [5]string{ "minute", "hourly", "daily", "weekly", "monthly"}
 func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, psr power_server.Repository) *calcSvc {
@@ -38,160 +37,65 @@ func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, psr powe
 	return s
 }
 
-//calculates a report given a carbon report and electrical report
-func CalculateReports(context.Context, *gencalc.CarbonReport, *gencalc.ElectricalReport) (*gencalc.TotalReport, error) {
+//CalculateReports yields lbs of CO2 given CO2 intensity(CO2lbs/MWh) and Power(KWh) reports
+func CalculateReports(context.Context, *gencalc.CarbonReport, *gencalc.ElectricalReport) (*gencalc.EmissionsReport, error) {
+	var report *gencalc.EmissionsReport
 	//input =carbon reports, 
 	//1 MWh = 1000 KWh
 	//1.convert from MWh to KWh
 	//2.
+	return report, nil
 }
 
 //uses store to get input for past-values service
-func (s *calcSvc) GetControlPoints(ctx context.Context, org *gencalc.UUID, building *gencalc.UUID, dateRange *gencalc.Period) ([]string, error) {
+func (s *calcSvc) GetPowerControlPoint(ctx context.Context, org uuid.UUID, agent string, pointName string) (uuid.UUID, error) {
+	nullid := uuid.Nil
+	if org == uuid.Nil {
+		return nullid, fmt.Errorf("Org ID is null\n")
+	}
 	
+	if agent == "" {
+		return nullid, fmt.Errorf("Agent ID is null\n")
+	}
+
+	point, err := s.psr.FindControlPointIDByName(org, agent, pointName)
+	if err != nil {
+		return nullid, fmt.Errorf("Error finding control point: [%s]\n", err)
+	}
+	return point, nil
 }
 
-//wrapper function for talking to power client
-//power meters at riverside, oxnard
-//0's more than a minute resemble blackout
-
-
-func (s *calcSvc) GetPower(ctx context.Context, org *gencalc.UUID, dateRange *gencalc.Period, cps []*gencalc.UUID, interval int64) (*gencalc.ElectricalReport, error) {
-	//power client returns minute reports
-	//1.store minute reports in clickhouse
-	//2.get dates for averages
-	//3. 
+//GetPower is a wrapper function for talking to the power client. Right now there is only a power meter
+//at Oxnard so this will only work for that power meter
+func (s *calcSvc) GetPower(ctx context.Context, org uuid.UUID, dateRange *gencalc.Period, cps []uuid.UUID, interval int64) ([]*gencalc.ElectricalReport, error) {
+	var reports []*gencalc.ElectricalReport
+	//nullid := uuid.Nil
+	if org == uuid.Nil {
+		return nil, fmt.Errorf("Org ID is null\n")
+	}
+	if cps[0] == uuid.Nil {
+		return nil, fmt.Errorf("No Control Points\n")
+	}
+	//interval has to be in nanoseconds
+	return reports, nil
 }
 
-//wrapper function for talking to storage client
+//GetEmissions is a wrapper function for talking to storage client
 func (s *calcSvc) GetEmissions(ctx context.Context, dateRange *gencalc.Period, interval string) ([]*gencalc.CarbonReport, error) {
-
+	var reports []*gencalc.CarbonReport
+	return reports, nil
 }
 
-//should maybe also take facility as an input
-func (s *calcSvc) HandleRequests(ctx context.Context, req *gencalc.RequestPayload) (error) {
-//based on the time period and time interval type that a client wants, get thre respective data from clickhouse
-//need region
+//HandleRequests will output the CO2 intensity, Power Meter, and resulting CO2 emission reports
+func (s *calcSvc) HandleRequests(ctx context.Context, req *gencalc.RequestPayload) (*gencalc.AllReports, error) {
+	var reports *gencalc.AllReports
+	return reports, nil
+}
 
 //R&D method
-func (s *calcSvc) Carbonreport(ctx context.Context) (error) {
-	//gets reports in carbon forecasts
-
+func (s *calcSvc) GetCarbonReportEndpoint(ctx context.Context) (error) {
+	return nil
 }
 
-func getdates(ctx context.Context, minutereports []*gencalc.PowerStamp) ([][]*gencalc.Period, error) {
-	
-	if minutereports == nil {
-		var err = fmt.Errorf("no reports for get dates")
-		return nil, err
-	}
 
-	var initialstart, err = time.Parse(timeFormat, minutereports[0].Period.StartTime)
-
-	if err != nil {
-		return nil, err
-	}
-	var finalDates [][]*gencalc.Period
-
-	var hourlyDates []*gencalc.Period
-	var dailyDates []*gencalc.Period
-	var weeklyDates []*gencalc.Period
-	var monthlyDates []*gencalc.Period
-	
-
-//will always be the begginning of the hour
-	var hourstart = initialstart
-	
-//will always be the beginning of the day
-	var daystart = initialstart
-	
-//will always be the beginning of the week
-	var weekstart = initialstart
-
-	year, month, day := initialstart.Date()
-
-	var monthstart time.Time
-	//adjust to be the beginning of the month
-	if day != 1 {
-		monthstart = time.Date(year, month, 1 ,0,0,0,0, initialstart.Location())
-	} else {
-
-		monthstart = initialstart
-
-	}
-
-	var previous = initialstart
-	
-
-	var hourcounter = time.Time.Hour(initialstart)
-	var daycounter = time.Time.Day(initialstart)
-	var weekcounter = 0
-	
-	var monthcounter = time.Time.Month(initialstart)
-	
-
-	
-	for _, event := range minutereports {
-		
-		var time, err = time.Parse(timeFormat, event.Period.StartTime)
-		if err != nil {
-			return nil, fmt.Errorf("parsing error")
-		}
-	
-		
-		var month = time.Month()
-		var day = time.Day()
-		var hour = time.Hour()
-		
-
-		if hour != hourcounter {
-			
-			if month != monthcounter {
-				
-				monthcounter = month
-				monthlyDates = append(monthlyDates, &gencalc.Period{monthstart.Format(timeFormat), previous.Format(timeFormat)})
-				monthstart = time
-			}
-
-			if day != daycounter {
-				daycounter = day
-				weekcounter += 1
-				dailyDates = append(dailyDates, &gencalc.Period{daystart.Format(timeFormat), previous.Format(timeFormat)})
-				
-				daystart = time
-				
-				if weekcounter == 7 {
-					weeklyDates = append(weeklyDates, &gencalc.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
-					weekstart = time
-					weekcounter = 0
-				}
-			}
-
-			hourcounter = hour
-			hourlyDates = append(hourlyDates, &gencalc.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
-			hourstart = time
-		}
-
-		previous = time
-
-	}
-
-	
-	if daycounter == time.Time.Day(initialstart) {
-		
-		dailyDates = append(dailyDates, &gencalc.Period{daystart.Format(timeFormat),previous.Format(timeFormat)})
-	}
-	
-	finalDates = append(finalDates, hourlyDates)
-	finalDates = append(finalDates, dailyDates)
-	finalDates = append(finalDates, weeklyDates)
-	finalDates = append(finalDates, monthlyDates)
-	
-
-	for _, date := range finalDates {
-		fmt.Println("DATE")
-		fmt.Println(date)
-	}
-	return finalDates, nil
-}
 

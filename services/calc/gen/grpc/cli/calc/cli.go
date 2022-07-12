@@ -3,7 +3,7 @@
 // calc gRPC client CLI support package
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package cli
 
@@ -22,20 +22,20 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `calc (calculate-reports|get-control-points|get-power|get-emissions|handle-requests|carbonreport)
+	return `calc (handle-requests|carbon-report)
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` calc calculate-reports --message '{
-      "Duration": {
+	return os.Args[0] + ` calc handle-requests --message '{
+      "Period": {
          "endTime": "2020-01-01T00:00:00Z",
          "startTime": "2020-01-01T00:00:00Z"
       },
-      "duration_type": "Quaerat repudiandae.",
-      "generated_rate": 37.8267,
-      "region": "MISO, ISO..."
+      "building": "Facere reiciendis.",
+      "interval": "hours, days, weeks, months, years",
+      "org": "Facere reiciendis."
    }'` + "\n" +
 		""
 }
@@ -46,30 +46,14 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	var (
 		calcFlags = flag.NewFlagSet("calc", flag.ContinueOnError)
 
-		calcCalculateReportsFlags       = flag.NewFlagSet("calculate-reports", flag.ExitOnError)
-		calcCalculateReportsMessageFlag = calcCalculateReportsFlags.String("message", "", "")
-
-		calcGetControlPointsFlags       = flag.NewFlagSet("get-control-points", flag.ExitOnError)
-		calcGetControlPointsMessageFlag = calcGetControlPointsFlags.String("message", "", "")
-
-		calcGetPowerFlags       = flag.NewFlagSet("get-power", flag.ExitOnError)
-		calcGetPowerMessageFlag = calcGetPowerFlags.String("message", "", "")
-
-		calcGetEmissionsFlags       = flag.NewFlagSet("get-emissions", flag.ExitOnError)
-		calcGetEmissionsMessageFlag = calcGetEmissionsFlags.String("message", "", "")
-
 		calcHandleRequestsFlags       = flag.NewFlagSet("handle-requests", flag.ExitOnError)
 		calcHandleRequestsMessageFlag = calcHandleRequestsFlags.String("message", "", "")
 
-		calcCarbonreportFlags = flag.NewFlagSet("carbonreport", flag.ExitOnError)
+		calcCarbonReportFlags = flag.NewFlagSet("carbon-report", flag.ExitOnError)
 	)
 	calcFlags.Usage = calcUsage
-	calcCalculateReportsFlags.Usage = calcCalculateReportsUsage
-	calcGetControlPointsFlags.Usage = calcGetControlPointsUsage
-	calcGetPowerFlags.Usage = calcGetPowerUsage
-	calcGetEmissionsFlags.Usage = calcGetEmissionsUsage
 	calcHandleRequestsFlags.Usage = calcHandleRequestsUsage
-	calcCarbonreportFlags.Usage = calcCarbonreportUsage
+	calcCarbonReportFlags.Usage = calcCarbonReportUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -105,23 +89,11 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 		switch svcn {
 		case "calc":
 			switch epn {
-			case "calculate-reports":
-				epf = calcCalculateReportsFlags
-
-			case "get-control-points":
-				epf = calcGetControlPointsFlags
-
-			case "get-power":
-				epf = calcGetPowerFlags
-
-			case "get-emissions":
-				epf = calcGetEmissionsFlags
-
 			case "handle-requests":
 				epf = calcHandleRequestsFlags
 
-			case "carbonreport":
-				epf = calcCarbonreportFlags
+			case "carbon-report":
+				epf = calcCarbonReportFlags
 
 			}
 
@@ -148,23 +120,11 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 		case "calc":
 			c := calcc.NewClient(cc, opts...)
 			switch epn {
-			case "calculate-reports":
-				endpoint = c.CalculateReports()
-				data, err = calcc.BuildCalculateReportsPayload(*calcCalculateReportsMessageFlag)
-			case "get-control-points":
-				endpoint = c.GetControlPoints()
-				data, err = calcc.BuildGetControlPointsPayload(*calcGetControlPointsMessageFlag)
-			case "get-power":
-				endpoint = c.GetPower()
-				data, err = calcc.BuildGetPowerPayload(*calcGetPowerMessageFlag)
-			case "get-emissions":
-				endpoint = c.GetEmissions()
-				data, err = calcc.BuildGetEmissionsPayload(*calcGetEmissionsMessageFlag)
 			case "handle-requests":
 				endpoint = c.HandleRequests()
 				data, err = calcc.BuildHandleRequestsPayload(*calcHandleRequestsMessageFlag)
-			case "carbonreport":
-				endpoint = c.Carbonreport()
+			case "carbon-report":
+				endpoint = c.CarbonReportEndpoint()
 				data = nil
 			}
 		}
@@ -183,95 +143,13 @@ Usage:
     %[1]s [globalflags] calc COMMAND [flags]
 
 COMMAND:
-    calculate-reports: helper method to make kW/lbs of Co2 report
-    get-control-points: wrapper for the power-service repo. gets the control points for the get_power function
-    get-power: This endpoint will retrieve the power data using control points from the get_control_points function
-    get-emissions: This endpoint will retrieve the emissions data for a facility
     handle-requests: This endpoint is used by a front end service to return energy usage information
-    carbonreport: Make reports available to external/R&D clients
+    carbon-report: Make reports available to external/R&D clients
 
 Additional help:
     %[1]s calc COMMAND --help
 `, os.Args[0])
 }
-func calcCalculateReportsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc calculate-reports -message JSON
-
-helper method to make kW/lbs of Co2 report
-    -message JSON: 
-
-Example:
-    %[1]s calc calculate-reports --message '{
-      "Duration": {
-         "endTime": "2020-01-01T00:00:00Z",
-         "startTime": "2020-01-01T00:00:00Z"
-      },
-      "duration_type": "Quaerat repudiandae.",
-      "generated_rate": 37.8267,
-      "region": "MISO, ISO..."
-   }'
-`, os.Args[0])
-}
-
-func calcGetControlPointsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-control-points -message JSON
-
-wrapper for the power-service repo. gets the control points for the get_power function
-    -message JSON: 
-
-Example:
-    %[1]s calc get-control-points --message '{
-      "Period": {
-         "endTime": "2020-01-01T00:00:00Z",
-         "startTime": "2020-01-01T00:00:00Z"
-      },
-      "building": "Voluptatem ipsa nesciunt.",
-      "org": "Voluptatem ipsa nesciunt."
-   }'
-`, os.Args[0])
-}
-
-func calcGetPowerUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-power -message JSON
-
-This endpoint will retrieve the power data using control points from the get_control_points function
-    -message JSON: 
-
-Example:
-    %[1]s calc get-power --message '{
-      "Period": {
-         "endTime": "2020-01-01T00:00:00Z",
-         "startTime": "2020-01-01T00:00:00Z"
-      },
-      "cps": [
-         "Voluptatem ipsa nesciunt.",
-         "Voluptatem ipsa nesciunt.",
-         "Voluptatem ipsa nesciunt.",
-         "Voluptatem ipsa nesciunt."
-      ],
-      "interval": 766901085469061942,
-      "org": "Voluptatem ipsa nesciunt."
-   }'
-`, os.Args[0])
-}
-
-func calcGetEmissionsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-emissions -message JSON
-
-This endpoint will retrieve the emissions data for a facility
-    -message JSON: 
-
-Example:
-    %[1]s calc get-emissions --message '{
-      "Period": {
-         "endTime": "2020-01-01T00:00:00Z",
-         "startTime": "2020-01-01T00:00:00Z"
-      },
-      "interval": "hours, days, weeks, months, years"
-   }'
-`, os.Args[0])
-}
-
 func calcHandleRequestsUsage() {
 	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc handle-requests -message JSON
 
@@ -284,19 +162,19 @@ Example:
          "endTime": "2020-01-01T00:00:00Z",
          "startTime": "2020-01-01T00:00:00Z"
       },
-      "building": "Voluptatem ipsa nesciunt.",
+      "building": "Facere reiciendis.",
       "interval": "hours, days, weeks, months, years",
-      "org": "Voluptatem ipsa nesciunt."
+      "org": "Facere reiciendis."
    }'
 `, os.Args[0])
 }
 
-func calcCarbonreportUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc carbonreport
+func calcCarbonReportUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc carbon-report
 
 Make reports available to external/R&D clients
 
 Example:
-    %[1]s calc carbonreport
+    %[1]s calc carbon-report
 `, os.Args[0])
 }

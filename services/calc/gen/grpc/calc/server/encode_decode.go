@@ -3,7 +3,7 @@
 // calc gRPC server encoders and decoders
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package server
 
@@ -16,142 +16,14 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// EncodeCalculateReportsResponse encodes responses from the "calc" service
-// "calculate_reports" endpoint.
-func EncodeCalculateReportsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.(*calc.TotalReport)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "calculate_reports", "*calc.TotalReport", v)
-	}
-	resp := NewProtoCalculateReportsResponse(result)
-	return resp, nil
-}
-
-// DecodeCalculateReportsRequest decodes requests sent to "calc" service
-// "calculate_reports" endpoint.
-func DecodeCalculateReportsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
-	var (
-		message *calcpb.CalculateReportsRequest
-		ok      bool
-	)
-	{
-		if message, ok = v.(*calcpb.CalculateReportsRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("calc", "calculate_reports", "*calcpb.CalculateReportsRequest", v)
-		}
-		if err := ValidateCalculateReportsRequest(message); err != nil {
-			return nil, err
-		}
-	}
-	var payload *calc.CarbonReport
-	{
-		payload = NewCalculateReportsPayload(message)
-	}
-	return payload, nil
-}
-
-// EncodeGetControlPointsResponse encodes responses from the "calc" service
-// "get_control_points" endpoint.
-func EncodeGetControlPointsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.([]string)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "get_control_points", "[]string", v)
-	}
-	resp := NewProtoGetControlPointsResponse(result)
-	return resp, nil
-}
-
-// DecodeGetControlPointsRequest decodes requests sent to "calc" service
-// "get_control_points" endpoint.
-func DecodeGetControlPointsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
-	var (
-		message *calcpb.GetControlPointsRequest
-		ok      bool
-	)
-	{
-		if message, ok = v.(*calcpb.GetControlPointsRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("calc", "get_control_points", "*calcpb.GetControlPointsRequest", v)
-		}
-		if err := ValidateGetControlPointsRequest(message); err != nil {
-			return nil, err
-		}
-	}
-	var payload *calc.PastValuesPayload
-	{
-		payload = NewGetControlPointsPayload(message)
-	}
-	return payload, nil
-}
-
-// EncodeGetPowerResponse encodes responses from the "calc" service "get_power"
-// endpoint.
-func EncodeGetPowerResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.(*calc.ElectricalReport)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "get_power", "*calc.ElectricalReport", v)
-	}
-	resp := NewProtoGetPowerResponse(result)
-	return resp, nil
-}
-
-// DecodeGetPowerRequest decodes requests sent to "calc" service "get_power"
-// endpoint.
-func DecodeGetPowerRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
-	var (
-		message *calcpb.GetPowerRequest
-		ok      bool
-	)
-	{
-		if message, ok = v.(*calcpb.GetPowerRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("calc", "get_power", "*calcpb.GetPowerRequest", v)
-		}
-		if err := ValidateGetPowerRequest(message); err != nil {
-			return nil, err
-		}
-	}
-	var payload *calc.GetPowerPayload
-	{
-		payload = NewGetPowerPayload(message)
-	}
-	return payload, nil
-}
-
-// EncodeGetEmissionsResponse encodes responses from the "calc" service
-// "get_emissions" endpoint.
-func EncodeGetEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	result, ok := v.(*calc.CarbonReport)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "get_emissions", "*calc.CarbonReport", v)
-	}
-	resp := NewProtoGetEmissionsResponse(result)
-	return resp, nil
-}
-
-// DecodeGetEmissionsRequest decodes requests sent to "calc" service
-// "get_emissions" endpoint.
-func DecodeGetEmissionsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
-	var (
-		message *calcpb.GetEmissionsRequest
-		ok      bool
-	)
-	{
-		if message, ok = v.(*calcpb.GetEmissionsRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("calc", "get_emissions", "*calcpb.GetEmissionsRequest", v)
-		}
-		if err := ValidateGetEmissionsRequest(message); err != nil {
-			return nil, err
-		}
-	}
-	var payload *calc.EmissionsPayload
-	{
-		payload = NewGetEmissionsPayload(message)
-	}
-	return payload, nil
-}
-
 // EncodeHandleRequestsResponse encodes responses from the "calc" service
 // "handle_requests" endpoint.
 func EncodeHandleRequestsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	resp := NewProtoHandleRequestsResponse()
+	result, ok := v.(*calc.AllReports)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("calc", "handle_requests", "*calc.AllReports", v)
+	}
+	resp := NewProtoHandleRequestsResponse(result)
 	return resp, nil
 }
 
@@ -177,9 +49,9 @@ func DecodeHandleRequestsRequest(ctx context.Context, v interface{}, md metadata
 	return payload, nil
 }
 
-// EncodeCarbonreportResponse encodes responses from the "calc" service
-// "carbonreport" endpoint.
-func EncodeCarbonreportResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	resp := NewProtoCarbonreportResponse()
+// EncodeCarbonReportEndpointResponse encodes responses from the "calc" service
+// "carbon_report" endpoint.
+func EncodeCarbonReportEndpointResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
+	resp := NewProtoCarbonReportResponse()
 	return resp, nil
 }

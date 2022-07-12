@@ -3,7 +3,7 @@
 // calc endpoints
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package calc
 
@@ -15,70 +15,22 @@ import (
 
 // Endpoints wraps the "calc" service endpoints.
 type Endpoints struct {
-	CalculateReports goa.Endpoint
-	GetControlPoints goa.Endpoint
-	GetPower         goa.Endpoint
-	GetEmissions     goa.Endpoint
-	HandleRequests   goa.Endpoint
-	Carbonreport     goa.Endpoint
+	HandleRequests       goa.Endpoint
+	CarbonReportEndpoint goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "calc" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		CalculateReports: NewCalculateReportsEndpoint(s),
-		GetControlPoints: NewGetControlPointsEndpoint(s),
-		GetPower:         NewGetPowerEndpoint(s),
-		GetEmissions:     NewGetEmissionsEndpoint(s),
-		HandleRequests:   NewHandleRequestsEndpoint(s),
-		Carbonreport:     NewCarbonreportEndpoint(s),
+		HandleRequests:       NewHandleRequestsEndpoint(s),
+		CarbonReportEndpoint: NewCarbonReportEndpointEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "calc" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
-	e.CalculateReports = m(e.CalculateReports)
-	e.GetControlPoints = m(e.GetControlPoints)
-	e.GetPower = m(e.GetPower)
-	e.GetEmissions = m(e.GetEmissions)
 	e.HandleRequests = m(e.HandleRequests)
-	e.Carbonreport = m(e.Carbonreport)
-}
-
-// NewCalculateReportsEndpoint returns an endpoint function that calls the
-// method "calculate_reports" of service "calc".
-func NewCalculateReportsEndpoint(s Service) goa.Endpoint {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*CarbonReport)
-		return s.CalculateReports(ctx, p)
-	}
-}
-
-// NewGetControlPointsEndpoint returns an endpoint function that calls the
-// method "get_control_points" of service "calc".
-func NewGetControlPointsEndpoint(s Service) goa.Endpoint {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*PastValuesPayload)
-		return s.GetControlPoints(ctx, p)
-	}
-}
-
-// NewGetPowerEndpoint returns an endpoint function that calls the method
-// "get_power" of service "calc".
-func NewGetPowerEndpoint(s Service) goa.Endpoint {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*GetPowerPayload)
-		return s.GetPower(ctx, p)
-	}
-}
-
-// NewGetEmissionsEndpoint returns an endpoint function that calls the method
-// "get_emissions" of service "calc".
-func NewGetEmissionsEndpoint(s Service) goa.Endpoint {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*EmissionsPayload)
-		return s.GetEmissions(ctx, p)
-	}
+	e.CarbonReportEndpoint = m(e.CarbonReportEndpoint)
 }
 
 // NewHandleRequestsEndpoint returns an endpoint function that calls the method
@@ -86,14 +38,14 @@ func NewGetEmissionsEndpoint(s Service) goa.Endpoint {
 func NewHandleRequestsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*RequestPayload)
-		return nil, s.HandleRequests(ctx, p)
+		return s.HandleRequests(ctx, p)
 	}
 }
 
-// NewCarbonreportEndpoint returns an endpoint function that calls the method
-// "carbonreport" of service "calc".
-func NewCarbonreportEndpoint(s Service) goa.Endpoint {
+// NewCarbonReportEndpointEndpoint returns an endpoint function that calls the
+// method "carbon_report" of service "calc".
+func NewCarbonReportEndpointEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.Carbonreport(ctx)
+		return nil, s.CarbonReportEndpoint(ctx)
 	}
 }

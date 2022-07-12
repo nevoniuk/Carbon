@@ -18,21 +18,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CalcClient interface {
-	// helper method to make kW/lbs of Co2 report
-	CalculateReports(ctx context.Context, in *CalculateReportsRequest, opts ...grpc.CallOption) (*CalculateReportsResponse, error)
-	// wrapper for the power-service repo. gets the control points for the
-	// get_power function
-	GetControlPoints(ctx context.Context, in *GetControlPointsRequest, opts ...grpc.CallOption) (*GetControlPointsResponse, error)
-	// This endpoint will retrieve the power data using control points from the
-	// get_control_points function
-	GetPower(ctx context.Context, in *GetPowerRequest, opts ...grpc.CallOption) (*GetPowerResponse, error)
-	// This endpoint will retrieve the emissions data for a facility
-	GetEmissions(ctx context.Context, in *GetEmissionsRequest, opts ...grpc.CallOption) (*GetEmissionsResponse, error)
 	// This endpoint is used by a front end service to return energy usage
 	// information
 	HandleRequests(ctx context.Context, in *HandleRequestsRequest, opts ...grpc.CallOption) (*HandleRequestsResponse, error)
 	// Make reports available to external/R&D clients
-	Carbonreport(ctx context.Context, in *CarbonreportRequest, opts ...grpc.CallOption) (*CarbonreportResponse, error)
+	CarbonReportEndpoint(ctx context.Context, in *CarbonReportRequest, opts ...grpc.CallOption) (*CarbonReportResponse, error)
 }
 
 type calcClient struct {
@@ -41,42 +31,6 @@ type calcClient struct {
 
 func NewCalcClient(cc grpc.ClientConnInterface) CalcClient {
 	return &calcClient{cc}
-}
-
-func (c *calcClient) CalculateReports(ctx context.Context, in *CalculateReportsRequest, opts ...grpc.CallOption) (*CalculateReportsResponse, error) {
-	out := new(CalculateReportsResponse)
-	err := c.cc.Invoke(ctx, "/calc.Calc/CalculateReports", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *calcClient) GetControlPoints(ctx context.Context, in *GetControlPointsRequest, opts ...grpc.CallOption) (*GetControlPointsResponse, error) {
-	out := new(GetControlPointsResponse)
-	err := c.cc.Invoke(ctx, "/calc.Calc/GetControlPoints", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *calcClient) GetPower(ctx context.Context, in *GetPowerRequest, opts ...grpc.CallOption) (*GetPowerResponse, error) {
-	out := new(GetPowerResponse)
-	err := c.cc.Invoke(ctx, "/calc.Calc/GetPower", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *calcClient) GetEmissions(ctx context.Context, in *GetEmissionsRequest, opts ...grpc.CallOption) (*GetEmissionsResponse, error) {
-	out := new(GetEmissionsResponse)
-	err := c.cc.Invoke(ctx, "/calc.Calc/GetEmissions", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *calcClient) HandleRequests(ctx context.Context, in *HandleRequestsRequest, opts ...grpc.CallOption) (*HandleRequestsResponse, error) {
@@ -88,9 +42,9 @@ func (c *calcClient) HandleRequests(ctx context.Context, in *HandleRequestsReque
 	return out, nil
 }
 
-func (c *calcClient) Carbonreport(ctx context.Context, in *CarbonreportRequest, opts ...grpc.CallOption) (*CarbonreportResponse, error) {
-	out := new(CarbonreportResponse)
-	err := c.cc.Invoke(ctx, "/calc.Calc/Carbonreport", in, out, opts...)
+func (c *calcClient) CarbonReportEndpoint(ctx context.Context, in *CarbonReportRequest, opts ...grpc.CallOption) (*CarbonReportResponse, error) {
+	out := new(CarbonReportResponse)
+	err := c.cc.Invoke(ctx, "/calc.Calc/CarbonReportEndpoint", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,21 +55,11 @@ func (c *calcClient) Carbonreport(ctx context.Context, in *CarbonreportRequest, 
 // All implementations must embed UnimplementedCalcServer
 // for forward compatibility
 type CalcServer interface {
-	// helper method to make kW/lbs of Co2 report
-	CalculateReports(context.Context, *CalculateReportsRequest) (*CalculateReportsResponse, error)
-	// wrapper for the power-service repo. gets the control points for the
-	// get_power function
-	GetControlPoints(context.Context, *GetControlPointsRequest) (*GetControlPointsResponse, error)
-	// This endpoint will retrieve the power data using control points from the
-	// get_control_points function
-	GetPower(context.Context, *GetPowerRequest) (*GetPowerResponse, error)
-	// This endpoint will retrieve the emissions data for a facility
-	GetEmissions(context.Context, *GetEmissionsRequest) (*GetEmissionsResponse, error)
 	// This endpoint is used by a front end service to return energy usage
 	// information
 	HandleRequests(context.Context, *HandleRequestsRequest) (*HandleRequestsResponse, error)
 	// Make reports available to external/R&D clients
-	Carbonreport(context.Context, *CarbonreportRequest) (*CarbonreportResponse, error)
+	CarbonReportEndpoint(context.Context, *CarbonReportRequest) (*CarbonReportResponse, error)
 	mustEmbedUnimplementedCalcServer()
 }
 
@@ -123,23 +67,11 @@ type CalcServer interface {
 type UnimplementedCalcServer struct {
 }
 
-func (UnimplementedCalcServer) CalculateReports(context.Context, *CalculateReportsRequest) (*CalculateReportsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CalculateReports not implemented")
-}
-func (UnimplementedCalcServer) GetControlPoints(context.Context, *GetControlPointsRequest) (*GetControlPointsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetControlPoints not implemented")
-}
-func (UnimplementedCalcServer) GetPower(context.Context, *GetPowerRequest) (*GetPowerResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPower not implemented")
-}
-func (UnimplementedCalcServer) GetEmissions(context.Context, *GetEmissionsRequest) (*GetEmissionsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetEmissions not implemented")
-}
 func (UnimplementedCalcServer) HandleRequests(context.Context, *HandleRequestsRequest) (*HandleRequestsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HandleRequests not implemented")
 }
-func (UnimplementedCalcServer) Carbonreport(context.Context, *CarbonreportRequest) (*CarbonreportResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Carbonreport not implemented")
+func (UnimplementedCalcServer) CarbonReportEndpoint(context.Context, *CarbonReportRequest) (*CarbonReportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CarbonReportEndpoint not implemented")
 }
 func (UnimplementedCalcServer) mustEmbedUnimplementedCalcServer() {}
 
@@ -152,78 +84,6 @@ type UnsafeCalcServer interface {
 
 func RegisterCalcServer(s grpc.ServiceRegistrar, srv CalcServer) {
 	s.RegisterService(&Calc_ServiceDesc, srv)
-}
-
-func _Calc_CalculateReports_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CalculateReportsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CalcServer).CalculateReports(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/calc.Calc/CalculateReports",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CalcServer).CalculateReports(ctx, req.(*CalculateReportsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Calc_GetControlPoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetControlPointsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CalcServer).GetControlPoints(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/calc.Calc/GetControlPoints",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CalcServer).GetControlPoints(ctx, req.(*GetControlPointsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Calc_GetPower_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPowerRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CalcServer).GetPower(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/calc.Calc/GetPower",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CalcServer).GetPower(ctx, req.(*GetPowerRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Calc_GetEmissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetEmissionsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CalcServer).GetEmissions(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/calc.Calc/GetEmissions",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CalcServer).GetEmissions(ctx, req.(*GetEmissionsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Calc_HandleRequests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -244,20 +104,20 @@ func _Calc_HandleRequests_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Calc_Carbonreport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CarbonreportRequest)
+func _Calc_CarbonReportEndpoint_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CarbonReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CalcServer).Carbonreport(ctx, in)
+		return srv.(CalcServer).CarbonReportEndpoint(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/calc.Calc/Carbonreport",
+		FullMethod: "/calc.Calc/CarbonReportEndpoint",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CalcServer).Carbonreport(ctx, req.(*CarbonreportRequest))
+		return srv.(CalcServer).CarbonReportEndpoint(ctx, req.(*CarbonReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -270,28 +130,12 @@ var Calc_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CalcServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CalculateReports",
-			Handler:    _Calc_CalculateReports_Handler,
-		},
-		{
-			MethodName: "GetControlPoints",
-			Handler:    _Calc_GetControlPoints_Handler,
-		},
-		{
-			MethodName: "GetPower",
-			Handler:    _Calc_GetPower_Handler,
-		},
-		{
-			MethodName: "GetEmissions",
-			Handler:    _Calc_GetEmissions_Handler,
-		},
-		{
 			MethodName: "HandleRequests",
 			Handler:    _Calc_HandleRequests_Handler,
 		},
 		{
-			MethodName: "Carbonreport",
-			Handler:    _Calc_Carbonreport_Handler,
+			MethodName: "CarbonReportEndpoint",
+			Handler:    _Calc_CarbonReportEndpoint_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
