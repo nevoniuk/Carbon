@@ -13,48 +13,15 @@ var _ = API("Calc", func() {
 
 var _ = Service("calc", func() {
 	Description("Service to interpret CO2 emissions through power and carbon intensity data")
-	
-	Method("calculate_reports", func() {
-		Payload(CarbonReport, ElectricalReport)
-		Result(TotalReport)
-		Description("helper method to make kW/lbs of Co2 report")
-		GRPC(func() {})
-	})
 
-	Method("get_control_points", func() {
-		//facility config stuff
-		Description("wrapper for the power-service repo. gets the control points for the get_power function")
-		Payload(PastValuesPayload)
-		Result(ArrayOf(String)) //control points
-		GRPC(func() {})
-	})
-
-	Method("get_power", func() {
-		//talks to power client
-		Payload(GetPowerPayload)
-		Result(ElectricalReport)
-		Description("This endpoint will retrieve the power data using control points from the get_control_points function")
-		GRPC(func() {})
-	})
-
-	Method("get_emissions", func() {
-		//talks to storage client
-		Payload(EmissionsPayload)
-		Result(CarbonReport)
-		Description("This endpoint will retrieve the emissions data for a facility")
-		GRPC(func() {})
-	})
-
-	
 	Method("handle_requests", func() {
-		Payload(RequestPayload)
-		//calls the above functions to get the power/emission reports
 		Description("This endpoint is used by a front end service to return energy usage information")
+		Payload(RequestPayload)
+		Response(ArrayOf(CarbonReport), ArrayOf(ElectricalReport), ArrayOf(TotalReport))
 		GRPC(func() {})
 	})
 
 	Method("carbonreport", func() {
-		//R&D client
 		Description("Make reports available to external/R&D clients")
 		GRPC(func() {})
 	})
@@ -84,6 +51,8 @@ var RequestPayload = Type("RequestPayload", func() {
 	})
 	Required("org", "Period", "building", "interval")
 })
+
+
 
 var PastValuesPayload = Type("PastValuesPayload", func() {
 	Description("Payload to get the control points")
