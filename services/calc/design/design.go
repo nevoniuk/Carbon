@@ -32,6 +32,7 @@ var EmissionsPayload = Type("EmissionsPayload", func() {
 	Field(2, "Interval", String, "Interval", func() {
 		Example("hours, days, weeks, months, years")
 	})
+	Required("Period", "Interval")
 })
 
 var AllReports = Type("AllReports", func() {
@@ -50,7 +51,7 @@ var RequestPayload = Type("RequestPayload", func() {
 	Field(4, "Interval", String, "Interval", func() {
 		Example("hours, days, weeks, months, years")
 	})
-	Required("Org", "Period", "Agent", "Interval")
+	Required("Org", "Duration", "Agent", "Interval")
 })
 
 var EmissionsReport = Type("EmissionsReport", func() {
