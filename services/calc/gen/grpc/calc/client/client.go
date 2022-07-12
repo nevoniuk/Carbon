@@ -46,12 +46,12 @@ func (c *Client) HandleRequests() goa.Endpoint {
 	}
 }
 
-// CarbonReportEndpoint calls the "CarbonReportEndpoint" function in
-// calcpb.CalcClient interface.
-func (c *Client) CarbonReportEndpoint() goa.Endpoint {
+// GetCarbonReport calls the "GetCarbonReport" function in calcpb.CalcClient
+// interface.
+func (c *Client) GetCarbonReport() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
-			BuildCarbonReportEndpointFunc(c.grpccli, c.opts...),
+			BuildGetCarbonReportFunc(c.grpccli, c.opts...),
 			nil,
 			nil)
 		res, err := inv.Invoke(ctx, v)

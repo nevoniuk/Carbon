@@ -55,16 +55,16 @@ func DecodeHandleRequestsResponse(ctx context.Context, v interface{}, hdr, trlr 
 	return res, nil
 }
 
-// BuildCarbonReportEndpointFunc builds the remote method to invoke for "calc"
-// service "carbon_report" endpoint.
-func BuildCarbonReportEndpointFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
+// BuildGetCarbonReportFunc builds the remote method to invoke for "calc"
+// service "get_carbon_report" endpoint.
+func BuildGetCarbonReportFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
 	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
 		for _, opt := range cliopts {
 			opts = append(opts, opt)
 		}
 		if reqpb != nil {
-			return grpccli.CarbonReportEndpoint(ctx, reqpb.(*calcpb.CarbonReportRequest), opts...)
+			return grpccli.GetCarbonReport(ctx, reqpb.(*calcpb.GetCarbonReportRequest), opts...)
 		}
-		return grpccli.CarbonReportEndpoint(ctx, &calcpb.CarbonReportRequest{}, opts...)
+		return grpccli.GetCarbonReport(ctx, &calcpb.GetCarbonReportRequest{}, opts...)
 	}
 }

@@ -49,9 +49,9 @@ func DecodeHandleRequestsRequest(ctx context.Context, v interface{}, md metadata
 	return payload, nil
 }
 
-// EncodeCarbonReportEndpointResponse encodes responses from the "calc" service
-// "carbon_report" endpoint.
-func EncodeCarbonReportEndpointResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	resp := NewProtoCarbonReportResponse()
+// EncodeGetCarbonReportResponse encodes responses from the "calc" service
+// "get_carbon_report" endpoint.
+func EncodeGetCarbonReportResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
+	resp := NewProtoGetCarbonReportResponse()
 	return resp, nil
 }

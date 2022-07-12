@@ -18,8 +18,8 @@ import (
 
 // Server implements the calcpb.CalcServer interface.
 type Server struct {
-	HandleRequestsH       goagrpc.UnaryHandler
-	CarbonReportEndpointH goagrpc.UnaryHandler
+	HandleRequestsH  goagrpc.UnaryHandler
+	GetCarbonReportH goagrpc.UnaryHandler
 	calcpb.UnimplementedCalcServer
 }
 
@@ -32,8 +32,8 @@ type ErrorNamer interface {
 // New instantiates the server struct with the calc service endpoints.
 func New(e *calc.Endpoints, uh goagrpc.UnaryHandler) *Server {
 	return &Server{
-		HandleRequestsH:       NewHandleRequestsHandler(e.HandleRequests, uh),
-		CarbonReportEndpointH: NewCarbonReportEndpointHandler(e.CarbonReportEndpoint, uh),
+		HandleRequestsH:  NewHandleRequestsHandler(e.HandleRequests, uh),
+		GetCarbonReportH: NewGetCarbonReportHandler(e.GetCarbonReport, uh),
 	}
 }
 
@@ -58,23 +58,23 @@ func (s *Server) HandleRequests(ctx context.Context, message *calcpb.HandleReque
 	return resp.(*calcpb.HandleRequestsResponse), nil
 }
 
-// NewCarbonReportEndpointHandler creates a gRPC handler which serves the
-// "calc" service "carbon_report" endpoint.
-func NewCarbonReportEndpointHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
+// NewGetCarbonReportHandler creates a gRPC handler which serves the "calc"
+// service "get_carbon_report" endpoint.
+func NewGetCarbonReportHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeCarbonReportEndpointResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeGetCarbonReportResponse)
 	}
 	return h
 }
 
-// CarbonReportEndpoint implements the "CarbonReportEndpoint" method in
-// calcpb.CalcServer interface.
-func (s *Server) CarbonReportEndpoint(ctx context.Context, message *calcpb.CarbonReportRequest) (*calcpb.CarbonReportResponse, error) {
-	ctx = context.WithValue(ctx, goa.MethodKey, "carbon_report")
+// GetCarbonReport implements the "GetCarbonReport" method in calcpb.CalcServer
+// interface.
+func (s *Server) GetCarbonReport(ctx context.Context, message *calcpb.GetCarbonReportRequest) (*calcpb.GetCarbonReportResponse, error) {
+	ctx = context.WithValue(ctx, goa.MethodKey, "get_carbon_report")
 	ctx = context.WithValue(ctx, goa.ServiceKey, "calc")
-	resp, err := s.CarbonReportEndpointH.Handle(ctx, message)
+	resp, err := s.GetCarbonReportH.Handle(ctx, message)
 	if err != nil {
 		return nil, goagrpc.EncodeError(err)
 	}
-	return resp.(*calcpb.CarbonReportResponse), nil
+	return resp.(*calcpb.GetCarbonReportResponse), nil
 }

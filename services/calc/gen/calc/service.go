@@ -13,11 +13,11 @@ import (
 
 // Service to interpret CO2 emissions through power and carbon intensity data
 type Service interface {
-	// This endpoint is used by a front end service to return energy usage
-	// information
+	// This endpoint is used by a front end service to return carbon emission
+	// reports
 	HandleRequests(context.Context, *RequestPayload) (res *AllReports, err error)
 	// Make reports available to external/R&D clients
-	CarbonReportEndpoint(context.Context) (err error)
+	GetCarbonReport(context.Context) (err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -28,51 +28,49 @@ const ServiceName = "calc"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"handle_requests", "carbon_report"}
+var MethodNames = [2]string{"handle_requests", "get_carbon_report"}
 
 // AllReports is the result type of the calc service handle_requests method.
 type AllReports struct {
-	// carbon_intensity_reports
+	// CarbonIntensityReports
 	CarbonIntensityReports []*CarbonReport
-	// power_reports
+	// PowerReports
 	PowerReports []*ElectricalReport
-	// total_emission_reports
+	// TotalEmissionReports
 	TotalEmissionReports []*EmissionsReport
 }
 
 // Carbon Report from clickhouse
 type CarbonReport struct {
-	// generated_rate
+	// GeneratedRate
 	GeneratedRate float64
 	// Duration
 	Duration *Period
-	// duration_type
+	// DurationType
 	DurationType string
-	// region
+	// Region
 	Region string
 }
 
-// Contains a time stamp with its respective x-y coordinates
+// Contains a time stamp with its respective x&y coordinates
 type DataPoint struct {
-	// time
+	// Time
 	Time string
-	// carbon_rate
-	CarbonRate float64
+	// carbon footprint is the lbs of CO2 emissions
+	CarbonFootprint float64
 }
 
-// Energy Generation Report
+// Energy Generation Report from the Past values function GetValues
 type ElectricalReport struct {
-	// period
-	Period *Period
-	// postalcode
-	Postalcode string
-	// facility
-	Facility UUID
-	// building
-	Building UUID
-	// stamp
-	Stamp []*PowerStamp
-	// intervalType
+	// Duration
+	Duration *Period
+	// Org
+	Org UUID
+	// Agent
+	Agent string
+	// Stamp
+	Stamp *PowerStamp
+	// IntervalType
 	IntervalType string
 }
 
@@ -80,15 +78,17 @@ type ElectricalReport struct {
 type EmissionsReport struct {
 	// Duration
 	Duration *Period
-	// duration_type
+	// DurationType
 	DurationType string
-	// point
-	Point []*DataPoint
-	// facility
-	Facility UUID
+	// Points
+	Points []*DataPoint
+	// Org
+	Org UUID
+	// Agent
+	Agent string
 }
 
-// Period of time from start to end of Forecast
+// Period of time from start to end for any report type
 type Period struct {
 	// Start time
 	StartTime string
@@ -96,23 +96,24 @@ type Period struct {
 	EndTime string
 }
 
+// Used by Electrical Report to store power meter data from GetValues()
 type PowerStamp struct {
-	// time
-	Time *string
+	// Time
+	Time string
 	// power stamp in KW
-	GenRate *float64
+	GeneratedRate float64
 }
 
 // RequestPayload is the payload type of the calc service handle_requests
 // method.
 type RequestPayload struct {
-	// org
+	// Org
 	Org UUID
-	// Period
-	Period *Period
-	// building
-	Building UUID
-	// interval
+	// Duration
+	Duration *Period
+	// Agent
+	Agent string
+	// Interval
 	Interval string
 }
 

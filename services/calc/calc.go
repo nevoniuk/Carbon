@@ -95,7 +95,7 @@ func (s *calcSvc) HandleRequests(ctx context.Context, req *gencalc.RequestPayloa
 }
 
 //R&D method
-func (s *calcSvc) GetCarbonReportEndpoint(ctx context.Context) (error) {
+func (s *calcSvc) GetCarbonReport(ctx context.Context) (error) {
 	return nil
 }
 

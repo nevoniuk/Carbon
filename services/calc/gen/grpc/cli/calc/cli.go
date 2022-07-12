@@ -22,20 +22,20 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `calc (handle-requests|carbon-report)
+	return `calc (handle-requests|get-carbon-report)
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
 	return os.Args[0] + ` calc handle-requests --message '{
-      "Period": {
-         "endTime": "2020-01-01T00:00:00Z",
-         "startTime": "2020-01-01T00:00:00Z"
+      "Agent": "Repudiandae sint odit dolor quis occaecati.",
+      "Duration": {
+         "EndTime": "2020-01-01T00:00:00Z",
+         "StartTime": "2020-01-01T00:00:00Z"
       },
-      "building": "Facere reiciendis.",
-      "interval": "hours, days, weeks, months, years",
-      "org": "Facere reiciendis."
+      "Interval": "hours, days, weeks, months, years",
+      "Org": "Facere reiciendis."
    }'` + "\n" +
 		""
 }
@@ -49,11 +49,11 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 		calcHandleRequestsFlags       = flag.NewFlagSet("handle-requests", flag.ExitOnError)
 		calcHandleRequestsMessageFlag = calcHandleRequestsFlags.String("message", "", "")
 
-		calcCarbonReportFlags = flag.NewFlagSet("carbon-report", flag.ExitOnError)
+		calcGetCarbonReportFlags = flag.NewFlagSet("get-carbon-report", flag.ExitOnError)
 	)
 	calcFlags.Usage = calcUsage
 	calcHandleRequestsFlags.Usage = calcHandleRequestsUsage
-	calcCarbonReportFlags.Usage = calcCarbonReportUsage
+	calcGetCarbonReportFlags.Usage = calcGetCarbonReportUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -92,8 +92,8 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			case "handle-requests":
 				epf = calcHandleRequestsFlags
 
-			case "carbon-report":
-				epf = calcCarbonReportFlags
+			case "get-carbon-report":
+				epf = calcGetCarbonReportFlags
 
 			}
 
@@ -123,8 +123,8 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			case "handle-requests":
 				endpoint = c.HandleRequests()
 				data, err = calcc.BuildHandleRequestsPayload(*calcHandleRequestsMessageFlag)
-			case "carbon-report":
-				endpoint = c.CarbonReportEndpoint()
+			case "get-carbon-report":
+				endpoint = c.GetCarbonReport()
 				data = nil
 			}
 		}
@@ -143,8 +143,8 @@ Usage:
     %[1]s [globalflags] calc COMMAND [flags]
 
 COMMAND:
-    handle-requests: This endpoint is used by a front end service to return energy usage information
-    carbon-report: Make reports available to external/R&D clients
+    handle-requests: This endpoint is used by a front end service to return carbon emission reports
+    get-carbon-report: Make reports available to external/R&D clients
 
 Additional help:
     %[1]s calc COMMAND --help
@@ -153,28 +153,28 @@ Additional help:
 func calcHandleRequestsUsage() {
 	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc handle-requests -message JSON
 
-This endpoint is used by a front end service to return energy usage information
+This endpoint is used by a front end service to return carbon emission reports
     -message JSON: 
 
 Example:
     %[1]s calc handle-requests --message '{
-      "Period": {
-         "endTime": "2020-01-01T00:00:00Z",
-         "startTime": "2020-01-01T00:00:00Z"
+      "Agent": "Repudiandae sint odit dolor quis occaecati.",
+      "Duration": {
+         "EndTime": "2020-01-01T00:00:00Z",
+         "StartTime": "2020-01-01T00:00:00Z"
       },
-      "building": "Facere reiciendis.",
-      "interval": "hours, days, weeks, months, years",
-      "org": "Facere reiciendis."
+      "Interval": "hours, days, weeks, months, years",
+      "Org": "Facere reiciendis."
    }'
 `, os.Args[0])
 }
 
-func calcCarbonReportUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc carbon-report
+func calcGetCarbonReportUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-carbon-report
 
 Make reports available to external/R&D clients
 
 Example:
-    %[1]s calc carbon-report
+    %[1]s calc get-carbon-report
 `, os.Args[0])
 }

@@ -13,24 +13,24 @@ option go_package = "/calcpb";
 
 // Service to interpret CO2 emissions through power and carbon intensity data
 service Calc {
-	// This endpoint is used by a front end service to return energy usage
-// information
+	// This endpoint is used by a front end service to return carbon emission
+// reports
 	rpc HandleRequests (HandleRequestsRequest) returns (HandleRequestsResponse);
 	// Make reports available to external/R&D clients
-	rpc CarbonReportEndpoint (CarbonReportRequest) returns (CarbonReportResponse);
+	rpc GetCarbonReport (GetCarbonReportRequest) returns (GetCarbonReportResponse);
 }
 
 message HandleRequestsRequest {
-	// org
+	// Org
 	string org = 1;
-	// Period
-	Period period = 2;
-	// building
-	string building = 3;
-	// interval
+	// Duration
+	Period duration = 2;
+	// Agent
+	string agent = 3;
+	// Interval
 	string interval = 4;
 }
-// Period of time from start to end of Forecast
+// Period of time from start to end for any report type
 message Period {
 	// Start time
 	string start_time = 1;
@@ -39,67 +39,67 @@ message Period {
 }
 
 message HandleRequestsResponse {
-	// carbon_intensity_reports
+	// CarbonIntensityReports
 	repeated CarbonReport carbon_intensity_reports = 1;
-	// power_reports
+	// PowerReports
 	repeated ElectricalReport power_reports = 2;
-	// total_emission_reports
+	// TotalEmissionReports
 	repeated EmissionsReport total_emission_reports = 3;
 }
 // Carbon Report from clickhouse
 message CarbonReport {
-	// generated_rate
+	// GeneratedRate
 	double generated_rate = 1;
 	// Duration
 	Period duration = 2;
-	// duration_type
+	// DurationType
 	string duration_type = 3;
-	// region
+	// Region
 	string region = 4;
 }
-// Energy Generation Report
+// Energy Generation Report from the Past values function GetValues
 message ElectricalReport {
-	// period
-	Period period = 1;
-	// postalcode
-	string postalcode = 2;
-	// facility
-	string facility = 3;
-	// building
-	string building = 4;
-	// stamp
-	repeated PowerStamp stamp = 5;
-	// intervalType
-	string interval_type = 6;
+	// Duration
+	Period duration = 1;
+	// Org
+	string org = 2;
+	// Agent
+	string agent = 3;
+	// Stamp
+	PowerStamp stamp = 4;
+	// IntervalType
+	string interval_type = 5;
 }
-
+// Used by Electrical Report to store power meter data from GetValues()
 message PowerStamp {
-	// time
+	// Time
 	string time = 1;
 	// power stamp in KW
-	double gen_rate = 2;
+	double generated_rate = 2;
 }
 // Carbon/Energy Generation Report
 message EmissionsReport {
 	// Duration
 	Period duration = 1;
-	// duration_type
+	// DurationType
 	string duration_type = 2;
-	// point
-	repeated DataPoint point = 3;
-	// facility
-	string facility = 4;
+	// Points
+	repeated DataPoint points = 3;
+	// Org
+	string org = 4;
+	// Agent
+	string agent = 5;
 }
-// Contains a time stamp with its respective x-y coordinates
+// Contains a time stamp with its respective x&y coordinates
 message DataPoint {
-	// time
+	// Time
 	string time = 1;
-	// carbon_rate
-	double carbon_rate = 2;
+	// carbon footprint is the lbs of CO2 emissions
+	double carbon_footprint = 2;
 }
 
-message CarbonReportRequest {
+message GetCarbonReportRequest {
 }
 
-message CarbonReportResponse {
+message GetCarbonReportResponse {
 }
