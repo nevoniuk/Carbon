@@ -7,6 +7,10 @@ import (
 var _ = API("Poller", func() {
 	Title("Poller")
 	Description("The Poller Service will query the Singularity Carbonara API daily and store in Clickhouse")
+	Docs(func() {
+		Description("Additional documentation on Singularity and Region Enums")
+		URL("https://docs.google.com/document/d/1t-_9GNZLyI98LujRzXwbjMVE6mVNBeiV7O2pwIecd9I/edit#")
+	})
 })
 
 

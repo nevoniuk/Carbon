@@ -47,6 +47,7 @@ func main() {
 
 		debug = flag.Bool("debug", false, "Enable debug logs")
 		//test  = flag.Bool("test", os.Getenv("TEST_ENV") != "", "Enable test mode")
+		carbonKey = flag.String("singularity-key", os.Getenv("SINGULARITY_API_KEY"), "The API key for Singularity")
 	)
 	flag.Parse()
 	format := log.FormatJSON
@@ -77,7 +78,7 @@ func main() {
 
 	//intiialize the clients
 	c := &http.Client{Transport: trace.Client(ctx, http.DefaultTransport)}
-	csc := carbonara.New(c)
+	csc := carbonara.New(c, *carbonKey)
 
 	chadd := *chaddr
 	if chadd == "" {

@@ -24,6 +24,7 @@ type (
 	}
 	client struct {
 		c *http.Client
+		key string
 	}
 	Outermoststruct struct {
 		Data []struct {
@@ -53,9 +54,9 @@ const (
 	cs_url     = "https://api.singularity.energy/v1/"
 )
 
-func New(c *http.Client) Client {
+func New(c *http.Client, key string) Client {
 	c.Timeout = 10 * time.Second
-	return &client{c}
+	return &client{c, key}
 }
 
 func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*http.Response, error) {
@@ -101,11 +102,11 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		
 		req.Close = true
 		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("X-Api-Key", "f74f6d5bafa942dcab07dd8e2a0af564")
+		req.Header.Add("X-Api-Key", c.key)
 
 		carbonresp, err := c.HttpGetRequestCall(ctx, req)
 		if err != nil {
-			fmt.Errorf("ERROR FROM GET REQUEST: %s", err)
+			fmt.Errorf("Error from get request: %s", err)
 			return nil, err
 		}
 		//TODO:will delete this line
