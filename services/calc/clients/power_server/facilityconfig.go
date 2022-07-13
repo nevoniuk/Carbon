@@ -6,6 +6,10 @@ import (
 	"strings"
 
 	"github.com/crossnokaye/facilityconfig"
+	//add path to file
+	//1. given inputs like org and agent find the above file path
+	//describe shape of the file
+	
 	"github.com/google/uuid"
 )
 
@@ -28,9 +32,11 @@ type Repository interface {
 	// FindControlPointConfigsByName searches control point description in the agent with specified name
 	// if point is not found, no error and empty slice is returned.
 	FindControlPointIDsByName(orgID uuid.UUID, clientName, pointName string) ([]uuid.UUID, error)
+	GetOrgByID(uuid.UUID) (*facilityconfig.Org, error)
+	GetAgentByName(*facilityconfig.Org, string) (*facilityconfig.Agent, error)
 }
 
-func (pc *powerConfig) getOrgByID(orgID uuid.UUID) (*facilityconfig.Org, error) {
+func (pc *powerConfig) GetOrgByID(orgID uuid.UUID) (*facilityconfig.Org, error) {
 	for _, org := range pc.f.Orgs {
 		if org.ID == orgID {
 			return org, nil
@@ -39,7 +45,7 @@ func (pc *powerConfig) getOrgByID(orgID uuid.UUID) (*facilityconfig.Org, error) 
 	return nil, fmt.Errorf("organisation %v does not exist in the config", orgID)
 }
 
-func (pc *powerConfig) getAgentByName(org *facilityconfig.Org, name string) (*facilityconfig.Agent, error) {
+func (pc *powerConfig) GetAgentByName(org *facilityconfig.Org, name string) (*facilityconfig.Agent, error) {
 	for _, agent := range org.AgentByID {
 		if strings.EqualFold(agent.Name, name) {
 			return agent, nil
@@ -49,13 +55,13 @@ func (pc *powerConfig) getAgentByName(org *facilityconfig.Org, name string) (*fa
 }
 
 func (pc *powerConfig) FindControlPointIDsByName(orgID uuid.UUID, clientName string, pointName string) ([]uuid.UUID, error) {
-	org, err := pc.getOrgByID(orgID)
+	org, err := pc.GetOrgByID(orgID)
 	var nullid []uuid.UUID
 	if err != nil {
 		return nullid, err
 	}
 
-	agent, err := pc.getAgentByName(org, clientName)
+	agent, err := pc.GetAgentByName(org, clientName)
 	
 	if err != nil {
 		return nullid, err

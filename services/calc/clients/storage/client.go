@@ -5,18 +5,17 @@ import (
 	"time"
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/crossnokaye/carbon/clients/clickhouse"
+	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 )
 
 type (
 
 
 	Client interface {
-		// Init development database
 		Name() string
-
 		Init(context.Context, bool) error
-
 		Ping(context.Context) error
+		GetCarbonReport(context.Context, []*gencalc.Period, string, string) ([]*gencalc.CarbonReport, error)
 		
 	}
 
@@ -29,7 +28,7 @@ const(
 	dateFormat = "2006-01-02"
 )
 
-
+var reportdurations [5]string = [5]string{ "minute", "hourly", "daily", "weekly", "monthly"}
 func (c *client) Name() string {
 	var name = "Clickhouse"
 	return name
@@ -57,24 +56,54 @@ func (c *client) Init(ctx context.Context, test bool) error {
 	}
 
 	var err error 
-		
-	/**
-	err = c.chcon.Exec(ctx, `
-			DROP TABLE carbondb.power_reports
-	`)
-	*/
-
 	err = c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS carbondb.power_reports (
 				start DateTime,
 				end DateTime,
 				generatedrate Float64,
-				
 				) Engine =  MergeTree()
 				ORDER BY (start)
 	`) 
 	
-	return err
-	
-		
+	return err	
 }
+
+func (c *client) GetCarbonReport(ctx context.Context, duration []*gencalc.Period, intervalType string, region string) ([]*gencalc.CarbonReport, error) {
+	var reports []*gencalc.CarbonReport
+	var report *gencalc.CarbonReport
+	var averagegen float64
+
+	for _, period := range duration {
+		var newstart, starterr = time.Parse(timeFormat, period.StartTime)
+		if starterr != nil {
+			return nil, starterr
+		}
+		var newend, enderr = time.Parse(timeFormat, period.EndTime)
+		if enderr != nil {
+			return nil, enderr
+		}
+		
+		rows := c.chcon.QueryRow(ctx,`
+		SELECT
+			AVG(generatedrate) AS generatedate,
+			AVG(marginalrate) AS marginalrate,
+			AVG(consumedrate) AS consumedrate
+		FROM 
+			carbondb.carbon_reports
+		WHERE
+			region = $1 AND start >= $2 AND end <= $3 AND duration = $4
+		GROUP BY region
+				`, region, newstart.UTC(), newend.UTC(), intervalType)
+		err := rows.Scan(&averagegen)
+
+		if err != nil {
+			return nil, fmt.Errorf("Error could not get report [%s]", err)
+		}
+		var duration = &gencalc.Period{StartTime: period.StartTime, EndTime: period.EndTime}
+		report = &gencalc.CarbonReport{GeneratedRate: averagegen, Duration: duration, DurationType: intervalType, Region: region}
+		reports = append(reports, report)	
+	}
+
+	return reports, nil
+}
+
