@@ -68,7 +68,9 @@ var EmissionsReport = Type("EmissionsReport", func() {
 var CarbonReport = Type("CarbonReport", func() {
 	Description("Carbon Report from clickhouse")
 	
-	Field(1, "GeneratedRate", Float64, "GeneratedRate")
+	Field(1, "GeneratedRate", Float64, "GeneratedRate", func() {
+		Description("This is in units of (lbs of CO2/MWh)")
+	})
 	Field(2, "Duration", Period, "Duration")
 	Field(3, "DurationType", String, "DurationType")
 	Field(4, "Region", String, "Region", func() {
@@ -96,21 +98,11 @@ var ElectricalReport = Type("ElectricalReport", func() {
 	Field(1, "Duration", Period, "Duration")
 	Field(2, "Org", UUID, "Org")
 	Field(3, "Agent", String, "Agent")
-	Field(4, "Stamp", PowerStamp, "Stamp")
+	Field(4, "GeneratedRate", Float64, "GeneratedRate", func() {
+		Description("KWh")
+	})
 	Field(5, "IntervalType", String, "IntervalType")
-
 	Required("Org", "Duration", "Agent", "Stamp", "IntervalType")
-})
-
-var PowerStamp = Type("PowerStamp", func() {
-	Description("Used by Electrical Report to store power meter data from GetValues()")
-	Field(1, "Time", String, "Time", func() {
-		Format(FormatDateTime)
-	})
-	Field(2, "GeneratedRate", Float64, "GeneratedRate", func() {
-		Description("power stamp in KW")
-	})
-	Required("GeneratedRate", "Time")
 })
 
 var Period = Type("Period", func() {
