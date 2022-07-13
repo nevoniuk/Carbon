@@ -1,6 +1,4 @@
 package calcapi
-
-//something
 import (
 	"context"
 	"fmt"
@@ -12,7 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-//only works for oxnard and riverside
 type (
 	calcSvc struct {
 	psc power.Client

@@ -78,7 +78,7 @@ var CarbonReport = Type("CarbonReport", func() {
 })
 
 var DataPoint = Type("DataPoint", func() {
-	Description("Contains a time stamp with its respective x&y coordinates")
+	Description("Contains carbon emissions in terms of DataPoints, which can be used as points for a time/CO2 emissions graph")
 	Field(1, "Time", String, "Time", func() {
 		Format(FormatDateTime)
 		Example("2020-01-01T00:00:00Z")

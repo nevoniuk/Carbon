@@ -70,4 +70,6 @@ func (pc *powerConfig) FindControlPointIDsByName(orgID uuid.UUID, clientName str
 	points = append(points, cp.ID)
 	return points, nil
 }
+//function to obtain pointname: configuration file to load in
+//schedlure
 
