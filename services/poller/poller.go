@@ -12,22 +12,31 @@ import (
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
-// Poller service example implementation.
-// The example methods log the requests and return zero values.
+
 type pollersrvc struct {
 	csc carbonara.Client
 	dbc storage.Client
 	ctx                 context.Context
 	cancel context.CancelFunc
-	readDates []string
-	carbonReports		[][]*genpoller.CarbonForecast
+	startDates []string
+	minuteReports		[][]*genpoller.CarbonForecast
+	
 }
+//timeFormat is used to parse times in order to store time as ISO8601 format
 var timeFormat = "2006-01-02T15:04:05-07:00"
-var dateFormat = "2006-01-02"
-//var regionstartdates map[string]string
-var regions [14]string
-var reportdurations [4]string
-	//ensurepastdata
+
+//regions maintains all the regions that Singularity returns CO2 intensity for
+var regions [13]string = [13]string{"CAISO", "AESO", "BPA", "ERCO", "IESO",
+"ISONE", "MISO",
+ "NYISO", "NYISO.NYCW",
+  "NYISO.NYLI", "NYISO.NYUP",
+   "PJM", "SPP"} 
+
+//reportdurations maintains the interval length of each report
+var reportdurations [5]string = [5]string{ "minute", "hourly", "daily", "weekly", "monthly"}
+var regionstartdate = "2020-01-1T00:00:00+00:00"
+var AesoStartDate = "2020-05-15T16:00:00+00:00"
+
 // NewPoller returns the Poller service implementation.
 func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *pollersrvc {
 	ctx, cancel := context.WithCancel(ctx)
@@ -36,209 +45,296 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		dbc:				dbc,
 		ctx:                ctx,
 		cancel: 			cancel,
-		readDates:		    []string{},
-		carbonReports:		[][]*genpoller.CarbonForecast{},
+		startDates:		    []string{},
+		minuteReports:		[][]*genpoller.CarbonForecast{},
+		
 	}
-	regions = [...]string{ "AESO", "BPA", "CAISO", "ERCO", "IESO",
+
+	regions = [...]string{ "CAISO", "AESO", "BPA", "ERCO", "IESO",
        "ISONE", "MISO",
-        "NYSIO", "NYISO.NYCW",
+        "NYISO", "NYISO.NYCW",
          "NYISO.NYLI", "NYISO.NYUP",
-          "PJM", "SPP", "EIA"} 
-	var regionstartdates = map[string]string{
-		"AESO": "2020-05-15T16:00:00+00:00",
-		"BPA": "2018-01-01T08:00:00+00:00",
-		"CAISO":"2018-04-10T07:00:00+00:00",
-		"ERCO" : "2018-07-02T05:05:00+00:00",
-		"IESO": "2017-12-31T05:00:00+00:00",
-		"ISONE": "2015-01-01T05:00:00+00:00",
-		"MISO": "2018-01-01T05:00:00+00:00",
-		"NYSIO": "2017-12-01T05:05:00+00:00",
-		"NYSIO.NYCW": "2019-01-01T00:00:00+00:00", //wont add to array
-		"NYISO.NYLI": "2019-01-01T00:00:00+00:00",
-		"NYISO.NYUP": "2019-01-01T00:00:00+00:00",
-		"PJM": "2017-07-01T04:05:00+00:00",
-		"SPP": "2017-12-31T00:00:00+00:00",
-		"EIA": "2019-01-01T05:00:00+00:00",
-	}
-	reportdurations = [...]string{"hourly", "daily", "weekly", "monthly"}
-	//rates poller service uses the command "go"
-	times := s.ensurepastdata(ctx, regionstartdates)
-	carbonReports, err := s.CarbonEmissions(ctx, times)
-	if err != nil {
-		fmt.Printf("could not retrieve co2 emissions")
+          "PJM", "SPP"} 
+	
+	
+	times := s.EnsurePastData(ctx)
+	fmt.Println("READ DATES")
+	fmt.Println(times)
+	
+	s = &pollersrvc{
+		csc:				csc,
+		dbc:				dbc,
+		ctx:                ctx,
+		cancel: 			cancel,
+		startDates:		    times,
 	}
 	
-	return &pollersrvc{csc: csc, dbc: dbc, ctx: ctx, cancel: cancel, readDates: times, carbonReports: carbonReports}
+	return s
 }
 
-func (s *pollersrvc) ensurepastdata(ctx context.Context, regionstartdates map[string]string) (startDates []string) {
-	//configure start dates for each region 
+//EnsurePastData will query clickhouse for the most recent report date
+func (s *pollersrvc) EnsurePastData(ctx context.Context) (startDates []string) {
 	var dates []string
+
 	for i := 0; i < len(regions); i++ {
-		//failing at checkDB because clickhouse connection is refused
+		
 		date, err := s.dbc.CheckDB(ctx, string(regions[i]))
 		if err == nil {
 			dates = append(dates, date)
 		} else if err != nil {
-			defaultDate := regionstartdates[string(regions[i])]
-			//fmt.Printf("date is %s\n", defaultDate)
-			if (err != nil) {dates = append(dates, defaultDate)}
+			fmt.Println(err)
+			var defaultDate string
+			if regions[i] == "AESO" {
+				defaultDate = AesoStartDate
+			} else {defaultDate = regionstartdate}
+			dates = append(dates, defaultDate)
 		}
 	}
 	return dates
 }
-/**
-func initMap() {
-	regionstartdates["AESO"] = "2020-05-15T16:00:00+00:00"
-	regionstartdates["BPA"] = "2018-01-01T08:00:00+00:00"
-	regionstartdates["CAISO"] = "2018-04-10T07:00:00+00:00"
-	regionstartdates["ERCO"] = "2018-07-02T05:05:00+00:00"
-	regionstartdates["IESO"] = "2017-12-31T05:00:00+00:00"
-	regionstartdates["ISONE"] = "2015-01-01T05:00:00+00:00"
-	regionstartdates["MISO"] = "2018-01-01T05:00:00+00:00"
-	regionstartdates["NYSIO"] = "2017-12-01T05:05:00+00:00"
-	regionstartdates["NYSIO.NYCW"] = "2019-01-01T00:00:00+00:00"
-	regionstartdates["NYISO.NYLI"] = "2019-01-01T00:00:00+00:00"
-	regionstartdates["NYISO.NYUP"] = "2019-01-01T00:00:00+00:00"
-	regionstartdates["PJM"] = "2017-07-01T04:05:00+00:00"
-	regionstartdates["SPP"] = "2017-12-31T00:00:00+00:00"
-	regionstartdates["EIA"] = "2019-01-01T05:00:00+00:00"
-}
-*/
 
-// query api getting search data for carbon_intensity event
-func (s *pollersrvc) CarbonEmissions(ctx context.Context, dates []string) (res [][]*genpoller.CarbonForecast, err error) {
-	//var dates = s.readDates
-	var reports [][]*genpoller.CarbonForecast
-	//end, err := time.Parse(timeFormat, time.Now().GoString())
-	if err != nil {
-		fmt.Printf("time parse problem in carbon emissions")
-	}
-	//fmt.Printf("the length of the dates array is %d\n", len(dates))
+//Update will fetch the latest reports for all regions
+func (s *pollersrvc) Update(ctx context.Context) error {
+	
 	for i := 0; i < len(regions); i++ {
-		carbonres, err := s.csc.GetEmissions(ctx, regions[i], dates[i], time.Now().GoString())
-        if err != nil { //handle errors when a region is not available??
-            //instead of returning have a way marking that a region is not available
-            //handle case when
-            return nil, err
+
+		minutereports, emissionsError := s.CarbonEmissions(ctx, s.startDates[i], regions[i]) //returns single array of forecasts
+		if emissionsError != nil {
+			fmt.Errorf("Error from carbon emissions %s\n", emissionsError)
+			continue
 		}
-		reports = append(reports, carbonres)
-		s.dbc.SaveCarbonReports(ctx, carbonres)
-		fmt.Printf("returned from save reports")
+		
+		dateConfigs, datesErr := GetDates(ctx, minutereports)
+
+		if datesErr != nil {
+			return datesErr
+		}
+
+		fmt.Println("5 MINUTE REPORTS:")
+		fmt.Println(len(minutereports))
+		s.dbc.SaveCarbonReports(ctx, minutereports)
+
+		
+		//var durationsCounter = 1
+
+		for j := 0; j < len(dateConfigs); j++ {
+			if dateConfigs[j] != nil {
+				fmt.Printf("j is %d\n", j)
+				aggErr := s.AggregateData(ctx, regions[i], dateConfigs[j], reportdurations[j])
+
+				if aggErr != nil {
+					fmt.Errorf("Error from aggregate data %s\n", aggErr)
+					return aggErr
+				}
+
+				//durationsCounter += 1
+			}
+			
+		}
 	}
-	return reports, nil
+	return nil
 }
 
-// query api using a search call for a fuel event from Carbonara API
-func (s *pollersrvc) Fuels(ctx context.Context, dates []time.Time) (err error) {
-	return
+
+//R&D can use this function to obtain CO2 intensity reports for a specific region
+func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoller.CarbonPayload) ([]*genpoller.CarbonForecast, error) {
+	var start = *input.Start
+	var end = *input.End
+	var region = *input.Region
+
+	var reports []*genpoller.CarbonForecast
+
+	reports, emissionsErr := ser.csc.GetEmissions(ctx, region, start, end, reports)
+	if emissionsErr != nil {
+		return nil, emissionsErr
+	}
+	return reports, emissionsErr
 }
 
-// get the aggregate data for an event from clickhouse
-func (s *pollersrvc) AggregateDataEndpoint(ctx context.Context) (res []*genpoller.AggregateData, err error) {
-		//timeNow, err := time.Parse(timeFormat, time.Now().GoString())
-		var carbonreports = s.carbonReports
-		var dates = s.readDates
+//CarbonEmissions is a helper function to calculate API calls in 7 day intervals
+func (ser *pollersrvc) CarbonEmissions(ctx context.Context, start string, region string) ([]*genpoller.CarbonForecast, error) {
+	
+
+	var reports []*genpoller.CarbonForecast
+
+	lastDate := time.Now().Format(timeFormat)
+
+	var startTime, err1 = time.Parse(timeFormat, start)
+
+	if err1 != nil {
+		return nil, err1
+	}
+
+	var endTime, err2 = time.Parse(timeFormat, lastDate)
+
+	if err2 != nil {
+		return nil, err2
+	}
+
+	for startTime.Before(endTime) {
+		fmt.Printf("REGION IS %s\n", region)
+		fmt.Printf("START TIME IS %s\n", start)
+		
+		t, err := time.Parse(timeFormat, start)
+
 		if err != nil {
 			return nil, err
 		}
-	if carbonreports != nil {
-		for i, region := range regions {
-			var days []*genpoller.Period
-			var months []*genpoller.Period
-			var years []*genpoller.Period
-			var initialstart, err = time.Parse(timeFormat, dates[i])
-			if err != nil {
-				fmt.Errorf("error parsing time")
-			}
-			days, months, years = getdates(ctx, initialstart, carbonreports[i])
-			if days != nil {
-				aggregateres, err := s.dbc.GetAggregateReports(ctx, days, region, reportdurations[1])
-				if err == nil {
-					s.dbc.SaveAggregateReports(ctx, aggregateres)
-				}
-			}
-			if months != nil {
-				aggregateres, err := s.dbc.GetAggregateReports(ctx, months, region, reportdurations[2])
-				if err == nil {
-					s.dbc.SaveAggregateReports(ctx, aggregateres)
-				}
-			}
 
-			if years != nil {
-				aggregateres, err := s.dbc.GetAggregateReports(ctx, years, region, reportdurations[3])
-				if err == nil {
-					s.dbc.SaveAggregateReports(ctx, aggregateres)
-				}
-			}
-			
-			
+		newTime := t.AddDate(0, 0, 6)
+		if !newTime.Before(endTime) {
+			return reports, nil
 		}
+
+		fmt.Printf("END TIME IS %s\n", newTime.Format(timeFormat))
+		var emissionsErr error
+		reports, emissionsErr = ser.csc.GetEmissions(ctx, region, start, newTime.Format(timeFormat), reports)
+		if emissionsErr != nil {
+			return nil, emissionsErr
+		}
+
+		newTime = newTime.AddDate(0, 0, 1)
+		start = newTime.Format(timeFormat)
 	}
-	
-	return nil, err
+
+	return reports, nil
 }
-//TODO make function return periods for daily, weekly and monthly reports
-func getdates(ctx context.Context, initialstart time.Time, hourlyreports []*genpoller.CarbonForecast) ([]*genpoller.Period, []*genpoller.Period, []*genpoller.Period) {
-	//var datescounter := 0
+
+//AggregateData gets aggregate reports for all report dates returned by GetDates and store them in clickhouse
+func (ser *pollersrvc) AggregateData(ctx context.Context, region string, dates []*genpoller.Period, duration string) (error) {
+
+	aggregateres, getErr := ser.dbc.GetAggregateReports(ctx, dates, region, duration)
+
+	fmt.Println(aggregateres)
+	if getErr != nil {
+		fmt.Errorf("Error from get carbon reports: %s\n", getErr)
+		return getErr
+	}
+	saveErr := ser.dbc.SaveCarbonReports(ctx, aggregateres)
+	if saveErr != nil {
+		fmt.Errorf("Error from save carbon reports: %s\n", saveErr)
+		return saveErr
+	}
+
+	return nil
+}
+
+//GetDates gets all the report dates that are used as input to clickhouse queries and obtain aggregate CO2 intensity data
+func GetDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
+	
+	if minutereports == nil {
+		var err = fmt.Errorf("no reports for get dates")
+		return nil, err
+	}
+
+	var initialstart, err = time.Parse(timeFormat, minutereports[0].Duration.StartTime)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var finalDates [][]*genpoller.Period
+
+	var hourlyDates []*genpoller.Period
 	var dailyDates []*genpoller.Period
+	var weeklyDates []*genpoller.Period
 	var monthlyDates []*genpoller.Period
-	var yearlyDates []*genpoller.Period
-	var daystart time.Time
-	var dayend time.Time
+	
+
+//will always be the begginning of the hour
+	var hourstart = initialstart
+	
+//will always be the beginning of the day
+	var daystart = initialstart
+	
+//will always be the beginning of the week
+	var weekstart = initialstart
+
+	year, month, day := initialstart.Date()
+
 	var monthstart time.Time
-	var monthend time.Time
-	var yearstart time.Time
-	var yearend time.Time
+	//adjust to be the beginning of the month
+	if day != 1 {
+		monthstart = time.Date(year, month, 1 ,0,0,0,0, initialstart.Location())
+	} else {
+		monthstart = initialstart
+	}
 
+	var previous = initialstart
+	
 
-	var newreport = true
-
-	//TODO dont know if function below returns the right values
+	var hourcounter = time.Time.Hour(initialstart)
 	var daycounter = time.Time.Day(initialstart)
+	var weekcounter = 0
+	
 	var monthcounter = time.Time.Month(initialstart)
-	var yearcounter = time.Time.Year(initialstart)
+	
 
-	daystart = initialstart
-	for _, event := range hourlyreports {
+	
+	for _, event := range minutereports {
+		
 		var time, err = time.Parse(timeFormat, event.Duration.StartTime)
 		if err != nil {
-			fmt.Errorf("parsing error")
+			return nil, fmt.Errorf("parsing error")
 		}
 	
-		var year = time.Year()
+		
 		var month = time.Month()
 		var day = time.Day()
+		var hour = time.Hour()
 		
 
-		if (month >= monthcounter && year >= yearcounter) || (month <= monthcounter && year >= yearcounter) {
-			if day > daycounter || (day < daycounter && month == monthcounter) {
-				daycounter = day
-				newreport = true 
-			}
-		}
-
-		if newreport == true {
-			newreport = false
+		if hour != hourcounter {
+			
 			if month != monthcounter {
+				
 				monthcounter = month
-				monthlyDates = append(monthlyDates, &genpoller.Period{monthstart.GoString(), monthend.GoString()})
+				monthlyDates = append(monthlyDates, &genpoller.Period{monthstart.Format(timeFormat), previous.Format(timeFormat)})
 				monthstart = time
 			}
-			if year != yearcounter {
-				yearcounter = year
-				yearlyDates = append(yearlyDates, &genpoller.Period{yearstart.GoString(), yearend.GoString()})
-				yearstart = time
+
+			if day != daycounter {
+				daycounter = day
+				weekcounter += 1
+				dailyDates = append(dailyDates, &genpoller.Period{daystart.Format(timeFormat), previous.Format(timeFormat)})
+				
+				daystart = time
+				
+				if weekcounter == 7 {
+					weeklyDates = append(weeklyDates, &genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
+					weekstart = time
+					weekcounter = 0
+				}
 			}
-			dailyDates = append(dailyDates, &genpoller.Period{daystart.GoString(), dayend.GoString()})
-			daystart = time
+
+			hourcounter = hour
+			hourlyDates = append(hourlyDates, &genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
+			hourstart = time
 		}
-		dayend = time
-		monthend = time
-		yearend = time
+
+		previous = time
 
 	}
-	return dailyDates, monthlyDates, yearlyDates
+
+	
+	if daycounter == time.Time.Day(initialstart) {
+		
+		dailyDates = append(dailyDates, &genpoller.Period{daystart.Format(timeFormat),previous.Format(timeFormat)})
+	}
+	
+	finalDates = append(finalDates, hourlyDates)
+	finalDates = append(finalDates, dailyDates)
+	finalDates = append(finalDates, weeklyDates)
+	finalDates = append(finalDates, monthlyDates)
+	
+
+	for _, date := range finalDates {
+		fmt.Println("DATE")
+		fmt.Println(date)
+	}
+	return finalDates, nil
 }
+
+
 
 

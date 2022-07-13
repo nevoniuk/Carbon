@@ -13,21 +13,29 @@ option go_package = "/pollerpb";
 
 // Service that provides forecasts to clickhouse from Carbonara API
 service Poller {
-	// query api getting search data for carbon_intensity event
-	rpc CarbonEmissions (CarbonEmissionsRequest) returns (CarbonEmissionsResponse);
-	// get the aggregate data for an event from clickhouse
-	rpc AggregateDataEndpoint (AggregateDataRequest) returns (AggregateDataResponse);
+	// query Singularity's search endpoint and convert 5 min interval reports into
+// averages
+	rpc Update (UpdateRequest) returns (UpdateResponse);
+	// query search endpoint for a region.
+	rpc GetEmissionsForRegion (GetEmissionsForRegionRequest) returns (GetEmissionsForRegionResponse);
 }
 
-message CarbonEmissionsRequest {
-	repeated string field = 1;
+message UpdateRequest {
 }
 
-message CarbonEmissionsResponse {
-	repeated ArrayOfCarbonForecast field = 1;
+message UpdateResponse {
 }
 
-message ArrayOfCarbonForecast {
+message GetEmissionsForRegionRequest {
+	// region
+	string region = 1;
+	// start
+	string start = 2;
+	// end
+	string end = 3;
+}
+
+message GetEmissionsForRegionResponse {
 	repeated CarbonForecast field = 1;
 }
 // Emissions Forecast
@@ -38,12 +46,12 @@ message CarbonForecast {
 	double marginal_rate = 2;
 	// consumed_rate
 	double consumed_rate = 3;
-	// duration
+	// Duration
 	Period duration = 4;
-	// generated_source
-	string generated_source = 7;
+	// duration_type
+	string duration_type = 5;
 	// region
-	string region = 9;
+	string region = 7;
 }
 // Period of time from start to end of Forecast
 message Period {
@@ -51,28 +59,4 @@ message Period {
 	string start_time = 1;
 	// End time
 	string end_time = 2;
-}
-
-message AggregateDataRequest {
-}
-
-message AggregateDataResponse {
-	repeated AggregateData field = 1;
-}
-// aggregate data
-message AggregateData {
-	// average
-	double average = 1;
-	// min
-	double min = 2;
-	// max
-	double max = 3;
-	// sum
-	double sum = 4;
-	// count
-	sint32 count = 5;
-	// duration
-	Period duration = 6;
-	// report_type
-	string report_type = 7;
 }

@@ -11,73 +11,60 @@ import (
 	"context"
 
 	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
+	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	goagrpc "goa.design/goa/v3/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
-// BuildCarbonEmissionsFunc builds the remote method to invoke for "Poller"
-// service "carbon_emissions" endpoint.
-func BuildCarbonEmissionsFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
+// BuildUpdateFunc builds the remote method to invoke for "Poller" service
+// "update" endpoint.
+func BuildUpdateFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
 	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
 		for _, opt := range cliopts {
 			opts = append(opts, opt)
 		}
 		if reqpb != nil {
-			return grpccli.CarbonEmissions(ctx, reqpb.(*pollerpb.CarbonEmissionsRequest), opts...)
+			return grpccli.Update(ctx, reqpb.(*pollerpb.UpdateRequest), opts...)
 		}
-		return grpccli.CarbonEmissions(ctx, &pollerpb.CarbonEmissionsRequest{}, opts...)
+		return grpccli.Update(ctx, &pollerpb.UpdateRequest{}, opts...)
 	}
 }
 
-// EncodeCarbonEmissionsRequest encodes requests sent to Poller
-// carbon_emissions endpoint.
-func EncodeCarbonEmissionsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
-	payload, ok := v.([]string)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "[]string", v)
-	}
-	return NewProtoCarbonEmissionsRequest(payload), nil
-}
-
-// DecodeCarbonEmissionsResponse decodes responses from the Poller
-// carbon_emissions endpoint.
-func DecodeCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*pollerpb.CarbonEmissionsResponse)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "carbon_emissions", "*pollerpb.CarbonEmissionsResponse", v)
-	}
-	if err := ValidateCarbonEmissionsResponse(message); err != nil {
-		return nil, err
-	}
-	res := NewCarbonEmissionsResult(message)
-	return res, nil
-}
-
-// BuildAggregateDataEndpointFunc builds the remote method to invoke for
-// "Poller" service "aggregate_data" endpoint.
-func BuildAggregateDataEndpointFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
+// BuildGetEmissionsForRegionFunc builds the remote method to invoke for
+// "Poller" service "get_emissions_for_region" endpoint.
+func BuildGetEmissionsForRegionFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
 	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
 		for _, opt := range cliopts {
 			opts = append(opts, opt)
 		}
 		if reqpb != nil {
-			return grpccli.AggregateDataEndpoint(ctx, reqpb.(*pollerpb.AggregateDataRequest), opts...)
+			return grpccli.GetEmissionsForRegion(ctx, reqpb.(*pollerpb.GetEmissionsForRegionRequest), opts...)
 		}
-		return grpccli.AggregateDataEndpoint(ctx, &pollerpb.AggregateDataRequest{}, opts...)
+		return grpccli.GetEmissionsForRegion(ctx, &pollerpb.GetEmissionsForRegionRequest{}, opts...)
 	}
 }
 
-// DecodeAggregateDataEndpointResponse decodes responses from the Poller
-// aggregate_data endpoint.
-func DecodeAggregateDataEndpointResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
-	message, ok := v.(*pollerpb.AggregateDataResponse)
+// EncodeGetEmissionsForRegionRequest encodes requests sent to Poller
+// get_emissions_for_region endpoint.
+func EncodeGetEmissionsForRegionRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
+	payload, ok := v.(*poller.CarbonPayload)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "aggregate_data", "*pollerpb.AggregateDataResponse", v)
+		return nil, goagrpc.ErrInvalidType("Poller", "get_emissions_for_region", "*poller.CarbonPayload", v)
 	}
-	if err := ValidateAggregateDataResponse(message); err != nil {
+	return NewProtoGetEmissionsForRegionRequest(payload), nil
+}
+
+// DecodeGetEmissionsForRegionResponse decodes responses from the Poller
+// get_emissions_for_region endpoint.
+func DecodeGetEmissionsForRegionResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
+	message, ok := v.(*pollerpb.GetEmissionsForRegionResponse)
+	if !ok {
+		return nil, goagrpc.ErrInvalidType("Poller", "get_emissions_for_region", "*pollerpb.GetEmissionsForRegionResponse", v)
+	}
+	if err := ValidateGetEmissionsForRegionResponse(message); err != nil {
 		return nil, err
 	}
-	res := NewAggregateDataResult(message)
+	res := NewGetEmissionsForRegionResult(message)
 	return res, nil
 }

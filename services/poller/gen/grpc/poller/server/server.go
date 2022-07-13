@@ -9,17 +9,19 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
 	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	goagrpc "goa.design/goa/v3/grpc"
 	goa "goa.design/goa/v3/pkg"
+	"google.golang.org/grpc/codes"
 )
 
 // Server implements the pollerpb.PollerServer interface.
 type Server struct {
-	CarbonEmissionsH       goagrpc.UnaryHandler
-	AggregateDataEndpointH goagrpc.UnaryHandler
+	UpdateH                goagrpc.UnaryHandler
+	GetEmissionsForRegionH goagrpc.UnaryHandler
 	pollerpb.UnimplementedPollerServer
 }
 
@@ -32,49 +34,66 @@ type ErrorNamer interface {
 // New instantiates the server struct with the Poller service endpoints.
 func New(e *poller.Endpoints, uh goagrpc.UnaryHandler) *Server {
 	return &Server{
-		CarbonEmissionsH:       NewCarbonEmissionsHandler(e.CarbonEmissions, uh),
-		AggregateDataEndpointH: NewAggregateDataEndpointHandler(e.AggregateDataEndpoint, uh),
+		UpdateH:                NewUpdateHandler(e.Update, uh),
+		GetEmissionsForRegionH: NewGetEmissionsForRegionHandler(e.GetEmissionsForRegion, uh),
 	}
 }
 
-// NewCarbonEmissionsHandler creates a gRPC handler which serves the "Poller"
-// service "carbon_emissions" endpoint.
-func NewCarbonEmissionsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
+// NewUpdateHandler creates a gRPC handler which serves the "Poller" service
+// "update" endpoint.
+func NewUpdateHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, DecodeCarbonEmissionsRequest, EncodeCarbonEmissionsResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeUpdateResponse)
 	}
 	return h
 }
 
-// CarbonEmissions implements the "CarbonEmissions" method in
-// pollerpb.PollerServer interface.
-func (s *Server) CarbonEmissions(ctx context.Context, message *pollerpb.CarbonEmissionsRequest) (*pollerpb.CarbonEmissionsResponse, error) {
-	ctx = context.WithValue(ctx, goa.MethodKey, "carbon_emissions")
+// Update implements the "Update" method in pollerpb.PollerServer interface.
+func (s *Server) Update(ctx context.Context, message *pollerpb.UpdateRequest) (*pollerpb.UpdateResponse, error) {
+	ctx = context.WithValue(ctx, goa.MethodKey, "update")
 	ctx = context.WithValue(ctx, goa.ServiceKey, "Poller")
-	resp, err := s.CarbonEmissionsH.Handle(ctx, message)
+	resp, err := s.UpdateH.Handle(ctx, message)
 	if err != nil {
+		var en ErrorNamer
+		if errors.As(err, &en) {
+			switch en.ErrorName() {
+			case "server_error":
+				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
+			}
+		}
 		return nil, goagrpc.EncodeError(err)
 	}
-	return resp.(*pollerpb.CarbonEmissionsResponse), nil
+	return resp.(*pollerpb.UpdateResponse), nil
 }
 
-// NewAggregateDataEndpointHandler creates a gRPC handler which serves the
-// "Poller" service "aggregate_data" endpoint.
-func NewAggregateDataEndpointHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
+// NewGetEmissionsForRegionHandler creates a gRPC handler which serves the
+// "Poller" service "get_emissions_for_region" endpoint.
+func NewGetEmissionsForRegionHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeAggregateDataEndpointResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeGetEmissionsForRegionRequest, EncodeGetEmissionsForRegionResponse)
 	}
 	return h
 }
 
-// AggregateDataEndpoint implements the "AggregateDataEndpoint" method in
+// GetEmissionsForRegion implements the "GetEmissionsForRegion" method in
 // pollerpb.PollerServer interface.
-func (s *Server) AggregateDataEndpoint(ctx context.Context, message *pollerpb.AggregateDataRequest) (*pollerpb.AggregateDataResponse, error) {
-	ctx = context.WithValue(ctx, goa.MethodKey, "aggregate_data")
+func (s *Server) GetEmissionsForRegion(ctx context.Context, message *pollerpb.GetEmissionsForRegionRequest) (*pollerpb.GetEmissionsForRegionResponse, error) {
+	ctx = context.WithValue(ctx, goa.MethodKey, "get_emissions_for_region")
 	ctx = context.WithValue(ctx, goa.ServiceKey, "Poller")
-	resp, err := s.AggregateDataEndpointH.Handle(ctx, message)
+	resp, err := s.GetEmissionsForRegionH.Handle(ctx, message)
 	if err != nil {
+		var en ErrorNamer
+		if errors.As(err, &en) {
+			switch en.ErrorName() {
+			case "no_data":
+				return nil, goagrpc.NewStatusError(codes.OutOfRange, err, goagrpc.NewErrorResponse(err))
+			case "region_not_found":
+				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
+			case "server_error":
+				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
+			}
+		}
 		return nil, goagrpc.EncodeError(err)
 	}
-	return resp.(*pollerpb.AggregateDataResponse), nil
+	return resp.(*pollerpb.GetEmissionsForRegionResponse), nil
 }

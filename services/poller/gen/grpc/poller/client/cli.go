@@ -12,24 +12,32 @@ import (
 	"fmt"
 
 	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
+	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
-// BuildCarbonEmissionsPayload builds the payload for the Poller
-// carbon_emissions endpoint from CLI flags.
-func BuildCarbonEmissionsPayload(pollerCarbonEmissionsMessage string) ([]string, error) {
+// BuildGetEmissionsForRegionPayload builds the payload for the Poller
+// get_emissions_for_region endpoint from CLI flags.
+func BuildGetEmissionsForRegionPayload(pollerGetEmissionsForRegionMessage string) (*poller.CarbonPayload, error) {
 	var err error
-	var message pollerpb.CarbonEmissionsRequest
+	var message pollerpb.GetEmissionsForRegionRequest
 	{
-		if pollerCarbonEmissionsMessage != "" {
-			err = json.Unmarshal([]byte(pollerCarbonEmissionsMessage), &message)
+		if pollerGetEmissionsForRegionMessage != "" {
+			err = json.Unmarshal([]byte(pollerGetEmissionsForRegionMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"field\": [\n         \"Molestias eveniet doloribus quia ea.\",\n         \"Minus dolores.\",\n         \"Adipisci non rerum nisi quisquam.\",\n         \"Aliquam pariatur sit iure debitis.\"\n      ]\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"end\": \"2020-01-01T00:00:00Z\",\n      \"region\": \"Aut sit inventore itaque est.\",\n      \"start\": \"2020-01-01T00:00:00Z\"\n   }'")
 			}
 		}
 	}
-	v := make([]string, len(message.Field))
-	for i, val := range message.Field {
-		v[i] = val
+	v := &poller.CarbonPayload{}
+	if message.Region != "" {
+		v.Region = &message.Region
 	}
+	if message.Start != "" {
+		v.Start = &message.Start
+	}
+	if message.End != "" {
+		v.End = &message.End
+	}
+
 	return v, nil
 }

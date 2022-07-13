@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: carbon
+
+resources:
+  - ./deployment.yaml
+  - ./rbac.yaml
+  - ./service.yaml
+  - ./synced-secret.yaml
+  - ./cronjob.yaml
+
+commonAnnotations:
+  crossnokaye.com/carbon-poller-version: ${VERSION}
+  

@@ -10,9 +10,6 @@ pushd ${GIT_ROOT}
 source .env
 source ./scripts/utils/common.sh
 
-# ugh, host-gateway does not work on WSL because it points to the Windows
-# host, not the WSL host. Instead in this case we need to use the WSL
-# subsystem IP.
 if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null ; then
     export HOST_GATEWAY=$(hostname -I)
 else
@@ -23,5 +20,5 @@ docker-compose -f docker-compose/docker-compose-grafana.yml up -d --remove-orpha
 
 ./scripts/start_databases
 overmind start
-
+#used to read environment variables from a file and use them as parameters to configure overmind per directory
 popd

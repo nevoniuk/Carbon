@@ -11,4 +11,9 @@ for svc in poller calc; do
   goa gen github.com/crossnokaye/carbon/services/${svc}/design -o services/${svc}
 done
 
+
+for cli in poller:carbonara poller:storage; do
+  rm -rf services/${cli%:*}/clients/${cli#*:}/mocks
+  mockery --all --case underscore --dir services/${cli%:*}/clients/${cli#*:} --exported=false --output services/${cli%:*}/clients/${cli#*:}/mocks
+done
 popd

@@ -1,0 +1,105 @@
+// Code generated with goa v3.7.6, DO NOT EDIT.
+//
+// calc protocol buffer definition
+//
+// Command:
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+
+syntax = "proto3";
+
+package calc;
+
+option go_package = "/calcpb";
+
+// Service to interpret CO2 emissions through power and carbon intensity data
+service Calc {
+	// This endpoint is used by a front end service to return carbon emission
+// reports
+	rpc HandleRequests (HandleRequestsRequest) returns (HandleRequestsResponse);
+	// Make reports available to external/R&D clients
+	rpc GetCarbonReport (GetCarbonReportRequest) returns (GetCarbonReportResponse);
+}
+
+message HandleRequestsRequest {
+	// Org
+	string org = 1;
+	// Duration
+	Period duration = 2;
+	// Agent
+	string agent = 3;
+	// Interval
+	string interval = 4;
+}
+// Period of time from start to end for any report type
+message Period {
+	// Start time
+	string start_time = 1;
+	// End time
+	string end_time = 2;
+}
+
+message HandleRequestsResponse {
+	// CarbonIntensityReports
+	repeated CarbonReport carbon_intensity_reports = 1;
+	// PowerReports
+	repeated ElectricalReport power_reports = 2;
+	// TotalEmissionReports
+	repeated EmissionsReport total_emission_reports = 3;
+}
+// Carbon Report from clickhouse
+message CarbonReport {
+	// GeneratedRate
+	double generated_rate = 1;
+	// Duration
+	Period duration = 2;
+	// DurationType
+	string duration_type = 3;
+	// Region
+	string region = 4;
+}
+// Energy Generation Report from the Past values function GetValues
+message ElectricalReport {
+	// Duration
+	Period duration = 1;
+	// Org
+	string org = 2;
+	// Agent
+	string agent = 3;
+	// Stamp
+	PowerStamp stamp = 4;
+	// IntervalType
+	string interval_type = 5;
+}
+// Used by Electrical Report to store power meter data from GetValues()
+message PowerStamp {
+	// Time
+	string time = 1;
+	// power stamp in KW
+	double generated_rate = 2;
+}
+// Carbon/Energy Generation Report
+message EmissionsReport {
+	// Duration
+	Period duration = 1;
+	// DurationType
+	string duration_type = 2;
+	// Points
+	repeated DataPoint points = 3;
+	// Org
+	string org = 4;
+	// Agent
+	string agent = 5;
+}
+// Contains a time stamp with its respective x&y coordinates
+message DataPoint {
+	// Time
+	string time = 1;
+	// carbon footprint is the lbs of CO2 emissions
+	double carbon_footprint = 2;
+}
+
+message GetCarbonReportRequest {
+}
+
+message GetCarbonReportResponse {
+}

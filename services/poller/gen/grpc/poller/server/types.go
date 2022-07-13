@@ -10,61 +10,63 @@ package server
 import (
 	pollerpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
 	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
+	goa "goa.design/goa/v3/pkg"
 )
 
-// NewCarbonEmissionsPayload builds the payload of the "carbon_emissions"
-// endpoint of the "Poller" service from the gRPC request type.
-func NewCarbonEmissionsPayload(message *pollerpb.CarbonEmissionsRequest) []string {
-	v := make([]string, len(message.Field))
-	for i, val := range message.Field {
-		v[i] = val
+// NewProtoUpdateResponse builds the gRPC response type from the result of the
+// "update" endpoint of the "Poller" service.
+func NewProtoUpdateResponse() *pollerpb.UpdateResponse {
+	message := &pollerpb.UpdateResponse{}
+	return message
+}
+
+// NewGetEmissionsForRegionPayload builds the payload of the
+// "get_emissions_for_region" endpoint of the "Poller" service from the gRPC
+// request type.
+func NewGetEmissionsForRegionPayload(message *pollerpb.GetEmissionsForRegionRequest) *poller.CarbonPayload {
+	v := &poller.CarbonPayload{}
+	if message.Region != "" {
+		v.Region = &message.Region
+	}
+	if message.Start != "" {
+		v.Start = &message.Start
+	}
+	if message.End != "" {
+		v.End = &message.End
 	}
 	return v
 }
 
-// NewProtoCarbonEmissionsResponse builds the gRPC response type from the
-// result of the "carbon_emissions" endpoint of the "Poller" service.
-func NewProtoCarbonEmissionsResponse(result [][]*poller.CarbonForecast) *pollerpb.CarbonEmissionsResponse {
-	message := &pollerpb.CarbonEmissionsResponse{}
-	message.Field = make([]*pollerpb.ArrayOfCarbonForecast, len(result))
+// NewProtoGetEmissionsForRegionResponse builds the gRPC response type from the
+// result of the "get_emissions_for_region" endpoint of the "Poller" service.
+func NewProtoGetEmissionsForRegionResponse(result []*poller.CarbonForecast) *pollerpb.GetEmissionsForRegionResponse {
+	message := &pollerpb.GetEmissionsForRegionResponse{}
+	message.Field = make([]*pollerpb.CarbonForecast, len(result))
 	for i, val := range result {
-		message.Field[i] = &pollerpb.ArrayOfCarbonForecast{}
-		message.Field[i].Field = make([]*pollerpb.CarbonForecast, len(val))
-		for j, val := range val {
-			message.Field[i].Field[j] = &pollerpb.CarbonForecast{
-				GeneratedRate:   val.GeneratedRate,
-				MarginalRate:    val.MarginalRate,
-				ConsumedRate:    val.ConsumedRate,
-				GeneratedSource: val.GeneratedSource,
-				Region:          val.Region,
-			}
-			if val.Duration != nil {
-				message.Field[i].Field[j].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
-			}
-		}
-	}
-	return message
-}
-
-// NewProtoAggregateDataResponse builds the gRPC response type from the result
-// of the "aggregate_data" endpoint of the "Poller" service.
-func NewProtoAggregateDataResponse(result []*poller.AggregateData) *pollerpb.AggregateDataResponse {
-	message := &pollerpb.AggregateDataResponse{}
-	message.Field = make([]*pollerpb.AggregateData, len(result))
-	for i, val := range result {
-		message.Field[i] = &pollerpb.AggregateData{
-			Average:    val.Average,
-			Min:        val.Min,
-			Max:        val.Max,
-			Sum:        val.Sum,
-			Count:      int32(val.Count),
-			ReportType: val.ReportType,
+		message.Field[i] = &pollerpb.CarbonForecast{
+			GeneratedRate: val.GeneratedRate,
+			MarginalRate:  val.MarginalRate,
+			ConsumedRate:  val.ConsumedRate,
+			DurationType:  val.DurationType,
+			Region:        val.Region,
 		}
 		if val.Duration != nil {
 			message.Field[i].Duration = svcPollerPeriodToPollerpbPeriod(val.Duration)
 		}
 	}
 	return message
+}
+
+// ValidateGetEmissionsForRegionRequest runs the validations defined on
+// GetEmissionsForRegionRequest.
+func ValidateGetEmissionsForRegionRequest(message *pollerpb.GetEmissionsForRegionRequest) (err error) {
+	if message.Start != "" {
+		err = goa.MergeErrors(err, goa.ValidateFormat("message.start", message.Start, goa.FormatDateTime))
+	}
+	if message.End != "" {
+		err = goa.MergeErrors(err, goa.ValidateFormat("message.end", message.End, goa.FormatDateTime))
+	}
+	return
 }
 
 // svcPollerPeriodToPollerpbPeriod builds a value of type *pollerpb.Period from

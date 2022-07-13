@@ -16,15 +16,10 @@ import (
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"goa.design/clue/health"
-	"goa.design/clue/log"
-	//the log package provides a context based logging API
-	"goa.design/clue/metrics"
-	//metrics is for exposing a promethes compatible metrics HTTP endpoint
-	//the trace package conforms to the opentelemetry specification to trace requests
+	"goa.design/clue/log" //the log package provides a context based logging API
+	"goa.design/clue/metrics" //metrics is for exposing a promethes compatible metrics HTTP endpoint
 	"goa.design/clue/trace"
 	goagrpcmiddleware "goa.design/goa/v3/grpc/middleware"
-	//goahttp "goa.design/goa/v3/http"
-	//goahttpmiddleware "goa.design/goa/v3/http/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -36,12 +31,9 @@ import (
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	genpb "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/pb"
 	gengrpc "github.com/crossnokaye/carbon/services/poller/gen/grpc/poller/server"
-	//genhttp "github.com/crossnokaye/carbon/services/poller/gen/http/poller/server"
 )
 
 func main() {
-	// Define command line flags, add any other flag required to configure the
-	// service.
 	var (
 		grpcaddr  = flag.String("grpc-addr", "0.0.0.0:12201", "gRPC listen address")
 		httpaddr  = flag.String("http-addr", "0.0.0.0:12202", "HTTP listen address")
@@ -55,9 +47,9 @@ func main() {
 
 		debug = flag.Bool("debug", false, "Enable debug logs")
 		//test  = flag.Bool("test", os.Getenv("TEST_ENV") != "", "Enable test mode")
+		carbonKey = flag.String("singularity-key", os.Getenv("SINGULARITY_API_KEY"), "The API key for Singularity")
 	)
 	flag.Parse()
-
 	format := log.FormatJSON
 	if log.IsTerminal() {
 		format = log.FormatTerminal
@@ -86,11 +78,11 @@ func main() {
 
 	//intiialize the clients
 	c := &http.Client{Transport: trace.Client(ctx, http.DefaultTransport)}
-	csc := carbonara.New(c)
+	csc := carbonara.New(c, *carbonKey)
 
 	chadd := *chaddr
 	if chadd == "" {
-		chadd = "localhost:8088" // dev default
+		chadd = "localhost:8088" //dev default
 	}
 	var tlsConfig *tls.Config
 	if *chssl {
@@ -100,14 +92,13 @@ func main() {
 		TLS:  tlsConfig,
 		Addr: []string{chadd},
 		Auth: ch.Auth{
-			Database: "carbondb",
 			Username: *chuser,
 			Password: *chpwd},
 	}
 	chcon, err := ch.Open(options)
+
 	retries := 0
 	for err != nil && retries < 10 {
-		// CH can take a few seconds before it accepts connection on start
 		time.Sleep(time.Second)
 		chcon, err = ch.Open(options)
 		retries++
@@ -125,9 +116,8 @@ func main() {
 	//setup the service
 	pollerSvc := pollerapi.NewPoller(ctx, csc, dbc)
 	endpoints := genpoller.NewEndpoints(pollerSvc)
-
-	// Wrap the services in endpoints that can be invoked from other services
-	// potentially running in different processes.
+	//for testing only
+	pollerSvc.Update(ctx)
 
 	//initialize context for tracing
 
@@ -139,8 +129,6 @@ func main() {
 			trace.UnaryServerInterceptor(ctx),
 			goagrpcmiddleware.UnaryRequestID(),
 			goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
-			
-			//metrics.UnaryServerInterceptor(ctx),
 		),
 		grpcmiddleware.WithStreamServerChain(
 			goagrpcmiddleware.StreamRequestID(),
