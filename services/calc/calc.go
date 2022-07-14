@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 	"github.com/crossnokaye/carbon/services/calc/clients/power"
-	"github.com/crossnokaye/carbon/services/calc/clients/power_server"
+	"github.com/crossnokaye/carbon/services/calc/clients/facilityconfig"
 	"github.com/crossnokaye/carbon/services/calc/clients/storage"
 	"github.com/crossnokaye/facilityconfig"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
@@ -12,25 +12,38 @@ import (
 )
 
 type (
+
 	calcSvc struct {
 	psc power.Client
 	dbc storage.Client
-	psr power_server.Repository
+	fc facilityconfig.Client
 	ctx context.Context
 	cancel context.CancelFunc
 	}
+
 	uuidArray []struct{}
+
+	facilityConfig struct {
+		ID string 
+		Carbon *CarbonConfig
+	}
+
+	CarbonConfig struct {
+		ControlPointName string 
+		scale float64
+		region string
+	}
 )
 var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
 
 var reportdurations [5]string = [5]string{ "minute", "hourly", "daily", "weekly", "monthly"}
-func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, psr power_server.Repository) *calcSvc {
+func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, fc facilityconfig.Client) *calcSvc {
 	ctx, cancel := context.WithCancel(ctx)
 	s := &calcSvc{
 		psc:				psc,
 		dbc:				dbc,
-		psr:                psr,
+		fc:                 fc,
 		ctx:                ctx,
 		cancel: 			cancel,
 	}
@@ -52,24 +65,26 @@ func CalculateEmissionsReport(ctx context.Context, carbonReports []*gencalc.Carb
 	return report, nil
 }
 
-//GetPowerControlPoint uses a facility config store to get the following input for past-values service: pointname for power meter, facility data, building data
+//GetPowerControlPoint uses a facility config client to get the following input for past-values service: control point name for power meter, facility ID, region for carbonemissions
 //It will get those values with the following input from the HandleRequest function: OrgID, AgentID, FacilityID
-func (s *calcSvc) GetPowerControlPoint(ctx context.Context, org uuid.UUID, agent string) ([]uuid.UUID, error) {
-	var temp []uuid.UUID
-	if org == uuid.Nil {
-		return temp, fmt.Errorf("Org ID is null\n")
+func (s *calcSvc) GetPowerControlPoint(ctx context.Context, orgID string, facilityID string) (*facilityConfig, error) {
+	if orgID == "" {
+		return nil, fmt.Errorf("Org ID is null\n")
+	}
+	if agentID == "" {
+		return nil, fmt.Errorf("Agent ID is null\n")
+	}
+	if facilityID == "" {
+		return nil, fmt.Errorf("Facility ID is null\n")
 	}
 	
-	if agent == "" {
-		return temp, fmt.Errorf("Agent ID is null\n")
-	}
-	pointName, err := s.psr.FindControlPointName(org uuid.UUID, agent string, facility uuid.UUID)
-	//TODO: find this point name 
-	point, err := s.psr.FindControlPointIDsByName(org, agent, pointName)
+	//figure out how to get env
+	var env = ""
+	FacilityData, err := s.fc.LoadFacilityConfig(ctx,env, orgID, facilityID)
 	if err != nil {
-		return temp, fmt.Errorf("Error finding control point: [%s]\n", err)
+		return nil, fmt.Errorf("Error from Load Facility Config: %s\n", err)
 	}
-	return point, nil
+	return FacilityData, nil
 }
 
 //GetPower is a wrapper function for talking to the power client. Right now there is only a power meter
@@ -115,9 +130,9 @@ func (s *calcSvc) HandleRequests(ctx context.Context, req *gencalc.RequestPayloa
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing time in GetDates: %s\n", err)
 		}
-		//find region from facility config client
-		//dummy
-		var region = ""
+
+		//call facility config client to obtain input
+		
 		carbonReports, err = s.GetEmissions(ctx, dates, req.Interval, region)
 		if err != nil {
 			return nil, fmt.Errorf("Error from GetEmissions: %s\n", err)
