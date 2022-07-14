@@ -3,7 +3,7 @@
 // calc gRPC server encoders and decoders
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 package server
 

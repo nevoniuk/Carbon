@@ -15,7 +15,7 @@ type (
 		Name() string
 		Init(context.Context, bool) error
 		Ping(context.Context) error
-		GetCarbonReport(context.Context, []*gencalc.Period, string, string) ([]*gencalc.CarbonReport, error)
+		GetCarbonReports(context.Context, []*gencalc.Period, string, string) ([]*gencalc.CarbonReport, error)
 		
 	}
 
@@ -68,7 +68,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 	return err	
 }
 
-func (c *client) GetCarbonReport(ctx context.Context, duration []*gencalc.Period, intervalType string, region string) ([]*gencalc.CarbonReport, error) {
+func (c *client) GetCarbonReports(ctx context.Context, duration []*gencalc.Period, intervalType string, region string) ([]*gencalc.CarbonReport, error) {
 	var reports []*gencalc.CarbonReport
 	var report *gencalc.CarbonReport
 	var averagegen float64

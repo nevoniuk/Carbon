@@ -3,7 +3,8 @@
 // Poller protocol buffer definition
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/poller/design
+// $ goa gen github.com/crossnokaye/carbon/services/poller/design -o
+// services/poller
 
 syntax = "proto3";
 

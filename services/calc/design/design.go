@@ -23,7 +23,6 @@ var _ = Service("calc", func() {
 		Description("Make reports available to external/R&D clients")
 		GRPC(func() {})
 	})
-
 })
 
 var EmissionsPayload = Type("EmissionsPayload", func() {
@@ -39,19 +38,20 @@ var AllReports = Type("AllReports", func() {
 	Description("CO2 intensity reports, power reports, and CO2 emission reports")
 	Field(1, "CarbonIntensityReports", ArrayOf(CarbonReport), "CarbonIntensityReports")
 	Field(2, "PowerReports", ArrayOf(ElectricalReport), "PowerReports")
-	Field(3, "TotalEmissionReports", ArrayOf(EmissionsReport), "TotalEmissionReports")
-	Required("CarbonIntensityReports", "PowerReports", "TotalEmissionReports")
+	Field(3, "TotalEmissionReport", EmissionsReport, "TotalEmissionReport")
+	Required("CarbonIntensityReports", "PowerReports", "TotalEmissionReport")
 })
 
 var RequestPayload = Type("RequestPayload", func() {
 	Description("Payload wraps the payload for past-values GetValues() and carbon poller service")
-	Field(1, "Org", UUID, "Org")
+	Field(1, "OrgID", UUID, "OrgID")
 	Field(2, "Duration", Period, "Duration")
-	Field(3, "Agent", String, "Agent")
-	Field(4, "Interval", String, "Interval", func() {
+	Field(3, "AgentID", String, "AgentID")
+	Field(4, "FacilityID", String, "FacilityID")
+	Field(5, "Interval", String, "Interval", func() {
 		Example("hours, days, weeks, months, years")
 	})
-	Required("Org", "Duration", "Agent", "Interval")
+	Required("OrgID", "Duration", "AgentID", "Interval", "FacilityID")
 })
 
 var EmissionsReport = Type("EmissionsReport", func() {
@@ -59,21 +59,21 @@ var EmissionsReport = Type("EmissionsReport", func() {
 	Field(1, "Duration", Period, "Duration")
 	Field(2, "DurationType", String, "DurationType")
 	Field(3, "Points", ArrayOf(DataPoint), "Points")
-	Field(4, "Org", UUID, "Org")
-	Field(5, "Agent", String, "Agent")
-	
-	Required("Duration", "Points", "Org", "DurationType", "Agent")
+	Field(4, "OrgID", UUID, "OrgID")
+	Field(5, "AgentID", String, "AgentID")
+	Field(6, "FacilityID", String, "FacilityID")
+	Required("Duration", "Points", "OrgID", "DurationType", "FacilityID", "AgentID")
 })
 
 var CarbonReport = Type("CarbonReport", func() {
 	Description("Carbon Report from clickhouse")
-	
 	Field(1, "GeneratedRate", Float64, "GeneratedRate", func() {
 		Description("This is in units of (lbs of CO2/MWh)")
 	})
 	Field(2, "Duration", Period, "Duration")
 	Field(3, "DurationType", String, "DurationType")
 	Field(4, "Region", String, "Region", func() {
+		Description("As found in the Enums section of the Poller service in the URL above")
 		Example("MISO, ISO...")
 	})
 	Required("GeneratedRate", "Region", "Duration", "DurationType")
@@ -96,13 +96,14 @@ var DataPoint = Type("DataPoint", func() {
 var ElectricalReport = Type("ElectricalReport", func() {
 	Description("Energy Generation Report from the Past values function GetValues")
 	Field(1, "Duration", Period, "Duration")
-	Field(2, "Org", UUID, "Org")
-	Field(3, "Agent", String, "Agent")
+	Field(2, "OrgID", UUID, "OrgID")
+	Field(3, "AgentID", String, "AgentID")
 	Field(4, "GeneratedRate", Float64, "GeneratedRate", func() {
-		Description("KWh")
+		Description("Power meter data in KWh")
 	})
 	Field(5, "IntervalType", String, "IntervalType")
-	Required("Org", "Duration", "Agent", "Stamp", "IntervalType")
+	Field(6, "FacilityID", String, "FacilityID")
+	Required("OrgID", "Duration", "AgentID", "GeneratedRate", "IntervalType", "FacilityID")
 })
 
 var Period = Type("Period", func() {

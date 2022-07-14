@@ -3,7 +3,7 @@
 // calc gRPC client CLI support package
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 package client
 
@@ -24,14 +24,15 @@ func BuildHandleRequestsPayload(calcHandleRequestsMessage string) (*calc.Request
 		if calcHandleRequestsMessage != "" {
 			err = json.Unmarshal([]byte(calcHandleRequestsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Agent\": \"Repudiandae sint odit dolor quis occaecati.\",\n      \"Duration\": {\n         \"EndTime\": \"2020-01-01T00:00:00Z\",\n         \"StartTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"Interval\": \"hours, days, weeks, months, years\",\n      \"Org\": \"Facere reiciendis.\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"AgentID\": \"Voluptatem voluptatem hic repudiandae vero.\",\n      \"Duration\": {\n         \"EndTime\": \"2020-01-01T00:00:00Z\",\n         \"StartTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"FacilityID\": \"Temporibus laborum repellat nam in.\",\n      \"Interval\": \"hours, days, weeks, months, years\",\n      \"OrgID\": \"Facere reiciendis.\"\n   }'")
 			}
 		}
 	}
 	v := &calc.RequestPayload{
-		Org:      calc.UUID(message.Org),
-		Agent:    message.Agent,
-		Interval: message.Interval,
+		OrgID:      calc.UUID(message.OrgId),
+		AgentID:    message.AgentId,
+		FacilityID: message.FacilityId,
+		Interval:   message.Interval,
 	}
 	if message.Duration != nil {
 		v.Duration = protobufCalcpbPeriodToCalcPeriod(message.Duration)

@@ -3,7 +3,7 @@
 // calc service
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 package calc
 
@@ -36,23 +36,24 @@ type AllReports struct {
 	CarbonIntensityReports []*CarbonReport
 	// PowerReports
 	PowerReports []*ElectricalReport
-	// TotalEmissionReports
-	TotalEmissionReports []*EmissionsReport
+	// TotalEmissionReport
+	TotalEmissionReport *EmissionsReport
 }
 
 // Carbon Report from clickhouse
 type CarbonReport struct {
-	// GeneratedRate
+	// This is in units of (lbs of CO2/MWh)
 	GeneratedRate float64
 	// Duration
 	Duration *Period
 	// DurationType
 	DurationType string
-	// Region
+	// As found in the Enums section of the Poller service in the URL above
 	Region string
 }
 
-// Contains a time stamp with its respective x&y coordinates
+// Contains carbon emissions in terms of DataPoints, which can be used as
+// points for a time/CO2 emissions graph
 type DataPoint struct {
 	// Time
 	Time string
@@ -64,14 +65,16 @@ type DataPoint struct {
 type ElectricalReport struct {
 	// Duration
 	Duration *Period
-	// Org
-	Org UUID
-	// Agent
-	Agent string
-	// Stamp
-	Stamp *PowerStamp
+	// OrgID
+	OrgID UUID
+	// AgentID
+	AgentID string
+	// Power meter data in KWh
+	GeneratedRate float64
 	// IntervalType
 	IntervalType string
+	// FacilityID
+	FacilityID string
 }
 
 // Carbon/Energy Generation Report
@@ -82,10 +85,12 @@ type EmissionsReport struct {
 	DurationType string
 	// Points
 	Points []*DataPoint
-	// Org
-	Org UUID
-	// Agent
-	Agent string
+	// OrgID
+	OrgID UUID
+	// AgentID
+	AgentID string
+	// FacilityID
+	FacilityID string
 }
 
 // Period of time from start to end for any report type
@@ -96,23 +101,17 @@ type Period struct {
 	EndTime string
 }
 
-// Used by Electrical Report to store power meter data from GetValues()
-type PowerStamp struct {
-	// Time
-	Time string
-	// power stamp in KW
-	GeneratedRate float64
-}
-
 // RequestPayload is the payload type of the calc service handle_requests
 // method.
 type RequestPayload struct {
-	// Org
-	Org UUID
+	// OrgID
+	OrgID UUID
 	// Duration
 	Duration *Period
-	// Agent
-	Agent string
+	// AgentID
+	AgentID string
+	// FacilityID
+	FacilityID string
 	// Interval
 	Interval string
 }

@@ -38,20 +38,22 @@ func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, psr powe
 }
 
 //CalculateReports yields lbs of CO2 given CO2 intensity(CO2lbs/MWh) and Power(KWh) reports
-func CalculateReports(ctx context.Context, carbonReports []*gencalc.CarbonReport, powerReports []*gencalc.ElectricalReport) ([]*gencalc.EmissionsReport, error) {
-	var reports []*gencalc.EmissionsReport
-	//assume that each report has the same duration and interval type
-	for i, report := range powerReports {
-		
+//Assumes that each report has the same duration and interval type
+func CalculateEmissionsReport(ctx context.Context, carbonReports []*gencalc.CarbonReport, powerReports []*gencalc.ElectricalReport) (*gencalc.EmissionsReport, error) {
+	var dataPoints []*gencalc.DataPoint
+	var report *gencalc.EmissionsReport
+	var org = powerReports[0].OrgID
+	var agent = powerReports[0].AgentID
+	for _, report := range carbonReports {
+		toKWh := report.GeneratedRate * 1000
+		dataPoints = append(dataPoints, &gencalc.DataPoint{Time: report.Duration.StartTime, CarbonFootprint:toKWh})
 	}
-	//input =carbon reports, 
-	//1 MWh = 1000 KWh
-	//1.convert from MWh to KWh
-	//2.
+	report = &gencalc.EmissionsReport{Duration: report.Duration, DurationType: report.DurationType, Points: dataPoints, OrgID: org, AgentID: agent}
 	return report, nil
 }
 
-//uses store to get input for past-values service
+//GetPowerControlPoint uses a facility config store to get the following input for past-values service: pointname for power meter, facility data, building data
+//It will get those values with the following input from the HandleRequest function: OrgID, AgentID, FacilityID
 func (s *calcSvc) GetPowerControlPoint(ctx context.Context, org uuid.UUID, agent string) ([]uuid.UUID, error) {
 	var temp []uuid.UUID
 	if org == uuid.Nil {
@@ -61,7 +63,7 @@ func (s *calcSvc) GetPowerControlPoint(ctx context.Context, org uuid.UUID, agent
 	if agent == "" {
 		return temp, fmt.Errorf("Agent ID is null\n")
 	}
-
+	pointName, err := s.psr.FindControlPointName(org uuid.UUID, agent string, facility uuid.UUID)
 	//TODO: find this point name 
 	point, err := s.psr.FindControlPointIDsByName(org, agent, pointName)
 	if err != nil {
@@ -86,14 +88,17 @@ func (s *calcSvc) GetPower(ctx context.Context, org uuid.UUID, dateRange *gencal
 }
 
 //GetEmissions is a wrapper function for talking to storage client
-func (s *calcSvc) GetEmissions(ctx context.Context, dateRange *gencalc.Period, interval string, region string) ([]*gencalc.CarbonReport, error) {
-	var reports []*gencalc.CarbonReport
+func (s *calcSvc) GetEmissions(ctx context.Context, dates []*gencalc.Period, interval string, region string) ([]*gencalc.CarbonReport, error) {
+	reports, err := s.dbc.GetCarbonReports(ctx, dates, interval, region)
+	if err != nil {
+		return nil, err
+	}
 	return reports, nil
 }
 
 //HandleRequests will output the CO2 intensity, Power Meter, and resulting CO2 emission reports
 func (s *calcSvc) HandleRequests(ctx context.Context, req *gencalc.RequestPayload) (*gencalc.AllReports, error) {
-	var emissionReports []*gencalc.EmissionsReport
+	var emissionReport *gencalc.EmissionsReport
 	var carbonReports []*gencalc.CarbonReport
 	var powerReports []*gencalc.ElectricalReport
 	var validInterval bool
@@ -105,14 +110,19 @@ func (s *calcSvc) HandleRequests(ctx context.Context, req *gencalc.RequestPayloa
 
 	var err error
 	if validInterval {
+		var dates []*gencalc.Period
+		dates, err = s.GetDates(ctx, req.Interval, req.Duration)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing time in GetDates: %s\n", err)
+		}
 		//find region from facility config client
 		//dummy
 		var region = ""
-		carbonReports, err = s.GetEmissions(ctx, req.Duration, req.Interval, region)
+		carbonReports, err = s.GetEmissions(ctx, dates, req.Interval, region)
 		if err != nil {
 			return nil, fmt.Errorf("Error from GetEmissions: %s\n", err)
 		}
-		//should not need to know the point name
+		
 		var orgID uuid.UUID
 		orgID, err = uuid.Parse(string(req.Org))
 		if err != nil {
@@ -140,17 +150,77 @@ func (s *calcSvc) HandleRequests(ctx context.Context, req *gencalc.RequestPayloa
 			return nil, fmt.Errorf("Error in GetPower: %s\n", err)
 		}
 
-		emissionReports, err = CalculateReports(ctx, carbonReports, powerReports)
+		emissionReport, err = CalculateEmissionsReport(ctx, carbonReports, powerReports)
 		if err != nil {
 			return nil, fmt.Errorf("Error from Calculate Reports: %s\n", err)
 		}
 	}
-	return &gencalc.AllReports{CarbonIntensityReports: carbonReports, PowerReports: powerReports,TotalEmissionReports: emissionReports}, nil
+	return &gencalc.AllReports{CarbonIntensityReports: carbonReports, PowerReports: powerReports,TotalEmissionReport: emissionReport}, nil
 }
 
-//R&D method
+//R&D method, will implement this later
 func (s *calcSvc) GetCarbonReport(ctx context.Context) (error) {
 	return nil
+}
+
+
+//GetDates returns an array of dates for the storage client in order to correctly query for carbon reports
+func (s *calcSvc) GetDates(ctx context.Context, intervalType string, duration *gencalc.Period) ([]*gencalc.Period, error) {
+
+	//var counter int
+	var newDates []*gencalc.Period
+	initialstart, err1 := time.Parse(timeFormat, duration.StartTime)
+	end, err2 := time.Parse(timeFormat, duration.EndTime)
+	
+	if err1 != nil {
+		return nil, err1
+	}
+	if err2 != nil {
+		return nil, err2
+	}
+
+	var diff = initialstart.Sub(end)
+	var datesCount float64
+	var durationType int
+
+	switch intervalType {
+	case reportdurations[0]: //minute
+		//counter = time.Time.Minute(initialstart)
+		datesCount = diff.Minutes()
+		durationType = int(time.Minute)
+	case reportdurations[1]: //hour
+		//counter = time.Time.Hour(initialstart)
+		datesCount = diff.Hours()
+		durationType = int(time.Hour)
+	case reportdurations[2]: //daily
+		//counter = time.Time.Day(initialstart)
+		datesCount = diff.Hours() / 24
+		durationType = int(time.Hour) * 24
+	case reportdurations[3]: //weekly
+		//counter = time.Time.Day(initialstart)
+		datesCount = diff.Hours() / (24 * 7)
+		durationType = int(time.Hour) * 24 * 7
+	case reportdurations[4]: //monthly
+		//var m time.Month = time.Time.Month(initialstart)
+		//counter = int(m)
+		datesCount = diff.Hours() / (24 * 29)
+		durationType = int(time.Hour) * 24 * 29
+	}
+
+	var tempstart = initialstart
+	var tempend time.Time
+
+	for i := 0.0; i < datesCount; i++ {
+		tempend = initialstart.Add(time.Duration(durationType))
+		if tempend.After(end) {
+			break
+		}
+		var startString = tempstart.Format(timeFormat)
+		var endString = tempend.Format(timeFormat)
+		newDates = append(newDates, &gencalc.Period{StartTime: startString, EndTime: endString})
+		tempstart = tempend
+	}
+	return newDates, nil
 }
 
 

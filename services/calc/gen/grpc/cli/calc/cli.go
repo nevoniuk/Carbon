@@ -3,7 +3,7 @@
 // calc gRPC client CLI support package
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 package cli
 
@@ -29,13 +29,14 @@ func UsageCommands() string {
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
 	return os.Args[0] + ` calc handle-requests --message '{
-      "Agent": "Repudiandae sint odit dolor quis occaecati.",
+      "AgentID": "Voluptatem voluptatem hic repudiandae vero.",
       "Duration": {
          "EndTime": "2020-01-01T00:00:00Z",
          "StartTime": "2020-01-01T00:00:00Z"
       },
+      "FacilityID": "Temporibus laborum repellat nam in.",
       "Interval": "hours, days, weeks, months, years",
-      "Org": "Facere reiciendis."
+      "OrgID": "Facere reiciendis."
    }'` + "\n" +
 		""
 }
@@ -158,13 +159,14 @@ This endpoint is used by a front end service to return carbon emission reports
 
 Example:
     %[1]s calc handle-requests --message '{
-      "Agent": "Repudiandae sint odit dolor quis occaecati.",
+      "AgentID": "Voluptatem voluptatem hic repudiandae vero.",
       "Duration": {
          "EndTime": "2020-01-01T00:00:00Z",
          "StartTime": "2020-01-01T00:00:00Z"
       },
+      "FacilityID": "Temporibus laborum repellat nam in.",
       "Interval": "hours, days, weeks, months, years",
-      "Org": "Facere reiciendis."
+      "OrgID": "Facere reiciendis."
    }'
 `, os.Args[0])
 }

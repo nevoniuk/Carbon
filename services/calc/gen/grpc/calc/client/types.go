@@ -3,7 +3,7 @@
 // calc gRPC client types
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 package client
 
@@ -17,9 +17,10 @@ import (
 // of the "handle_requests" endpoint of the "calc" service.
 func NewProtoHandleRequestsRequest(payload *calc.RequestPayload) *calcpb.HandleRequestsRequest {
 	message := &calcpb.HandleRequestsRequest{
-		Org:      string(payload.Org),
-		Agent:    payload.Agent,
-		Interval: payload.Interval,
+		OrgId:      string(payload.OrgID),
+		AgentId:    payload.AgentID,
+		FacilityId: payload.FacilityID,
+		Interval:   payload.Interval,
 	}
 	if payload.Duration != nil {
 		message.Duration = svcCalcPeriodToCalcpbPeriod(payload.Duration)
@@ -48,39 +49,19 @@ func NewHandleRequestsResult(message *calcpb.HandleRequestsResponse) *calc.AllRe
 		result.PowerReports = make([]*calc.ElectricalReport, len(message.PowerReports))
 		for i, val := range message.PowerReports {
 			result.PowerReports[i] = &calc.ElectricalReport{
-				Org:          calc.UUID(val.Org),
-				Agent:        val.Agent,
-				IntervalType: val.IntervalType,
+				OrgID:         calc.UUID(val.OrgId),
+				AgentID:       val.AgentId,
+				GeneratedRate: val.GeneratedRate,
+				IntervalType:  val.IntervalType,
+				FacilityID:    val.FacilityId,
 			}
 			if val.Duration != nil {
 				result.PowerReports[i].Duration = protobufCalcpbPeriodToCalcPeriod(val.Duration)
 			}
-			if val.Stamp != nil {
-				result.PowerReports[i].Stamp = protobufCalcpbPowerStampToCalcPowerStamp(val.Stamp)
-			}
 		}
 	}
-	if message.TotalEmissionReports != nil {
-		result.TotalEmissionReports = make([]*calc.EmissionsReport, len(message.TotalEmissionReports))
-		for i, val := range message.TotalEmissionReports {
-			result.TotalEmissionReports[i] = &calc.EmissionsReport{
-				DurationType: val.DurationType,
-				Org:          calc.UUID(val.Org),
-				Agent:        val.Agent,
-			}
-			if val.Duration != nil {
-				result.TotalEmissionReports[i].Duration = protobufCalcpbPeriodToCalcPeriod(val.Duration)
-			}
-			if val.Points != nil {
-				result.TotalEmissionReports[i].Points = make([]*calc.DataPoint, len(val.Points))
-				for j, val := range val.Points {
-					result.TotalEmissionReports[i].Points[j] = &calc.DataPoint{
-						Time:            val.Time,
-						CarbonFootprint: val.CarbonFootprint,
-					}
-				}
-			}
-		}
+	if message.TotalEmissionReport != nil {
+		result.TotalEmissionReport = protobufCalcpbEmissionsReportToCalcEmissionsReport(message.TotalEmissionReport)
 	}
 	return result
 }
@@ -117,8 +98,8 @@ func ValidateHandleRequestsResponse(message *calcpb.HandleRequestsResponse) (err
 	if message.PowerReports == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("PowerReports", "message"))
 	}
-	if message.TotalEmissionReports == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("TotalEmissionReports", "message"))
+	if message.TotalEmissionReport == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("TotalEmissionReport", "message"))
 	}
 	for _, e := range message.CarbonIntensityReports {
 		if e != nil {
@@ -134,11 +115,9 @@ func ValidateHandleRequestsResponse(message *calcpb.HandleRequestsResponse) (err
 			}
 		}
 	}
-	for _, e := range message.TotalEmissionReports {
-		if e != nil {
-			if err2 := ValidateEmissionsReport(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
+	if message.TotalEmissionReport != nil {
+		if err2 := ValidateEmissionsReport(message.TotalEmissionReport); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	return
@@ -162,27 +141,12 @@ func ValidateElectricalReport(message *calcpb.ElectricalReport) (err error) {
 	if message.Duration == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("Duration", "message"))
 	}
-	if message.Stamp == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("Stamp", "message"))
-	}
 	if message.Duration != nil {
 		if err2 := ValidatePeriod(message.Duration); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
-	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.Org), goa.FormatUUID))
-
-	if message.Stamp != nil {
-		if err2 := ValidatePowerStamp(message.Stamp); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
-	}
-	return
-}
-
-// ValidatePowerStamp runs the validations defined on PowerStamp.
-func ValidatePowerStamp(message *calcpb.PowerStamp) (err error) {
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.Time", message.Time, goa.FormatDateTime))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.OrgId), goa.FormatUUID))
 
 	return
 }
@@ -207,7 +171,7 @@ func ValidateEmissionsReport(message *calcpb.EmissionsReport) (err error) {
 			}
 		}
 	}
-	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.Org), goa.FormatUUID))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.OrgId), goa.FormatUUID))
 
 	return
 }
@@ -241,23 +205,51 @@ func svcCalcPeriodToCalcpbPeriod(v *calc.Period) *calcpb.Period {
 	return res
 }
 
-// svcCalcPowerStampToCalcpbPowerStamp builds a value of type
-// *calcpb.PowerStamp from a value of type *calc.PowerStamp.
-func svcCalcPowerStampToCalcpbPowerStamp(v *calc.PowerStamp) *calcpb.PowerStamp {
-	res := &calcpb.PowerStamp{
-		Time:          v.Time,
-		GeneratedRate: v.GeneratedRate,
+// svcCalcEmissionsReportToCalcpbEmissionsReport builds a value of type
+// *calcpb.EmissionsReport from a value of type *calc.EmissionsReport.
+func svcCalcEmissionsReportToCalcpbEmissionsReport(v *calc.EmissionsReport) *calcpb.EmissionsReport {
+	res := &calcpb.EmissionsReport{
+		DurationType: v.DurationType,
+		OrgId:        string(v.OrgID),
+		AgentId:      v.AgentID,
+		FacilityId:   v.FacilityID,
+	}
+	if v.Duration != nil {
+		res.Duration = svcCalcPeriodToCalcpbPeriod(v.Duration)
+	}
+	if v.Points != nil {
+		res.Points = make([]*calcpb.DataPoint, len(v.Points))
+		for i, val := range v.Points {
+			res.Points[i] = &calcpb.DataPoint{
+				Time:            val.Time,
+				CarbonFootprint: val.CarbonFootprint,
+			}
+		}
 	}
 
 	return res
 }
 
-// protobufCalcpbPowerStampToCalcPowerStamp builds a value of type
-// *calc.PowerStamp from a value of type *calcpb.PowerStamp.
-func protobufCalcpbPowerStampToCalcPowerStamp(v *calcpb.PowerStamp) *calc.PowerStamp {
-	res := &calc.PowerStamp{
-		Time:          v.Time,
-		GeneratedRate: v.GeneratedRate,
+// protobufCalcpbEmissionsReportToCalcEmissionsReport builds a value of type
+// *calc.EmissionsReport from a value of type *calcpb.EmissionsReport.
+func protobufCalcpbEmissionsReportToCalcEmissionsReport(v *calcpb.EmissionsReport) *calc.EmissionsReport {
+	res := &calc.EmissionsReport{
+		DurationType: v.DurationType,
+		OrgID:        calc.UUID(v.OrgId),
+		AgentID:      v.AgentId,
+		FacilityID:   v.FacilityId,
+	}
+	if v.Duration != nil {
+		res.Duration = protobufCalcpbPeriodToCalcPeriod(v.Duration)
+	}
+	if v.Points != nil {
+		res.Points = make([]*calc.DataPoint, len(v.Points))
+		for i, val := range v.Points {
+			res.Points[i] = &calc.DataPoint{
+				Time:            val.Time,
+				CarbonFootprint: val.CarbonFootprint,
+			}
+		}
 	}
 
 	return res
