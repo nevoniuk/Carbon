@@ -15,16 +15,16 @@ var _ = Service("BabyNames", func() {
 	Method("GetName", func() {
 		Description("get most popular baby name")
 		//Error("server_error", ErrorResult, "Error with Singularity Server.")
-		Payload(ObtainListPayload)
-        Result(Name)
+		Payload(payload)
+        Result(name)
 	})
 })
-var ObtainListPayload = Type("ObtainListPayload", func() {
+var payload = Type("payload", func() {
     Field(1, "year", String, "year", func() {
     })
     Required("year")
 })
-var Name = Type("Name", func() {
+var name = Type("name", func() {
     Field(1, "name", String, "name", func() {
     })
     Required("name")
