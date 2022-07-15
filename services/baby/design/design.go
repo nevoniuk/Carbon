@@ -12,20 +12,26 @@ var _ = API("BabyNames", func() {
 	})
 })
 var _ = Service("BabyNames", func() {
+	
+	HTTP(func(){
+		Path("/BabyNames")
+	})
+
 	Method("GetName", func() {
 		Description("get most popular baby name")
 		//Error("server_error", ErrorResult, "Error with Singularity Server.")
-		Payload(payload)
+		Payload(func() {
+			Attribute("year", String, "year") 
+		})
         Result(name)
+		HTTP(func(){
+			GET("/{year}")
+		})
 	})
 })
-var payload = Type("payload", func() {
-    Field(1, "year", String, "year", func() {
-    })
-    Required("year")
-})
+
 var name = Type("name", func() {
-    Field(1, "name", String, "name", func() {
+    Attribute("name", String, "name", func() {
     })
     Required("name")
 })
