@@ -1,14 +1,16 @@
 package calcapi
+
 import (
 	"context"
 	"fmt"
 	"time"
-	"github.com/crossnokaye/carbon/services/calc/clients/power"
+
 	"github.com/crossnokaye/carbon/services/calc/clients/facilityconfig"
+	"github.com/crossnokaye/carbon/services/calc/clients/power"
 	"github.com/crossnokaye/carbon/services/calc/clients/storage"
-	"github.com/crossnokaye/facilityconfig"
+
+
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
-	"github.com/google/uuid"
 )
 
 type (
@@ -22,17 +24,6 @@ type (
 	}
 
 	uuidArray []struct{}
-
-	facilityConfig struct {
-		ID string 
-		Carbon *CarbonConfig
-	}
-
-	CarbonConfig struct {
-		ControlPointName string 
-		scale float64
-		region string
-	}
 )
 var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
@@ -66,39 +57,47 @@ func CalculateEmissionsReport(ctx context.Context, carbonReports []*gencalc.Carb
 }
 
 //GetPowerControlPoint uses a facility config client to get the following input for past-values service: control point name for power meter, facility ID, region for carbonemissions
-//It will get those values with the following input from the HandleRequest function: OrgID, AgentID, FacilityID
-func (s *calcSvc) GetPowerControlPoint(ctx context.Context, orgID string, facilityID string) (*facilityConfig, error) {
+//It will get those values with the following input from the HandleRequest function: OrgID, and FacilityID
+func (s *calcSvc) GetPowerControlPoint(ctx context.Context, orgID string, facilityID string) (*facilityconfig.Carbon, error) {
 	if orgID == "" {
 		return nil, fmt.Errorf("Org ID is null\n")
 	}
-	if agentID == "" {
-		return nil, fmt.Errorf("Agent ID is null\n")
-	}
+	
 	if facilityID == "" {
 		return nil, fmt.Errorf("Facility ID is null\n")
 	}
 	
-	//figure out how to get env
-	var env = ""
-	FacilityData, err := s.fc.LoadFacilityConfig(ctx,env, orgID, facilityID)
+	CarbonData, err := s.fc.LoadFacilityConfig(ctx, orgID, facilityID)
 	if err != nil {
 		return nil, fmt.Errorf("Error from Load Facility Config: %s\n", err)
 	}
-	return FacilityData, nil
+	return CarbonData, nil
 }
 
 //GetPower is a wrapper function for talking to the power client. Right now there is only a power meter
 //at Oxnard so this will only work for that power meter
-func (s *calcSvc) GetPower(ctx context.Context, org uuid.UUID, dateRange *gencalc.Period, cps []uuid.UUID, pastValInterval int64, reportInterval string) ([]*gencalc.ElectricalReport, error) {
+func (s *calcSvc) GetPower(ctx context.Context, org string, dateRange *gencalc.Period, cp string, pastValInterval int64, reportInterval string, formula *string) ([]*gencalc.ElectricalReport, error) {
 	var reports []*gencalc.ElectricalReport
-	//nullid := uuid.Nil
-	if org == uuid.Nil {
+	
+	if org == "" {
 		return nil, fmt.Errorf("Org ID is null\n")
 	}
-	if cps[0] == uuid.Nil {
-		return nil, fmt.Errorf("No Control Points\n")
+
+	if cp == "" {
+		return nil, fmt.Errorf("No Control Point\n")
 	}
-	//interval has to be in nanoseconds
+
+	if formula == nil {
+		return nil, fmt.Errorf("No Formula\n")
+	}
+
+	var err error
+	reports, err = s.psc.GetPower(ctx, org, cp, pastValInterval, dateRange.StartTime, dateRange.EndTime, formula)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error from GetPower: %s\n", err)
+	}
+
 	return reports, nil
 }
 
@@ -130,25 +129,21 @@ func (s *calcSvc) HandleRequests(ctx context.Context, req *gencalc.RequestPayloa
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing time in GetDates: %s\n", err)
 		}
-
-		//call facility config client to obtain input
+		
+		var res *facilityconfig.Carbon
+		res, err = s.GetPowerControlPoint(ctx, string(req.OrgID), req.FacilityID)
+		if err != nil {
+			return nil, fmt.Errorf("Error from GetPowerControlPoint: %s\n", err)
+		}
+		var region = res.Region
+		var controlPointName = res.ControlPointName
+		var formula = res.Formula
 		
 		carbonReports, err = s.GetEmissions(ctx, dates, req.Interval, region)
 		if err != nil {
 			return nil, fmt.Errorf("Error from GetEmissions: %s\n", err)
 		}
 		
-		var orgID uuid.UUID
-		orgID, err = uuid.Parse(string(req.Org))
-		if err != nil {
-			return nil, fmt.Errorf("Error from parsing org id in HandleRequests: %s\n", err)
-		}
-		
-		var controlPoints, err = s.GetPowerControlPoint(ctx, orgID, req.Agent)
-		if err != nil {
-			return nil, fmt.Errorf("Error from GetPowerControlPoint() in HandleRequests: %s\n", err)
-		}
-
 		endTime, timeError1 := time.Parse(timeFormat, req.Duration.EndTime)
 		if timeError1 != nil {
 			return nil, fmt.Errorf("parsing time err: %s\n", timeError1)
@@ -160,7 +155,8 @@ func (s *calcSvc) HandleRequests(ctx context.Context, req *gencalc.RequestPayloa
 
 		difference := endTime.Sub(startTime)
 		duration := difference.Nanoseconds()
-		powerReports, err = s.GetPower(ctx, orgID, req.Duration, controlPoints, duration, req.Interval)
+
+		powerReports, err = s.GetPower(ctx, string(req.OrgID), req.Duration, controlPointName, duration, req.Interval, &formula)
 		if err != nil {
 			return nil, fmt.Errorf("Error in GetPower: %s\n", err)
 		}

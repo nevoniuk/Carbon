@@ -1,7 +1,7 @@
 package facilityconfig
+
 import (
 	"fmt"
-	"github.com/crossnokaye/facilityconfig"
 	"github.com/google/uuid"
 	"io/ioutil"
 	"path/filepath"
@@ -35,11 +35,14 @@ import (
 		controlPointAliasName: whatever that is for the pulse val
 		scale: .6(in Oxnard's example)
 		formula:(may or may not need this depending on how generic Riverside data ends up being)
+		region:
+		agentID:
 	 */
 type(
 
 	Client interface {
-		LoadFacilityConfig(ctx context.Context, env, orgID, facilityID string) (*facilityConfig, error)
+		LoadFacilityConfig(ctx context.Context, orgID string, facilityID string) (*Carbon, error)
+		
 	}
 	ControlPoint struct {
 		ID        uuid.UUID
@@ -48,9 +51,11 @@ type(
 		Scaling   string
 		Unscaling string
 	}
+
 	client struct {
 		env string
 	}
+
 	//need to make a configstruct for the above data
 	facilityConfig struct {
 		ID string `yaml: id`
@@ -58,9 +63,18 @@ type(
 	}
 
 	CarbonConfig struct {
-		ControlPointName string `yaml:"controlPointAliasName"`
-		scale float64 `yaml: "scale"`
+		ControlPointName string `yaml: "controlPointAliasName"`
+		formula string `yaml: "formula"`
 		region string `yaml: "region"`
+		agent string `yaml: "agent"`
+	}
+
+	Carbon struct {
+		ID string
+		ControlPointName string 
+		Formula string
+		Region string 
+		Agent string
 	}
 
 	// ErrNotFound is returned when a facility config is not found.
@@ -81,7 +95,7 @@ func New(env string) Client {
 
 //GetCarbonConfig obtains the above carbon configuration for the given input
 //called in load facility config to get carbonconfig for facility config struct
-func GetCarbonConfig(ctx context.Context, orgID string, agentName string, facilityID string) (*CarbonConfig, error) {
+func GetCarbonConfig(ctx context.Context, orgID string, facilityID string) (*CarbonConfig, error) {
 	return nil, nil
 }
 
@@ -174,8 +188,8 @@ func findLocation(ctx context.Context, env, orgID, facilityID, agentID string) (
 
 
 // loadFacilityConfig returns the facility config for the given org and facility IDs.
-func (c *client) LoadFacilityConfig(ctx context.Context, env, orgID, facilityID string) (*facilityConfig, error) {
-	facilityPath, err := findFacility(ctx, env, orgID, facilityID)
+func (c *client) LoadFacilityConfig(ctx context.Context, orgID, facilityID string) (*Carbon, error) {
+	facilityPath, err := findFacility(ctx, c.env, orgID, facilityID)
 	if err != nil {
 		return nil, err
 	}
@@ -183,12 +197,14 @@ func (c *client) LoadFacilityConfig(ctx context.Context, env, orgID, facilityID 
 	if err != nil {
 		return nil, fmt.Errorf("failed to read facility config file %s: %w", facilityPath, err)
 	}
-	//call to carbonconfig
+	//call to carbonconfig to get carbonconfig struct
 	var config facilityConfig
 	if err := yaml.Unmarshal(cfg, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse facility config file %s: %w", facilityPath, err)
 	}
-	return &config, nil
+	var carbon  = &Carbon{ID: config.ID, ControlPointName: config.Carbon.ControlPointName,
+		 Formula: config.Carbon.formula, Region: config.Carbon.region, Agent: config.Carbon.agent}
+	return carbon, nil
 }
 
 func mapIDToNonProd(id, facilityID string) string {
@@ -214,7 +230,7 @@ func validate(fc *facilityConfig) error {
 	if fc.Carbon.ControlPointName== "" {
 		return fmt.Errorf("control point name not specified")
 	}
-	if fc.Carbon.scale == 0 {
+	if fc.Carbon.formula == "" {
 		return fmt.Errorf("formula scale name not specified")
 	}
 	return nil

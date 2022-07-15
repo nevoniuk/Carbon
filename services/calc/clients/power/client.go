@@ -14,7 +14,7 @@ var dateFormat = "2006-01-02"
 
 type (
 	Client interface {
-		GetPower(context.Context, string, []uuid.UUID, int64, string, string) (*gencalc.ElectricalReport, error)
+		GetPower(context.Context, string, string, int64, string, string, *string) ([]*gencalc.ElectricalReport, error)
 	}
 	client struct {
 		getPower goa.Endpoint
@@ -24,38 +24,33 @@ type (
 
 func New(conn *grpc.ClientConn) Client {
 	c := genvaluesc.NewClient(conn, grpc.WaitForReady(true))
-	//method to client
 	return &client{
 		getPower: c.GetValues(),
 	}
 }
 
-func (c *client) GetPower(ctx context.Context, orgID string, controlPoints []uuid.UUID, interval int64,
-	 start string, end string) (*gencalc.ElectricalReport, error) {
-	var cps []genvalues.UUID
-	for _,point := range controlPoints {
-		newPoint := genvalues.UUID(point.ID())
-		cps = append(cps, newPoint)
-	}
-
+func (c *client) GetPower(ctx context.Context, orgID string, controlPoint string, interval int64,
+	 start string, end string, formula *string) ([]*gencalc.ElectricalReport, error) {
+	
+	var newOrg = genvalues.UUID(orgID)
+	var pointIDs []genvalues.UUID
+	pointIDs = append(pointIDs, genvalues.UUID(controlPoint))
+	
 	p := genvalues.ValuesQuery{
-		OrgID: genvalues.UUID(orgID),
-		PointIds: cps,
+		OrgID: newOrg,
+		PointIds: pointIDs,
 		Start: start,
 		End: end,
 		Interval: interval,
 	}
 
-	res, err := c.getPower(ctx, &p)
-	//res is historical values
-	//historical values = discrete points, analog points and structures
-
+	res, err := c.getPower(ctx, &p) //res is value *genvalues.HistoricalValues: discrete points, analog points and structures
+	
 	if err != nil {
 		return nil, fmt.Errorf("Error in GetPower: %s\n", err)
 	}
 	newRes, err := toPower(res)
-	//analyze error
-	//wrong ordID
+	//TODO: Roman has to implement errors in design file so I analyze errors such as wrong ordID
 	if err != nil {
 		return nil, fmt.Errorf("Error in GetPower: %s\n", err)
 	}
@@ -63,9 +58,9 @@ func (c *client) GetPower(ctx context.Context, orgID string, controlPoints []uui
 }
 
 //ToPower will cast the response from GetValues and return 5 minute interval reports to match the ones
-//returned from the Poller service
-func toPower(r interface{}) (*gencalc.ElectricalReport, error) {
-	//knowing that the client name and agent name were already passed in
+//returned from the Poller service. It will read the values from the input control point and convert them to Power in KW utilizing the formula
+func toPower(r interface{}) ([]*gencalc.ElectricalReport, error) {
+	//TODO implement this function
 	res := r.([]*genvalues.HistoricalValues)
 	var report *gencalc.ElectricalReport
 	var analogPoints = res[1] //Array of Analog Points
