@@ -16,6 +16,11 @@ type pollersrvc struct {
 	ctx                 context.Context
 	cancel context.CancelFunc
 	startDates []string
+<<<<<<< HEAD
+=======
+	//minuteReports		[][]*genpoller.CarbonForecast
+	
+>>>>>>> work on unit tests
 }
 //timeFormat is used to parse times in order to store time as ISO8601 format
 var timeFormat = "2006-01-02T15:04:05-07:00"

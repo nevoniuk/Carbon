@@ -46,6 +46,10 @@ type (
 			}`json:pagination`
 		}`json:"meta"`
 	}
+	ErrNotFound struct{ Err error }
+	ServerError struct{ Err error }
+	NoData struct{ Err error }
+	RegionNotFound struct{ Err error }
 )
 
 const (
@@ -71,13 +75,13 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 	}
 	
 	if err != nil {
-		log.Errorf(ctx, err, "carbon client API Get error")
-		return resp, err
+		var serverError = ErrNotFound{Err: fmt.Errorf("server error %d", resp.StatusCode)}
+		return resp, serverError.Err
 	}
 	
 	if resp.StatusCode != http.StatusOK {
-		log.Errorf(ctx, err, "%d", resp.StatusCode)
-		return resp, err
+		var serverError = ErrNotFound{Err: fmt.Errorf("server error %d", resp.StatusCode)}
+		return resp, serverError.Err
 	}
 
 	return resp, nil
@@ -88,18 +92,13 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 	var page = 1
 	var last = 100 //dummy value
 	for page <= last {
-
 		carbonUrl := strings.Join([]string{cs_url, "region_events/search?", "region=", region, "&event_type=carbon_intensity&start=",
 		startime, "&end=", endtime, "&per_page=1000", "&page=", strconv.Itoa(page)}, "")
-	
-		fmt.Println(carbonUrl)
-		
 		req, err := http.NewRequest("GET", carbonUrl, nil)
 		if err != nil {
 			fmt.Println(err)
 			return nil, err
 		}
-		
 		req.Close = true
 		req.Header.Add("Content-Type", "application/json")
 		req.Header.Add("X-Api-Key", c.key)
@@ -111,22 +110,20 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		}
 		//TODO:will delete this line
 		if carbonresp.ContentLength < 100 {
-			return nil, fmt.Errorf("No data available for region %s\n", region)
+			var noDataError = NoData{Err: fmt.Errorf("no data for Region %s", region)}
+			return nil, noDataError.Err
 		}
 
 		defer carbonresp.Body.Close()
-
 		var carbonData Outermoststruct
-		
 		err = json.NewDecoder(carbonresp.Body).Decode(&carbonData)
 		
 		if err != nil {
-
 			if errors.Is(err, io.EOF) {
-				msg := "Request body is empty"
-				fmt.Errorf("Error Decoding JSON Response: %s[%d]\n",msg, http.StatusBadRequest)
+				var noDataError = NoData{Err: fmt.Errorf("no data for Region %s", region)}
+				return nil, noDataError.Err
 			} else {
-				fmt.Errorf("Error Decoding JSON Response: %s[%d]\n", err, http.StatusBadRequest)
+				err = fmt.Errorf("Error Decoding JSON Response: %s[%d]\n", err, http.StatusBadRequest)
 			}
 			return nil, err
 		}

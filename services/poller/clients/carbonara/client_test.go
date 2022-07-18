@@ -8,6 +8,7 @@ import (
 
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
+
 //TODO: figure out how to encode API key - may come with client
 var (
 	validreq  = `INTERVALSTARTTIME_GMT,INTERVALENDTIME_GMT,OPR_DT,OPR_HR,OPR_INTERVAL,NODE_ID_XML,NODE_ID,NODE,MARKET_RUN_ID,LMP_TYPE,XML_DATA_ITEM,PNODE_RESMRID,GRP_TYPE,POS,MW,GROUP
@@ -30,7 +31,7 @@ func TestGetEmissions(t *testing.T) {
 		endtime  string
 		reports  []*genpoller.CarbonForecast
 	}
-
+	//define end result reports here and error
 	tests := []struct {
 		name    string
 		fields  fields
@@ -61,18 +62,28 @@ func TestGetEmissions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &client{
-				c:   tt.fields.c,
-				key: tt.fields.key,
-			}
-			got, err := c.GetEmissions(tt.args.ctx, tt.args.region, tt.args.startime, tt.args.endtime, tt.args.reports)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("client.GetEmissions() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			cl := New(&http.Client{Transport: roundTripFunc(tt.roundTripFn)}, tt.fields.key).(*client)
+			got, err := cl.GetEmissions(tt.args.ctx, tt.args.region, tt.args.startime, tt.args.endtime, tt.args.reports)
+			
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("client.GetEmissions() = %v, want %v", got, tt.want)
 			}
+			if tt.expectedErr != "" {
+				if err == nil {
+					t.Errorf("DownloadCAISO did not return an error")
+				}
+				if (err != nil) != tt.wantErr {
+					t.Errorf("client.GetEmissions() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+			}
+			if err != nil {
+				t.Fatalf("GetEmissions returned error: %v", err)
+			}
+			if got == nil {
+				t.Fatal("report is nil")
+			}
+			//possible other checks
 		})
 	}
 }
@@ -83,15 +94,13 @@ func downloadCarbonReport(t *testing.T, content string) func(*http.Request) *htt
 		if req.URL.Scheme != "http" {
 			t.Errorf("got scheme %s, want http", req.URL.Scheme)
 		}
-		if req.URL.Host != "oasis.caiso.com" {
-			t.Errorf("got host %s, want oasis.caiso.com", req.URL.Host)
+		if req.URL.Host != "https://api.singularity.energy/v1/" {
+			t.Errorf("got host %s, want https://api.singularity.energy/v1/", req.URL.Host)
 		}
 		if req.URL.Path != "/oasisapi/SingleZip" {
 			t.Errorf("got path %s, want /oasisapi/SingleZip", req.URL.Path)
 		}
-		if !strings.Contains(req.URL.RawQuery, "queryname=ATL_PUB") {
-			t.Errorf("got query %s, want queryname=ATL_PUB", req.URL.RawQuery)
-		}
+		//TODO: ask raphael what to do here
 		var buf bytes.Buffer
 		w := zip.NewWriter(&buf)
 		if content != "" {
@@ -126,7 +135,7 @@ func downloadReportRetry(t *testing.T) func(*http.Request) *http.Response {
 	retried := false
 	return func(req *http.Request) *http.Response {
 		if retried {
-			return downloadCarbonReport(t, completedXML)(req) //create way of determining if XML is complete
+			return downloadCarbonReport(t, validreq)(req) //create way of determining if XML is complete
 		}
 		retried = true
 		return &http.Response{
