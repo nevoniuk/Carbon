@@ -1,7 +1,7 @@
 package design
 
 import (
-	. "github.com/crossnokaye/carbon/types"
+	"github.com/crossnokaye/carbon/types"
 	. "goa.design/goa/v3/dsl"
 )
 

@@ -1,6 +1,9 @@
 package design
 
-import . "goa.design/goa/v3/dsl"
+import (
+	. "goa.design/goa/v3/dsl"
+	"github.com/crossnokaye/carbon/types/design"
+)
 
 var _ = API("Calc", func() {
 	Title("calc")
@@ -13,14 +16,11 @@ var _ = API("Calc", func() {
 
 var _ = Service("calc", func() {
 	Description("Service to interpret CO2 emissions through power and carbon intensity data")
-	Method("handle_requests", func() {
+	//historicalcarbonemissions
+	Method("Historical_Carbon_Emissions", func() {
 		Description("This endpoint is used by a front end service to return carbon emission reports")
 		Payload(RequestPayload)
 		Result(AllReports)
-		GRPC(func() {})
-	})
-	Method("get_carbon_report", func() {
-		Description("Make reports available to external/R&D clients")
 		GRPC(func() {})
 	})
 })
@@ -28,9 +28,7 @@ var _ = Service("calc", func() {
 var EmissionsPayload = Type("EmissionsPayload", func() {
 	Description("Period is the range to get data for, interval is the time unit at which to parse the data by.")
 	Field(1, "Period", Period, "Period")
-	Field(2, "Interval", String, "Interval", func() {
-		Example("hours, days, weeks, months, years")
-	})
+	Field(2, "Interval", design.IntervalType, "Interval")
 	Required("Period", "Interval")
 })
 
@@ -46,23 +44,19 @@ var RequestPayload = Type("RequestPayload", func() {
 	Description("Payload wraps the payload for past-values GetValues() and carbon poller service")
 	Field(1, "OrgID", UUID, "OrgID")
 	Field(2, "Duration", Period, "Duration")
-	Field(3, "AgentID", String, "AgentID")
-	Field(4, "FacilityID", String, "FacilityID")
-	Field(5, "Interval", String, "Interval", func() {
-		Example("hours, days, weeks, months, years")
-	})
-	Required("OrgID", "Duration", "AgentID", "Interval", "FacilityID")
+	Field(3, "FacilityID", String, "FacilityID")
+	Field(4, "Interval", design.IntervalType, "Interval")
+	Required("OrgID", "Duration", "Interval", "FacilityID")
 })
 
 var EmissionsReport = Type("EmissionsReport", func() {
 	Description("Carbon/Energy Generation Report")
 	Field(1, "Duration", Period, "Duration")
-	Field(2, "DurationType", String, "DurationType")
+	Field(2, "Interval", design.IntervalType, "Interval")
 	Field(3, "Points", ArrayOf(DataPoint), "Points")
 	Field(4, "OrgID", UUID, "OrgID")
-	Field(5, "AgentID", String, "AgentID")
-	Field(6, "FacilityID", String, "FacilityID")
-	Required("Duration", "Points", "OrgID", "DurationType", "FacilityID", "AgentID")
+	Field(5, "FacilityID", String, "FacilityID")
+	Required("Duration", "Points", "OrgID", "Interval", "FacilityID")
 })
 
 var CarbonReport = Type("CarbonReport", func() {
@@ -71,12 +65,9 @@ var CarbonReport = Type("CarbonReport", func() {
 		Description("This is in units of (lbs of CO2/MWh)")
 	})
 	Field(2, "Duration", Period, "Duration")
-	Field(3, "DurationType", String, "DurationType")
-	Field(4, "Region", String, "Region", func() {
-		Description("As found in the Enums section of the Poller service in the URL above")
-		Example("MISO, ISO...")
-	})
-	Required("GeneratedRate", "Region", "Duration", "DurationType")
+	Field(3, "Interval", design.IntervalType, "Interval")
+	Field(4, "Region", design.RegionName, "Region")
+	Required("GeneratedRate", "Region", "Duration", "Interval")
 })
 
 var DataPoint = Type("DataPoint", func() {
@@ -97,13 +88,12 @@ var ElectricalReport = Type("ElectricalReport", func() {
 	Description("Energy Generation Report from the Past values function GetValues")
 	Field(1, "Duration", Period, "Duration")
 	Field(2, "OrgID", UUID, "OrgID")
-	Field(3, "AgentID", String, "AgentID")
-	Field(4, "GeneratedRate", Float64, "GeneratedRate", func() {
+	Field(3, "GeneratedRate", Float64, "GeneratedRate", func() {
 		Description("Power meter data in KWh")
 	})
-	Field(5, "IntervalType", String, "IntervalType")
-	Field(6, "FacilityID", String, "FacilityID")
-	Required("OrgID", "Duration", "AgentID", "GeneratedRate", "IntervalType", "FacilityID")
+	Field(4, "Interval", design.IntervalType, "Interval")
+	Field(5, "FacilityID", String, "FacilityID")
+	Required("OrgID", "Duration", "GeneratedRate", "Interval", "FacilityID")
 })
 
 var Period = Type("Period", func() {
