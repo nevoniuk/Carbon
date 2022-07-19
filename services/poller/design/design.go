@@ -2,6 +2,7 @@ package design
 
 import (
 	. "goa.design/goa/v3/dsl"
+	"github.com/crossnokaye/carbon/types/design"
 )
 
 var _ = API("Poller", func() {
@@ -53,14 +54,14 @@ var CarbonForecast = Type("CarbonForecast", func() {
 	Field(3, "consumed_rate", Float64, "consumed_rate", func() {
 		Example(37.8267)
 	})
-	Field(4, "Duration", Period, "Duration")
+	Field(4, "duration", Period, "duration")
 
-	Field(5, "duration_type", String, "duration_type")
+	Field(4, "interval", design.IntervalType, "interval")
 
 	Field(7, "region", String, "region", func() {
 		Example("MISO, ISO...")
 	})
-	Required("generated_rate", "marginal_rate", "consumed_rate", "region", "Duration", "duration_type")
+	Required("generated_rate", "marginal_rate", "consumed_rate", "region", "duration", "interval")
 })
 
 
