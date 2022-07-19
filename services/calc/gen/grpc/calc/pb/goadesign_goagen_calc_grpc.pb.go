@@ -20,9 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 type CalcClient interface {
 	// This endpoint is used by a front end service to return carbon emission
 	// reports
-	HandleRequests(ctx context.Context, in *HandleRequestsRequest, opts ...grpc.CallOption) (*HandleRequestsResponse, error)
-	// Make reports available to external/R&D clients
-	GetCarbonReport(ctx context.Context, in *GetCarbonReportRequest, opts ...grpc.CallOption) (*GetCarbonReportResponse, error)
+	HistoricalCarbonEmissions(ctx context.Context, in *HistoricalCarbonEmissionsRequest, opts ...grpc.CallOption) (*HistoricalCarbonEmissionsResponse, error)
 }
 
 type calcClient struct {
@@ -33,18 +31,9 @@ func NewCalcClient(cc grpc.ClientConnInterface) CalcClient {
 	return &calcClient{cc}
 }
 
-func (c *calcClient) HandleRequests(ctx context.Context, in *HandleRequestsRequest, opts ...grpc.CallOption) (*HandleRequestsResponse, error) {
-	out := new(HandleRequestsResponse)
-	err := c.cc.Invoke(ctx, "/calc.Calc/HandleRequests", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *calcClient) GetCarbonReport(ctx context.Context, in *GetCarbonReportRequest, opts ...grpc.CallOption) (*GetCarbonReportResponse, error) {
-	out := new(GetCarbonReportResponse)
-	err := c.cc.Invoke(ctx, "/calc.Calc/GetCarbonReport", in, out, opts...)
+func (c *calcClient) HistoricalCarbonEmissions(ctx context.Context, in *HistoricalCarbonEmissionsRequest, opts ...grpc.CallOption) (*HistoricalCarbonEmissionsResponse, error) {
+	out := new(HistoricalCarbonEmissionsResponse)
+	err := c.cc.Invoke(ctx, "/calc.Calc/HistoricalCarbonEmissions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -57,9 +46,7 @@ func (c *calcClient) GetCarbonReport(ctx context.Context, in *GetCarbonReportReq
 type CalcServer interface {
 	// This endpoint is used by a front end service to return carbon emission
 	// reports
-	HandleRequests(context.Context, *HandleRequestsRequest) (*HandleRequestsResponse, error)
-	// Make reports available to external/R&D clients
-	GetCarbonReport(context.Context, *GetCarbonReportRequest) (*GetCarbonReportResponse, error)
+	HistoricalCarbonEmissions(context.Context, *HistoricalCarbonEmissionsRequest) (*HistoricalCarbonEmissionsResponse, error)
 	mustEmbedUnimplementedCalcServer()
 }
 
@@ -67,11 +54,8 @@ type CalcServer interface {
 type UnimplementedCalcServer struct {
 }
 
-func (UnimplementedCalcServer) HandleRequests(context.Context, *HandleRequestsRequest) (*HandleRequestsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HandleRequests not implemented")
-}
-func (UnimplementedCalcServer) GetCarbonReport(context.Context, *GetCarbonReportRequest) (*GetCarbonReportResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCarbonReport not implemented")
+func (UnimplementedCalcServer) HistoricalCarbonEmissions(context.Context, *HistoricalCarbonEmissionsRequest) (*HistoricalCarbonEmissionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HistoricalCarbonEmissions not implemented")
 }
 func (UnimplementedCalcServer) mustEmbedUnimplementedCalcServer() {}
 
@@ -86,38 +70,20 @@ func RegisterCalcServer(s grpc.ServiceRegistrar, srv CalcServer) {
 	s.RegisterService(&Calc_ServiceDesc, srv)
 }
 
-func _Calc_HandleRequests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HandleRequestsRequest)
+func _Calc_HistoricalCarbonEmissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HistoricalCarbonEmissionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CalcServer).HandleRequests(ctx, in)
+		return srv.(CalcServer).HistoricalCarbonEmissions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/calc.Calc/HandleRequests",
+		FullMethod: "/calc.Calc/HistoricalCarbonEmissions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CalcServer).HandleRequests(ctx, req.(*HandleRequestsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Calc_GetCarbonReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCarbonReportRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CalcServer).GetCarbonReport(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/calc.Calc/GetCarbonReport",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CalcServer).GetCarbonReport(ctx, req.(*GetCarbonReportRequest))
+		return srv.(CalcServer).HistoricalCarbonEmissions(ctx, req.(*HistoricalCarbonEmissionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -130,12 +96,8 @@ var Calc_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CalcServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "HandleRequests",
-			Handler:    _Calc_HandleRequests_Handler,
-		},
-		{
-			MethodName: "GetCarbonReport",
-			Handler:    _Calc_GetCarbonReport_Handler,
+			MethodName: "HistoricalCarbonEmissions",
+			Handler:    _Calc_HistoricalCarbonEmissions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

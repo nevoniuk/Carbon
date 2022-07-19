@@ -3,7 +3,7 @@
 // calc gRPC server encoders and decoders
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package server
 
@@ -16,42 +16,35 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// EncodeHandleRequestsResponse encodes responses from the "calc" service
-// "handle_requests" endpoint.
-func EncodeHandleRequestsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
+// EncodeHistoricalCarbonEmissionsResponse encodes responses from the "calc"
+// service "Historical_Carbon_Emissions" endpoint.
+func EncodeHistoricalCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
 	result, ok := v.(*calc.AllReports)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "handle_requests", "*calc.AllReports", v)
+		return nil, goagrpc.ErrInvalidType("calc", "Historical_Carbon_Emissions", "*calc.AllReports", v)
 	}
-	resp := NewProtoHandleRequestsResponse(result)
+	resp := NewProtoHistoricalCarbonEmissionsResponse(result)
 	return resp, nil
 }
 
-// DecodeHandleRequestsRequest decodes requests sent to "calc" service
-// "handle_requests" endpoint.
-func DecodeHandleRequestsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
+// DecodeHistoricalCarbonEmissionsRequest decodes requests sent to "calc"
+// service "Historical_Carbon_Emissions" endpoint.
+func DecodeHistoricalCarbonEmissionsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
 	var (
-		message *calcpb.HandleRequestsRequest
+		message *calcpb.HistoricalCarbonEmissionsRequest
 		ok      bool
 	)
 	{
-		if message, ok = v.(*calcpb.HandleRequestsRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("calc", "handle_requests", "*calcpb.HandleRequestsRequest", v)
+		if message, ok = v.(*calcpb.HistoricalCarbonEmissionsRequest); !ok {
+			return nil, goagrpc.ErrInvalidType("calc", "Historical_Carbon_Emissions", "*calcpb.HistoricalCarbonEmissionsRequest", v)
 		}
-		if err := ValidateHandleRequestsRequest(message); err != nil {
+		if err := ValidateHistoricalCarbonEmissionsRequest(message); err != nil {
 			return nil, err
 		}
 	}
 	var payload *calc.RequestPayload
 	{
-		payload = NewHandleRequestsPayload(message)
+		payload = NewHistoricalCarbonEmissionsPayload(message)
 	}
 	return payload, nil
-}
-
-// EncodeGetCarbonReportResponse encodes responses from the "calc" service
-// "get_carbon_report" endpoint.
-func EncodeGetCarbonReportResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
-	resp := NewProtoGetCarbonReportResponse()
-	return resp, nil
 }

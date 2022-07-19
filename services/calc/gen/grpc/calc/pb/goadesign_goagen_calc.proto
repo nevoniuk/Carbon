@@ -3,7 +3,7 @@
 // calc protocol buffer definition
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 syntax = "proto3";
 
@@ -15,22 +15,20 @@ option go_package = "/calcpb";
 service Calc {
 	// This endpoint is used by a front end service to return carbon emission
 // reports
-	rpc HandleRequests (HandleRequestsRequest) returns (HandleRequestsResponse);
-	// Make reports available to external/R&D clients
-	rpc GetCarbonReport (GetCarbonReportRequest) returns (GetCarbonReportResponse);
+	rpc HistoricalCarbonEmissions (HistoricalCarbonEmissionsRequest) returns (HistoricalCarbonEmissionsResponse);
 }
 
-message HandleRequestsRequest {
+message HistoricalCarbonEmissionsRequest {
 	// OrgID
 	string org_id = 1;
 	// Duration
 	Period duration = 2;
-	// AgentID
-	string agent_id = 3;
 	// FacilityID
-	string facility_id = 4;
+	string facility_id = 3;
 	// Interval
-	string interval = 5;
+	IntervalType interval = 4;
+	// LocationID
+	string location_id = 5;
 }
 // Period of time from start to end for any report type
 message Period {
@@ -39,8 +37,14 @@ message Period {
 	// End time
 	string end_time = 2;
 }
+// Defines the interval or 'granularity' types by which to obtain Carbon
+// Intensity reports and Power reports
+message IntervalType {
+	// Interval type kind
+	string kind = 1;
+}
 
-message HandleRequestsResponse {
+message HistoricalCarbonEmissionsResponse {
 	// CarbonIntensityReports
 	repeated CarbonReport carbon_intensity_reports = 1;
 	// PowerReports
@@ -54,40 +58,42 @@ message CarbonReport {
 	double generated_rate = 1;
 	// Duration
 	Period duration = 2;
-	// DurationType
-	string duration_type = 3;
-	// As found in the Enums section of the Poller service in the URL above
-	string region = 4;
+	// Interval
+	IntervalType interval = 3;
+	// Region
+	RegionName region = 4;
+}
+// Defines the region by which to obtain Carbon Intensity reports and Power
+// reports
+message RegionName {
+	// Acceptable region name
+	string region = 1;
 }
 // Energy Generation Report from the Past values function GetValues
 message ElectricalReport {
 	// Duration
 	Period duration = 1;
-	// OrgID
-	string org_id = 2;
-	// AgentID
-	string agent_id = 3;
 	// Power meter data in KWh
-	double generated_rate = 4;
-	// IntervalType
-	string interval_type = 5;
-	// FacilityID
-	string facility_id = 6;
+	double power = 2;
+	// Interval
+	IntervalType interval = 3;
 }
 // Carbon/Energy Generation Report
 message EmissionsReport {
 	// Duration
 	Period duration = 1;
-	// DurationType
-	string duration_type = 2;
+	// Interval
+	IntervalType interval = 2;
 	// Points
 	repeated DataPoint points = 3;
 	// OrgID
 	string org_id = 4;
-	// AgentID
-	string agent_id = 5;
 	// FacilityID
-	string facility_id = 6;
+	string facility_id = 5;
+	// LocationID
+	string location_id = 6;
+	// Region
+	RegionName region = 7;
 }
 // Contains carbon emissions in terms of DataPoints, which can be used as
 // points for a time/CO2 emissions graph
@@ -96,10 +102,4 @@ message DataPoint {
 	string time = 1;
 	// carbon footprint is the lbs of CO2 emissions
 	double carbon_footprint = 2;
-}
-
-message GetCarbonReportRequest {
-}
-
-message GetCarbonReportResponse {
 }

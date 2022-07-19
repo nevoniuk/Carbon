@@ -1,4 +1,5 @@
 package power
+
 import (
 	"context"
 	"fmt"
@@ -9,15 +10,17 @@ import (
 	genvalues "github.com/crossnokaye/past-values/services/past-values/gen/past_values"
 	genvaluesc "github.com/crossnokaye/past-values/services/past-values/gen/grpc/past_values/client"
 )
+
 var timeFormat = "2006-01-02T15:04:05-07:00"
 var dateFormat = "2006-01-02"
 
 type (
 	Client interface {
-		GetPower(context.Context, string, string, int64, string, string, *string) ([]*gencalc.ElectricalReport, error)
+		GetPower(ctx context.Context, orgID string, controlPoint string, durationInterval int64, start string, end string, formula *string) ([]*gencalc.ElectricalReport, error)
 	}
 	client struct {
 		getPower goa.Endpoint
+		getControlPointID goa.Endpoint
 	}
 	
 )
@@ -26,22 +29,23 @@ func New(conn *grpc.ClientConn) Client {
 	c := genvaluesc.NewClient(conn, grpc.WaitForReady(true))
 	return &client{
 		getPower: c.GetValues(),
+		getControlPointID: c.FindControlPointConfigsByName(),
 	}
 }
 
-func (c *client) GetPower(ctx context.Context, orgID string, controlPoint string, interval int64,
+
+func (c *client) GetPower(ctx context.Context, orgID string, controlPoint string, durationInterval int64,
 	 start string, end string, formula *string) ([]*gencalc.ElectricalReport, error) {
-	
 	var newOrg = genvalues.UUID(orgID)
 	var pointIDs []genvalues.UUID
 	pointIDs = append(pointIDs, genvalues.UUID(controlPoint))
-	
+	//Make call to getControlPointID here
 	p := genvalues.ValuesQuery{
 		OrgID: newOrg,
 		PointIds: pointIDs,
 		Start: start,
 		End: end,
-		Interval: interval,
+		Interval: durationInterval,
 	}
 
 	res, err := c.getPower(ctx, &p) //res is value *genvalues.HistoricalValues: discrete points, analog points and structures
@@ -50,7 +54,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, controlPoint string
 		return nil, fmt.Errorf("Error in GetPower: %s\n", err)
 	}
 	newRes, err := toPower(res)
-	//TODO: Roman has to implement errors in design file so I analyze errors such as wrong ordID
+	//TODO: Roman has to implement errors in his design file so i can implement error handling
 	if err != nil {
 		return nil, fmt.Errorf("Error in GetPower: %s\n", err)
 	}
@@ -72,6 +76,12 @@ func toPower(r interface{}) ([]*gencalc.ElectricalReport, error) {
 	//historical values->ArrayOf(devices)->array of control points per device->each control point contains a timestamp and a value
 	return report, nil
 }
+
+//getControlPointID will obtain the control point id from the below input in order to use the GetPower function with valid input
+func getControlPointID(ctx context.Context, orgID string, agentName string, pointName string) (uuid.UUID, error) {
+	return nil, nil
+}
+
 
 
 

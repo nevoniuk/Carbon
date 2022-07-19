@@ -3,7 +3,7 @@
 // calc gRPC client CLI support package
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package cli
 
@@ -22,20 +22,22 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `calc (handle-requests|get-carbon-report)
+	return `calc historical-carbon-emissions
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` calc handle-requests --message '{
-      "AgentID": "Voluptatem voluptatem hic repudiandae vero.",
+	return os.Args[0] + ` calc historical-carbon-emissions --message '{
       "Duration": {
          "EndTime": "2020-01-01T00:00:00Z",
          "StartTime": "2020-01-01T00:00:00Z"
       },
-      "FacilityID": "Temporibus laborum repellat nam in.",
-      "Interval": "hours, days, weeks, months, years",
+      "FacilityID": "Facere reiciendis.",
+      "Interval": {
+         "Kind": "weekly"
+      },
+      "LocationID": "Facere reiciendis.",
       "OrgID": "Facere reiciendis."
    }'` + "\n" +
 		""
@@ -47,14 +49,11 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	var (
 		calcFlags = flag.NewFlagSet("calc", flag.ContinueOnError)
 
-		calcHandleRequestsFlags       = flag.NewFlagSet("handle-requests", flag.ExitOnError)
-		calcHandleRequestsMessageFlag = calcHandleRequestsFlags.String("message", "", "")
-
-		calcGetCarbonReportFlags = flag.NewFlagSet("get-carbon-report", flag.ExitOnError)
+		calcHistoricalCarbonEmissionsFlags       = flag.NewFlagSet("historical-carbon-emissions", flag.ExitOnError)
+		calcHistoricalCarbonEmissionsMessageFlag = calcHistoricalCarbonEmissionsFlags.String("message", "", "")
 	)
 	calcFlags.Usage = calcUsage
-	calcHandleRequestsFlags.Usage = calcHandleRequestsUsage
-	calcGetCarbonReportFlags.Usage = calcGetCarbonReportUsage
+	calcHistoricalCarbonEmissionsFlags.Usage = calcHistoricalCarbonEmissionsUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -90,11 +89,8 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 		switch svcn {
 		case "calc":
 			switch epn {
-			case "handle-requests":
-				epf = calcHandleRequestsFlags
-
-			case "get-carbon-report":
-				epf = calcGetCarbonReportFlags
+			case "historical-carbon-emissions":
+				epf = calcHistoricalCarbonEmissionsFlags
 
 			}
 
@@ -121,12 +117,9 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 		case "calc":
 			c := calcc.NewClient(cc, opts...)
 			switch epn {
-			case "handle-requests":
-				endpoint = c.HandleRequests()
-				data, err = calcc.BuildHandleRequestsPayload(*calcHandleRequestsMessageFlag)
-			case "get-carbon-report":
-				endpoint = c.GetCarbonReport()
-				data = nil
+			case "historical-carbon-emissions":
+				endpoint = c.HistoricalCarbonEmissions()
+				data, err = calcc.BuildHistoricalCarbonEmissionsPayload(*calcHistoricalCarbonEmissionsMessageFlag)
 			}
 		}
 	}
@@ -144,39 +137,30 @@ Usage:
     %[1]s [globalflags] calc COMMAND [flags]
 
 COMMAND:
-    handle-requests: This endpoint is used by a front end service to return carbon emission reports
-    get-carbon-report: Make reports available to external/R&D clients
+    historical-carbon-emissions: This endpoint is used by a front end service to return carbon emission reports
 
 Additional help:
     %[1]s calc COMMAND --help
 `, os.Args[0])
 }
-func calcHandleRequestsUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc handle-requests -message JSON
+func calcHistoricalCarbonEmissionsUsage() {
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc historical-carbon-emissions -message JSON
 
 This endpoint is used by a front end service to return carbon emission reports
     -message JSON: 
 
 Example:
-    %[1]s calc handle-requests --message '{
-      "AgentID": "Voluptatem voluptatem hic repudiandae vero.",
+    %[1]s calc historical-carbon-emissions --message '{
       "Duration": {
          "EndTime": "2020-01-01T00:00:00Z",
          "StartTime": "2020-01-01T00:00:00Z"
       },
-      "FacilityID": "Temporibus laborum repellat nam in.",
-      "Interval": "hours, days, weeks, months, years",
+      "FacilityID": "Facere reiciendis.",
+      "Interval": {
+         "Kind": "weekly"
+      },
+      "LocationID": "Facere reiciendis.",
       "OrgID": "Facere reiciendis."
    }'
-`, os.Args[0])
-}
-
-func calcGetCarbonReportUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] calc get-carbon-report
-
-Make reports available to external/R&D clients
-
-Example:
-    %[1]s calc get-carbon-report
 `, os.Args[0])
 }

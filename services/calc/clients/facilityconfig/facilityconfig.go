@@ -1,80 +1,52 @@
 package facilityconfig
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"io/ioutil"
 	"path/filepath"
-	"errors"
 	"regexp"
-	"context"
+	"github.com/google/uuid"
 	"goa.design/clue/log"
 	"gopkg.in/yaml.v3"
 )
 
-//steps to make this work
-//1. define interface and methods necessar to get control point name from FILE
-//2. define shape and write the FILE for any configurations
-//3. probably add this file to another YAML file
-//4. load that file using loader
-//5. Add region identifier to facility.yaml
-
-
-//changes to facility.yaml file
-//carbon:
-	/*
-	id:
-	....
-	carbon:
-		controlpointname:
-		scale: ->this may change depending on how to make power formula generic for all facilities
-		region:
-	# ...
-	timezone: 'America/Los_Angeles' # required for threshold algo with tou rates
+/*
+	The following are changes to location.yaml file in order for the calc service to work
 	carbon:
 		controlPointAliasName: whatever that is for the pulse val
-		scale: .6(in Oxnard's example)
-		formula:(may or may not need this depending on how generic Riverside data ends up being)
-		region:
-		agentID:
-	 */
+		formula:(This will be read and parsed using the GoMath)
+		SingularityRegion:
+*/
+
 type(
-
 	Client interface {
-		LoadFacilityConfig(ctx context.Context, orgID string, facilityID string) (*Carbon, error)
-		
+		GetCarbonConfig(ctx context.Context, orgID string, facilityID string, locationID string) (*Carbon, error)
 	}
-	ControlPoint struct {
-		ID        uuid.UUID
-		Name      string
-		Units     string
-		Scaling   string
-		Unscaling string
-	}
-
 	client struct {
 		env string
 	}
 
-	//need to make a configstruct for the above data
-	facilityConfig struct {
+	locationConfig struct {
 		ID string `yaml: id`
-		Carbon *CarbonConfig `yaml: carbon`
+		Carbon *carbonConfig `yaml: carbon`
 	}
 
-	CarbonConfig struct {
+	carbonConfig struct {
 		ControlPointName string `yaml: "controlPointAliasName"`
-		formula string `yaml: "formula"`
-		region string `yaml: "region"`
-		agent string `yaml: "agent"`
+		Formula string `yaml: "formula"`
+		SingularityRegion string `yaml: "region"`
 	}
 
 	Carbon struct {
-		ID string
+		OrgID string
+		FacilityID string
+		BuildingID string
 		ControlPointName string 
 		Formula string
 		Region string 
-		Agent string
+		AgentID string
 	}
 
 	// ErrNotFound is returned when a facility config is not found.
@@ -83,20 +55,27 @@ type(
 	// ErrNoConfig is returned when no schedule type is specified.
 	ErrNoConfig struct{ Err error }
 )
-
 var (
 	FacilityDataFilePath = "deploy/facility_data"
 )
-
 // New returns a new client for the facility config data.
 func New(env string) Client {
 	return &client{env: env}
 }
 
 //GetCarbonConfig obtains the above carbon configuration for the given input
-//called in load facility config to get carbonconfig for facility config struct
-func GetCarbonConfig(ctx context.Context, orgID string, facilityID string) (*CarbonConfig, error) {
-	return nil, nil
+func (c *client) GetCarbonConfig(ctx context.Context, orgID string, facilityID string, locationID string) (*Carbon, error) {
+	path, config, err := loadLocationConfig(ctx, c.env, orgID, facilityID, locationID)
+	if err != nil {
+		return nil, err
+	}
+	id, err := findAgentIDFromLocation(ctx, c.env, orgID, facilityID, path)
+	if err != nil {
+		return nil, err
+	}
+	carbon := &Carbon{OrgID: orgID, FacilityID: facilityID, BuildingID: locationID, ControlPointName: config.Carbon.ControlPointName, Formula: config.Carbon.Formula, 
+	Region: config.Carbon.SingularityRegion, AgentID: id}
+	return carbon, nil
 }
 
 // findOrg finds the org file for the given org ID.
@@ -118,7 +97,7 @@ func findOrg(ctx context.Context, env, orgID string) (string, error) {
 }
 
 // findFacility returns the path to the facility config for the given org and facility IDs.
-func findFacility(ctx context.Context, env, orgID, facilityID string) (string, error) {
+func findFacility(ctx context.Context, env, orgID string, facilityID string) (string, error) {
 	path, err := findOrg(ctx, env, orgID)
 	if err != nil {
 		return "", err
@@ -147,9 +126,8 @@ func findFacility(ctx context.Context, env, orgID, facilityID string) (string, e
 	}
 	return facilityPath, nil
 }
-
-// findLocation returns the path to the building config for the given org, facility, and agent IDs.
-func findLocation(ctx context.Context, env, orgID, facilityID, agentID string) (string, error) {
+//findLocation will find the location path from location/building ID instead of the agentID
+func findLocation(ctx context.Context, env string, orgID string, facilityID string, locationID string) (string, error) {
 	path, err := findFacility(ctx, env, orgID, facilityID)
 	if err != nil {
 		return "", err
@@ -163,20 +141,20 @@ func findLocation(ctx context.Context, env, orgID, facilityID, agentID string) (
 		if !b.IsDir() {
 			continue
 		}
-		agentPath := filepath.Join(filepath.Dir(path), b.Name(), "agent.yaml")
-		read := readID(ctx, agentPath)
+		tempPath := filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
+		read := readID(ctx, locationPath)
 		if env != "production" {
 			read = mapIDToNonProd(read, facilityID)
 			if env == "office" {
-				name := readName(ctx, agentPath)
+				name := readName(ctx, tempPath)
 				id := mapAgentToNonProd(name)
 				if id != "" {
 					read = id
 				}
 			}
 		}
-		if read == agentID {
-			locationPath = filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
+		if read == locationID {
+			locationPath = tempPath
 			break
 		}
 	}
@@ -184,28 +162,38 @@ func findLocation(ctx context.Context, env, orgID, facilityID, agentID string) (
 		return "", &ErrNotFound{errors.New("location config not found")}
 	}
 	return locationPath, nil
+
+}
+
+//findAgentIDFromLocation is a separate function to take in the location path and return the agent ID for a location
+func findAgentIDFromLocation(ctx context.Context, env, orgID, facilityID, locationPath string) (string, error) {
+	if locationPath == "" {
+		return "", fmt.Errorf("No location path")
+	}
+	var agentPath = filepath.Join(filepath.Dir(locationPath), "agent.yaml")
+	read := readID(ctx, agentPath)
+	return read, nil
 }
 
 
-// loadFacilityConfig returns the facility config for the given org and facility IDs.
-func (c *client) LoadFacilityConfig(ctx context.Context, orgID, facilityID string) (*Carbon, error) {
-	facilityPath, err := findFacility(ctx, c.env, orgID, facilityID)
+// loadLocationConfig returns the building config for the given org, facility, and agent IDs.
+// it will also return the buildingpath in order to avoid an extra function call to use findAgentIDFromLocation
+func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID string) (string, *locationConfig, error) {
+	buildingPath, err := findLocation(ctx, env, orgID, facilityID, locationID)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
-	cfg, err := ioutil.ReadFile(facilityPath)
+	cfg, err := ioutil.ReadFile(buildingPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read facility config file %s: %w", facilityPath, err)
+		return "", nil, fmt.Errorf("failed to read building config file %s: %w", buildingPath, err)
 	}
-	//call to carbonconfig to get carbonconfig struct
-	var config facilityConfig
+	var config locationConfig
 	if err := yaml.Unmarshal(cfg, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse facility config file %s: %w", facilityPath, err)
+		return "", nil, fmt.Errorf("failed to parse building config file %s: %w", buildingPath, err)
 	}
-	var carbon  = &Carbon{ID: config.ID, ControlPointName: config.Carbon.ControlPointName,
-		 Formula: config.Carbon.formula, Region: config.Carbon.region, Agent: config.Carbon.agent}
-	return carbon, nil
+	return buildingPath, &config, nil
 }
+
 
 func mapIDToNonProd(id, facilityID string) string {
 	return mapToNonProd(uuid.MustParse(id), uuid.MustParse(facilityID))
@@ -219,22 +207,6 @@ func mapToNonProd(u, fid uuid.UUID) string {
 	return uuid.NewSHA1(u, key).String()
 }
 
-// validate validates the facility config.
-func validate(fc *facilityConfig) error {
-	if fc.ID== "" {
-		return &ErrNoConfig{errors.New("ID not specified")}
-	}
-	if fc.Carbon.region == "" {
-		return fmt.Errorf("region not specified")
-	}
-	if fc.Carbon.ControlPointName== "" {
-		return fmt.Errorf("control point name not specified")
-	}
-	if fc.Carbon.formula == "" {
-		return fmt.Errorf("formula scale name not specified")
-	}
-	return nil
-}
 // Keep this in sync with crossnokaye/pkg/facilityconfig/loader/overrides.go
 func mapAgentToNonProd(name string) string {
 	switch name {

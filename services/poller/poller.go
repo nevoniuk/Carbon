@@ -3,10 +3,7 @@ package pollerapi
 import (
 	"context"
 	"fmt"
-	//"fmt"
-	//"sync"
 	"time"
-
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
@@ -19,8 +16,6 @@ type pollersrvc struct {
 	ctx                 context.Context
 	cancel context.CancelFunc
 	startDates []string
-	minuteReports		[][]*genpoller.CarbonForecast
-	
 }
 //timeFormat is used to parse times in order to store time as ISO8601 format
 var timeFormat = "2006-01-02T15:04:05-07:00"
@@ -46,8 +41,6 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		ctx:                ctx,
 		cancel: 			cancel,
 		startDates:		    []string{},
-		minuteReports:		[][]*genpoller.CarbonForecast{},
-		
 	}
 
 	regions = [...]string{ "CAISO", "AESO", "BPA", "ERCO", "IESO",
@@ -77,7 +70,6 @@ func (s *pollersrvc) EnsurePastData(ctx context.Context) (startDates []string) {
 	var dates []string
 
 	for i := 0; i < len(regions); i++ {
-		
 		date, err := s.dbc.CheckDB(ctx, string(regions[i]))
 		if err == nil {
 			dates = append(dates, date)

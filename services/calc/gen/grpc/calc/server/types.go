@@ -3,7 +3,7 @@
 // calc gRPC server types
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package server
 
@@ -13,35 +13,46 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// NewHandleRequestsPayload builds the payload of the "handle_requests"
-// endpoint of the "calc" service from the gRPC request type.
-func NewHandleRequestsPayload(message *calcpb.HandleRequestsRequest) *calc.RequestPayload {
+// NewHistoricalCarbonEmissionsPayload builds the payload of the
+// "Historical_Carbon_Emissions" endpoint of the "calc" service from the gRPC
+// request type.
+func NewHistoricalCarbonEmissionsPayload(message *calcpb.HistoricalCarbonEmissionsRequest) *calc.RequestPayload {
 	v := &calc.RequestPayload{
 		OrgID:      calc.UUID(message.OrgId),
-		AgentID:    message.AgentId,
-		FacilityID: message.FacilityId,
-		Interval:   message.Interval,
+		FacilityID: calc.UUID(message.FacilityId),
+	}
+	if message.LocationId != "" {
+		locationIDptr := calc.UUID(message.LocationId)
+		v.LocationID = &locationIDptr
 	}
 	if message.Duration != nil {
 		v.Duration = protobufCalcpbPeriodToCalcPeriod(message.Duration)
 	}
+	if message.Interval != nil {
+		v.Interval = protobufCalcpbIntervalTypeToCalcIntervalType(message.Interval)
+	}
 	return v
 }
 
-// NewProtoHandleRequestsResponse builds the gRPC response type from the result
-// of the "handle_requests" endpoint of the "calc" service.
-func NewProtoHandleRequestsResponse(result *calc.AllReports) *calcpb.HandleRequestsResponse {
-	message := &calcpb.HandleRequestsResponse{}
+// NewProtoHistoricalCarbonEmissionsResponse builds the gRPC response type from
+// the result of the "Historical_Carbon_Emissions" endpoint of the "calc"
+// service.
+func NewProtoHistoricalCarbonEmissionsResponse(result *calc.AllReports) *calcpb.HistoricalCarbonEmissionsResponse {
+	message := &calcpb.HistoricalCarbonEmissionsResponse{}
 	if result.CarbonIntensityReports != nil {
 		message.CarbonIntensityReports = make([]*calcpb.CarbonReport, len(result.CarbonIntensityReports))
 		for i, val := range result.CarbonIntensityReports {
 			message.CarbonIntensityReports[i] = &calcpb.CarbonReport{
 				GeneratedRate: val.GeneratedRate,
-				DurationType:  val.DurationType,
-				Region:        val.Region,
 			}
 			if val.Duration != nil {
 				message.CarbonIntensityReports[i].Duration = svcCalcPeriodToCalcpbPeriod(val.Duration)
+			}
+			if val.Interval != nil {
+				message.CarbonIntensityReports[i].Interval = svcCalcIntervalTypeToCalcpbIntervalType(val.Interval)
+			}
+			if val.Region != nil {
+				message.CarbonIntensityReports[i].Region = svcCalcRegionNameToCalcpbRegionName(val.Region)
 			}
 		}
 	}
@@ -49,14 +60,13 @@ func NewProtoHandleRequestsResponse(result *calc.AllReports) *calcpb.HandleReque
 		message.PowerReports = make([]*calcpb.ElectricalReport, len(result.PowerReports))
 		for i, val := range result.PowerReports {
 			message.PowerReports[i] = &calcpb.ElectricalReport{
-				OrgId:         string(val.OrgID),
-				AgentId:       val.AgentID,
-				GeneratedRate: val.GeneratedRate,
-				IntervalType:  val.IntervalType,
-				FacilityId:    val.FacilityID,
+				Power: val.Power,
 			}
 			if val.Duration != nil {
 				message.PowerReports[i].Duration = svcCalcPeriodToCalcpbPeriod(val.Duration)
+			}
+			if val.Interval != nil {
+				message.PowerReports[i].Interval = svcCalcIntervalTypeToCalcpbIntervalType(val.Interval)
 			}
 		}
 	}
@@ -66,18 +76,14 @@ func NewProtoHandleRequestsResponse(result *calc.AllReports) *calcpb.HandleReque
 	return message
 }
 
-// NewProtoGetCarbonReportResponse builds the gRPC response type from the
-// result of the "get_carbon_report" endpoint of the "calc" service.
-func NewProtoGetCarbonReportResponse() *calcpb.GetCarbonReportResponse {
-	message := &calcpb.GetCarbonReportResponse{}
-	return message
-}
-
-// ValidateHandleRequestsRequest runs the validations defined on
-// HandleRequestsRequest.
-func ValidateHandleRequestsRequest(message *calcpb.HandleRequestsRequest) (err error) {
+// ValidateHistoricalCarbonEmissionsRequest runs the validations defined on
+// HistoricalCarbonEmissionsRequest.
+func ValidateHistoricalCarbonEmissionsRequest(message *calcpb.HistoricalCarbonEmissionsRequest) (err error) {
 	if message.Duration == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("Duration", "message"))
+	}
+	if message.Interval == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("Interval", "message"))
 	}
 	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.OrgId), goa.FormatUUID))
 
@@ -86,6 +92,15 @@ func ValidateHandleRequestsRequest(message *calcpb.HandleRequestsRequest) (err e
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.FacilityId), goa.FormatUUID))
+
+	if message.Interval != nil {
+		if err2 := ValidateIntervalType(message.Interval); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.LocationId), goa.FormatUUID))
+
 	return
 }
 
@@ -105,12 +120,33 @@ func ValidatePeriod(message *calcpb.Period) (err error) {
 	return
 }
 
+// ValidateIntervalType runs the validations defined on IntervalType.
+func ValidateIntervalType(message *calcpb.IntervalType) (err error) {
+	if message.Kind != "" {
+		if !(message.Kind == "minute" || message.Kind == "hourly" || message.Kind == "daily" || message.Kind == "weekly" || message.Kind == "monthly") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.Kind", message.Kind, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
+		}
+	}
+	return
+}
+
 // protobufCalcpbPeriodToCalcPeriod builds a value of type *calc.Period from a
 // value of type *calcpb.Period.
 func protobufCalcpbPeriodToCalcPeriod(v *calcpb.Period) *calc.Period {
 	res := &calc.Period{
 		StartTime: v.StartTime,
 		EndTime:   v.EndTime,
+	}
+
+	return res
+}
+
+// protobufCalcpbIntervalTypeToCalcIntervalType builds a value of type
+// *calc.IntervalType from a value of type *calcpb.IntervalType.
+func protobufCalcpbIntervalTypeToCalcIntervalType(v *calcpb.IntervalType) *calc.IntervalType {
+	res := &calc.IntervalType{}
+	if v.Kind != "" {
+		res.Kind = &v.Kind
 	}
 
 	return res
@@ -127,17 +163,41 @@ func svcCalcPeriodToCalcpbPeriod(v *calc.Period) *calcpb.Period {
 	return res
 }
 
+// svcCalcIntervalTypeToCalcpbIntervalType builds a value of type
+// *calcpb.IntervalType from a value of type *calc.IntervalType.
+func svcCalcIntervalTypeToCalcpbIntervalType(v *calc.IntervalType) *calcpb.IntervalType {
+	res := &calcpb.IntervalType{}
+	if v.Kind != nil {
+		res.Kind = *v.Kind
+	}
+
+	return res
+}
+
+// svcCalcRegionNameToCalcpbRegionName builds a value of type
+// *calcpb.RegionName from a value of type *calc.RegionName.
+func svcCalcRegionNameToCalcpbRegionName(v *calc.RegionName) *calcpb.RegionName {
+	res := &calcpb.RegionName{}
+	if v.Region != nil {
+		res.Region = *v.Region
+	}
+
+	return res
+}
+
 // svcCalcEmissionsReportToCalcpbEmissionsReport builds a value of type
 // *calcpb.EmissionsReport from a value of type *calc.EmissionsReport.
 func svcCalcEmissionsReportToCalcpbEmissionsReport(v *calc.EmissionsReport) *calcpb.EmissionsReport {
 	res := &calcpb.EmissionsReport{
-		DurationType: v.DurationType,
-		OrgId:        string(v.OrgID),
-		AgentId:      v.AgentID,
-		FacilityId:   v.FacilityID,
+		OrgId:      string(v.OrgID),
+		FacilityId: string(v.FacilityID),
+		LocationId: string(v.LocationID),
 	}
 	if v.Duration != nil {
 		res.Duration = svcCalcPeriodToCalcpbPeriod(v.Duration)
+	}
+	if v.Interval != nil {
+		res.Interval = svcCalcIntervalTypeToCalcpbIntervalType(v.Interval)
 	}
 	if v.Points != nil {
 		res.Points = make([]*calcpb.DataPoint, len(v.Points))
@@ -148,6 +208,20 @@ func svcCalcEmissionsReportToCalcpbEmissionsReport(v *calc.EmissionsReport) *cal
 			}
 		}
 	}
+	if v.Region != nil {
+		res.Region = svcCalcRegionNameToCalcpbRegionName(v.Region)
+	}
+
+	return res
+}
+
+// protobufCalcpbRegionNameToCalcRegionName builds a value of type
+// *calc.RegionName from a value of type *calcpb.RegionName.
+func protobufCalcpbRegionNameToCalcRegionName(v *calcpb.RegionName) *calc.RegionName {
+	res := &calc.RegionName{}
+	if v.Region != "" {
+		res.Region = &v.Region
+	}
 
 	return res
 }
@@ -156,13 +230,15 @@ func svcCalcEmissionsReportToCalcpbEmissionsReport(v *calc.EmissionsReport) *cal
 // *calc.EmissionsReport from a value of type *calcpb.EmissionsReport.
 func protobufCalcpbEmissionsReportToCalcEmissionsReport(v *calcpb.EmissionsReport) *calc.EmissionsReport {
 	res := &calc.EmissionsReport{
-		DurationType: v.DurationType,
-		OrgID:        calc.UUID(v.OrgId),
-		AgentID:      v.AgentId,
-		FacilityID:   v.FacilityId,
+		OrgID:      calc.UUID(v.OrgId),
+		FacilityID: calc.UUID(v.FacilityId),
+		LocationID: calc.UUID(v.LocationId),
 	}
 	if v.Duration != nil {
 		res.Duration = protobufCalcpbPeriodToCalcPeriod(v.Duration)
+	}
+	if v.Interval != nil {
+		res.Interval = protobufCalcpbIntervalTypeToCalcIntervalType(v.Interval)
 	}
 	if v.Points != nil {
 		res.Points = make([]*calc.DataPoint, len(v.Points))
@@ -172,6 +248,9 @@ func protobufCalcpbEmissionsReportToCalcEmissionsReport(v *calcpb.EmissionsRepor
 				CarbonFootprint: val.CarbonFootprint,
 			}
 		}
+	}
+	if v.Region != nil {
+		res.Region = protobufCalcpbRegionNameToCalcRegionName(v.Region)
 	}
 
 	return res

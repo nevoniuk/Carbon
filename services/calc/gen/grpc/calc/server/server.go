@@ -3,7 +3,7 @@
 // calc gRPC server
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package server
 
@@ -18,8 +18,7 @@ import (
 
 // Server implements the calcpb.CalcServer interface.
 type Server struct {
-	HandleRequestsH  goagrpc.UnaryHandler
-	GetCarbonReportH goagrpc.UnaryHandler
+	HistoricalCarbonEmissionsH goagrpc.UnaryHandler
 	calcpb.UnimplementedCalcServer
 }
 
@@ -32,49 +31,27 @@ type ErrorNamer interface {
 // New instantiates the server struct with the calc service endpoints.
 func New(e *calc.Endpoints, uh goagrpc.UnaryHandler) *Server {
 	return &Server{
-		HandleRequestsH:  NewHandleRequestsHandler(e.HandleRequests, uh),
-		GetCarbonReportH: NewGetCarbonReportHandler(e.GetCarbonReport, uh),
+		HistoricalCarbonEmissionsH: NewHistoricalCarbonEmissionsHandler(e.HistoricalCarbonEmissions, uh),
 	}
 }
 
-// NewHandleRequestsHandler creates a gRPC handler which serves the "calc"
-// service "handle_requests" endpoint.
-func NewHandleRequestsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
+// NewHistoricalCarbonEmissionsHandler creates a gRPC handler which serves the
+// "calc" service "Historical_Carbon_Emissions" endpoint.
+func NewHistoricalCarbonEmissionsHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, DecodeHandleRequestsRequest, EncodeHandleRequestsResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeHistoricalCarbonEmissionsRequest, EncodeHistoricalCarbonEmissionsResponse)
 	}
 	return h
 }
 
-// HandleRequests implements the "HandleRequests" method in calcpb.CalcServer
-// interface.
-func (s *Server) HandleRequests(ctx context.Context, message *calcpb.HandleRequestsRequest) (*calcpb.HandleRequestsResponse, error) {
-	ctx = context.WithValue(ctx, goa.MethodKey, "handle_requests")
+// HistoricalCarbonEmissions implements the "HistoricalCarbonEmissions" method
+// in calcpb.CalcServer interface.
+func (s *Server) HistoricalCarbonEmissions(ctx context.Context, message *calcpb.HistoricalCarbonEmissionsRequest) (*calcpb.HistoricalCarbonEmissionsResponse, error) {
+	ctx = context.WithValue(ctx, goa.MethodKey, "Historical_Carbon_Emissions")
 	ctx = context.WithValue(ctx, goa.ServiceKey, "calc")
-	resp, err := s.HandleRequestsH.Handle(ctx, message)
+	resp, err := s.HistoricalCarbonEmissionsH.Handle(ctx, message)
 	if err != nil {
 		return nil, goagrpc.EncodeError(err)
 	}
-	return resp.(*calcpb.HandleRequestsResponse), nil
-}
-
-// NewGetCarbonReportHandler creates a gRPC handler which serves the "calc"
-// service "get_carbon_report" endpoint.
-func NewGetCarbonReportHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
-	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeGetCarbonReportResponse)
-	}
-	return h
-}
-
-// GetCarbonReport implements the "GetCarbonReport" method in calcpb.CalcServer
-// interface.
-func (s *Server) GetCarbonReport(ctx context.Context, message *calcpb.GetCarbonReportRequest) (*calcpb.GetCarbonReportResponse, error) {
-	ctx = context.WithValue(ctx, goa.MethodKey, "get_carbon_report")
-	ctx = context.WithValue(ctx, goa.ServiceKey, "calc")
-	resp, err := s.GetCarbonReportH.Handle(ctx, message)
-	if err != nil {
-		return nil, goagrpc.EncodeError(err)
-	}
-	return resp.(*calcpb.GetCarbonReportResponse), nil
+	return resp.(*calcpb.HistoricalCarbonEmissionsResponse), nil
 }

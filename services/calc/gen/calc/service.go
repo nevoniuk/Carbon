@@ -3,7 +3,7 @@
 // calc service
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design
 
 package calc
 
@@ -15,9 +15,7 @@ import (
 type Service interface {
 	// This endpoint is used by a front end service to return carbon emission
 	// reports
-	HandleRequests(context.Context, *RequestPayload) (res *AllReports, err error)
-	// Make reports available to external/R&D clients
-	GetCarbonReport(context.Context) (err error)
+	HistoricalCarbonEmissions(context.Context, *RequestPayload) (res *AllReports, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -28,9 +26,10 @@ const ServiceName = "calc"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"handle_requests", "get_carbon_report"}
+var MethodNames = [1]string{"Historical_Carbon_Emissions"}
 
-// AllReports is the result type of the calc service handle_requests method.
+// AllReports is the result type of the calc service
+// Historical_Carbon_Emissions method.
 type AllReports struct {
 	// CarbonIntensityReports
 	CarbonIntensityReports []*CarbonReport
@@ -46,10 +45,10 @@ type CarbonReport struct {
 	GeneratedRate float64
 	// Duration
 	Duration *Period
-	// DurationType
-	DurationType string
-	// As found in the Enums section of the Poller service in the URL above
-	Region string
+	// Interval
+	Interval *IntervalType
+	// Region
+	Region *RegionName
 }
 
 // Contains carbon emissions in terms of DataPoints, which can be used as
@@ -65,32 +64,35 @@ type DataPoint struct {
 type ElectricalReport struct {
 	// Duration
 	Duration *Period
-	// OrgID
-	OrgID UUID
-	// AgentID
-	AgentID string
 	// Power meter data in KWh
-	GeneratedRate float64
-	// IntervalType
-	IntervalType string
-	// FacilityID
-	FacilityID string
+	Power float64
+	// Interval
+	Interval *IntervalType
 }
 
 // Carbon/Energy Generation Report
 type EmissionsReport struct {
 	// Duration
 	Duration *Period
-	// DurationType
-	DurationType string
+	// Interval
+	Interval *IntervalType
 	// Points
 	Points []*DataPoint
 	// OrgID
 	OrgID UUID
-	// AgentID
-	AgentID string
 	// FacilityID
-	FacilityID string
+	FacilityID UUID
+	// LocationID
+	LocationID UUID
+	// Region
+	Region *RegionName
+}
+
+// Defines the interval or 'granularity' types by which to obtain Carbon
+// Intensity reports and Power reports
+type IntervalType struct {
+	// Interval type kind
+	Kind *string
 }
 
 // Period of time from start to end for any report type
@@ -101,19 +103,26 @@ type Period struct {
 	EndTime string
 }
 
-// RequestPayload is the payload type of the calc service handle_requests
-// method.
+// Defines the region by which to obtain Carbon Intensity reports and Power
+// reports
+type RegionName struct {
+	// Acceptable region name
+	Region *string
+}
+
+// RequestPayload is the payload type of the calc service
+// Historical_Carbon_Emissions method.
 type RequestPayload struct {
 	// OrgID
 	OrgID UUID
 	// Duration
 	Duration *Period
-	// AgentID
-	AgentID string
 	// FacilityID
-	FacilityID string
+	FacilityID UUID
 	// Interval
-	Interval string
+	Interval *IntervalType
+	// LocationID
+	LocationID *UUID
 }
 
 // Universally unique identifier
