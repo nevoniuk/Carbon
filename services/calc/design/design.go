@@ -50,8 +50,8 @@ var EmissionsReport = Type("EmissionsReport", func() {
 	Field(3, "Points", ArrayOf(DataPoint), "Points")
 	Field(4, "OrgID", UUID, "OrgID")
 	Field(5, "FacilityID", UUID, "FacilityID")
-	Field(5, "LocationID", UUID, "LocationID")
-	Field(5, "Region", design.RegionName, "Region")
+	Field(6, "LocationID", UUID, "LocationID")
+	Field(7, "Region", design.RegionName, "Region")
 	Required("Duration", "Points", "OrgID", "Interval", "FacilityID", "LocationID", "Region")
 })
 
