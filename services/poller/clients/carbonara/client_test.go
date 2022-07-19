@@ -5,24 +5,40 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
-
+	"strings"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
 //TODO: figure out how to encode API key - may come with client
+var cs_url = "https://api.singularity.energy/v1/"
 var (
-	validreq  = `INTERVALSTARTTIME_GMT,INTERVALENDTIME_GMT,OPR_DT,OPR_HR,OPR_INTERVAL,NODE_ID_XML,NODE_ID,NODE,MARKET_RUN_ID,LMP_TYPE,XML_DATA_ITEM,PNODE_RESMRID,GRP_TYPE,POS,MW,GROUP
-2022-02-01T15:00:00-00:00,2022-02-01T16:00:00-00:00,2022-02-01,8,0,0096WD_7_N001,0096WD_7_N001,0096WD_7_N001,DAM,LMP,LMP_PRC,0096WD_7_N001,ALL,1,74.63,1`
-	invalidreq = `INTERVALSTARTTIME_GMT,INTERVALENDTIME_GMT,OPR_DT,OPR_HR,OPR_INTERVAL,NODE_ID_XML,NODE_ID,NODE,MARKET_RUN_ID,LMP_TYPE,XML_DATA_ITEM,PNODE_RESMRID,POS,MW,GROUP
-2022-02-01T15:00:00-00:00,2022-02-01T16:00:00-00:00,2022-02-01,8,0,0096WD_7_N001,0096WD_7_N001,0096WD_7_N001,DAM,LMP,LMP_PRC,0096WD_7_N001,ALL,1,74.63,1`
+	validreq  = `https://api.singularity.energy/v1/region_events/search?region=CAISO&event_type=carbon_intensity&start=2022-01-01T00:00:00-00:00&end=2022-01-02T00:00:00-00:00&' --header 'Content-Type: application/json' --header 'X-Api-Key: key`
+	invalidreq = `https://api.singularity.energy/v1/region_events/search?region=CAISO&event_type=carbon_intensty&start=2022-01-01T00:00:00-00:00&end=2022-01-02T00:00:00-00:00&' --header 'Content-Type: application/json' --header 'X-Api-Key: key`
 )
 
 func TestGetEmissions(t *testing.T) {
-
 	type fields struct {
 		c   *http.Client
 		key string
 	}
+	goodreq, err := http.NewRequest("GET", validreq, nil)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	goodreq.Close = true
+	goodreq.Header.Add("Content-Type", "application/json")
+	goodreq.Header.Add("X-Api-Key", fields.key)
+	badreq, err := http.NewRequest("GET", invalidreq, nil)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	badreq.Close = true
+	badreq.Header.Add("Content-Type", "application/json")
+	badreq.Header.Add("X-Api-Key", key)
+	
 
 	type args struct {
 		ctx      context.Context
@@ -34,16 +50,16 @@ func TestGetEmissions(t *testing.T) {
 	//define end result reports here and error
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		fields fields
 		roundTripFn func(req *http.Request) *http.Response
-		want    []*genpoller.CarbonForecast
 		expectedErr string
-		wantErr bool
 	}{ 
 		{
 			name:        "valid",
 			roundTripFn: downloadCarbonReport(t, validreq),
+			fields: fields{
+				key: "blahblahblah",
+			},
 		},
 		{
 			name:        "invalid",
@@ -62,20 +78,17 @@ func TestGetEmissions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cl := New(&http.Client{Transport: roundTripFunc(tt.roundTripFn)}, tt.fields.key).(*client)
-			got, err := cl.GetEmissions(tt.args.ctx, tt.args.region, tt.args.startime, tt.args.endtime, tt.args.reports)
-			
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("client.GetEmissions() = %v, want %v", got, tt.want)
-			}
+			var key = tt.fields.key
+			cl := New(&http.Client{Transport: roundTripFunc(tt.roundTripFn)}, key).(*client)
+			ctx := context.Background()
+			got, err := cl.GetEmissions(ctx, tt.args.region, tt.args.startime, tt.args.endtime, tt.args.reports)
 			if tt.expectedErr != "" {
 				if err == nil {
-					t.Errorf("DownloadCAISO did not return an error")
+					t.Errorf("GetEmissions did not return an error")
+				} else if err.Error() != tt.expectedErr {
+					t.Errorf("client.GetEmissions() error = %s, wantErr %s", err.Error(), tt.expectedErr)
 				}
-				if (err != nil) != tt.wantErr {
-					t.Errorf("client.GetEmissions() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
+				return
 			}
 			if err != nil {
 				t.Fatalf("GetEmissions returned error: %v", err)
@@ -100,7 +113,14 @@ func downloadCarbonReport(t *testing.T, content string) func(*http.Request) *htt
 		if req.URL.Path != "/oasisapi/SingleZip" {
 			t.Errorf("got path %s, want /oasisapi/SingleZip", req.URL.Path)
 		}
-		//TODO: ask raphael what to do here
+		req, err := http.NewRequest("GET", content, nil)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		req.Close = true
+		req.Header.Add("Content-Type", "application/json")
+		req.Header.Add("X-Api-Key", key)
 		var buf bytes.Buffer
 		w := zip.NewWriter(&buf)
 		if content != "" {
