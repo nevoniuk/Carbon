@@ -73,7 +73,6 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 //EnsurePastData will query clickhouse for the most recent report date
 func (s *pollersrvc) EnsurePastData(ctx context.Context) (startDates []string) {
 	var dates []string
-
 	for i := 0; i < len(regions); i++ {
 		date, err := s.dbc.CheckDB(ctx, string(regions[i]))
 		if err == nil {
@@ -91,42 +90,32 @@ func (s *pollersrvc) EnsurePastData(ctx context.Context) (startDates []string) {
 }
 
 //Update will fetch the latest reports for all regions
+/* 
+Errors: server error, download error, dates error, clickhouse error
+*/
 func (s *pollersrvc) Update(ctx context.Context) error {
-	
 	for i := 0; i < len(regions); i++ {
-
 		minutereports, emissionsError := s.CarbonEmissions(ctx, s.startDates[i], regions[i]) //returns single array of forecasts
 		if emissionsError != nil {
 			fmt.Errorf("Error from carbon emissions %s\n", emissionsError)
 			continue
 		}
-		
 		dateConfigs, datesErr := GetDates(ctx, minutereports)
-
 		if datesErr != nil {
 			return datesErr
 		}
-
 		fmt.Println("5 MINUTE REPORTS:")
 		fmt.Println(len(minutereports))
 		s.dbc.SaveCarbonReports(ctx, minutereports)
-
-		
-		//var durationsCounter = 1
-
 		for j := 0; j < len(dateConfigs); j++ {
 			if dateConfigs[j] != nil {
 				fmt.Printf("j is %d\n", j)
 				aggErr := s.AggregateData(ctx, regions[i], dateConfigs[j], reportdurations[j])
-
 				if aggErr != nil {
 					fmt.Errorf("Error from aggregate data %s\n", aggErr)
 					return aggErr
 				}
-
-				//durationsCounter += 1
 			}
-			
 		}
 	}
 	return nil
@@ -149,6 +138,7 @@ func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoll
 }
 
 //CarbonEmissions is a helper function to calculate API calls in 7 day intervals
+//Errors: server error, download error(general error)
 func (ser *pollersrvc) CarbonEmissions(ctx context.Context, start string, region string) ([]*genpoller.CarbonForecast, error) {
 	
 

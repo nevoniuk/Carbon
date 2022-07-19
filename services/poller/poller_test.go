@@ -3,8 +3,6 @@ package pollerapi
 import (
 	"context"
 	"errors"
-	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -19,119 +17,62 @@ import (
 2. create mock reports for client_test.go */
 var startTime = time.Date(2021, time.January, 1, 0, 0, 0, 0, nil)
 var endTime = time.Date(2021, time.January, 2, 0, 0, 0, 0, nil)
-
+var testPeriod = &genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat)}
+var testRegion = regions[0]
 var mockReport = &genpoller.CarbonForecast{
 	GeneratedRate: 1290.00,
 	MarginalRate:  123.00,
 	ConsumedRate:  123.88,
-	Duration:      &genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat)},
+	Duration:      testPeriod,
 	DurationType:  reportdurations[1],
-	Region:        regions[0],
+	Region:        testRegion,
+}
+var mockReports []*genpoller.CarbonForecast
+var mockMinuteReportOne = &genpoller.CarbonForecast{
+	GeneratedRate: 1290.00,
+	MarginalRate:  123.00,
+	ConsumedRate:  123.88,
+	Duration:      &genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: startTime.Add(time.Minute * 4).Format(timeFormat)},
+	DurationType:  reportdurations[0],
+	Region:        testRegion,
 }
 
-func Test_pollersrvc_CarbonEmissions(t *testing.T) {
-	carbonaraErrNotFound := carbonara.ErrNotFound{Err: fmt.Errorf("Error not found")}
-	carbonaraServerError := carbonara.ServerError{Err: fmt.Errorf("Server error")}
-	carbonaraNoDataError := carbonara.NoData{Err: fmt.Errorf("No Data error")}
-	//test input
-	start := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
-	end := time.Date(2020, time.January, 2, 0, 0, 0, 0, time.UTC)
-	region := regions[0]
-	period := &genpoller.Period{StartTime: start.Format(timeFormat), EndTime: end.Format(timeFormat)}
-	expectedOutput := []*genpoller.CarbonForecast{
-		{GeneratedRate: 170.0, MarginalRate: 124.0, ConsumedRate: 120.0, Duration: period, DurationType: reportdurations[0], Region: regions[0]},
-	}
 
-	type fields struct {
-		csc        carbonara.Client
-		dbc        storage.Client
-		ctx        context.Context
-		cancel     context.CancelFunc
-		startDates []string
-	}
-	type args struct {
-		ctx    context.Context
-		start  string
-		end    string
-		region string
-	}
+
+func Test_pollersrvc_CarbonEmissions(t *testing.T) {
+	downloadError := errors.New("download error")
+	serverError := errors.New("server error")
 	tests := []struct {
-		name        string
-		apiErr      error
-		expectedErr error
+		name           string
+		apiErr         error
+		expectedOutput []*genpoller.CarbonForecast
 	}{
 		//test cases
-		{"success", nil, nil},
-		{"server error", carbonaraServerError.Err, genpoller.MakeServerError(carbonaraServerError.Err)},
-		{"no data", carbonaraServerError.Err, genpoller.MakeNoData(carbonaraNoDataError.Err)},
-		{"other error", fmt.Errorf("other error"), fmt.Errorf("other error")},
+		{name: "success", apiErr: nil, expectedOutput: mockReports},
+		{name: "server error", apiErr: serverError, expectedOutput: nil},
+		{name: "download error", apiErr: downloadError, expectedOutput: nil},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			carbonarac := carbonara.NewMock(t)
-
+			mockReports = append(mockReports, mockReport)
 			if tt.name == "success" {
 
 			}
 			if tt.apiErr != nil {
 				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
-					//TODO check input fields to make sure that they are valid
 					return nil, tt.apiErr
 
 				})
 			}
-			for i := 0; i < 13; i++ {
-				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
-					return mockReport, nil
-
-				})
-			}
+			carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
+				return mockReports, nil
+			})
 			ctx := context.Background()
 			var svc *pollersrvc
 			svc = NewPoller(ctx, carbonarac, nil)
-
-			svc.CarbonEmissions(ctx, start.Format(timeFormat), region)
-		})
-	}
-}
-
-func Test_pollersrvc_AggregateData(t *testing.T) {
-	/*
-		give a bad time period and expected error
-	*/
-	type fields struct {
-		csc           carbonara.Client
-		dbc           storage.Client
-		ctx           context.Context
-		cancel        context.CancelFunc
-		startDates    []string
-		minuteReports [][]*genpoller.CarbonForecast
-	}
-	type args struct {
-		ctx      context.Context
-		region   string
-		dates    []*genpoller.Period
-		duration string
-	}
-	tests := []struct {
-		name    string
-		wantErr bool
-	}{}
-	for _, tt := range tests {
-
-		t.Run(tt.name, func(t *testing.T) {
-			ser := &pollersrvc{
-				csc:           tt.fields.csc,
-				dbc:           tt.fields.dbc,
-				ctx:           tt.fields.ctx,
-				cancel:        tt.fields.cancel,
-				startDates:    tt.fields.startDates,
-				minuteReports: tt.fields.minuteReports,
-			}
-			if err := ser.AggregateData(tt.args.ctx, tt.args.region, tt.args.dates, tt.args.duration); (err != nil) != tt.wantErr {
-				t.Errorf("pollersrvc.AggregateData() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			svc.CarbonEmissions(ctx, testPeriod.StartTime, testRegion)
 		})
 	}
 }
@@ -139,81 +80,107 @@ func Test_pollersrvc_AggregateData(t *testing.T) {
 func TestGetDates(t *testing.T) {
 	//Need to test this function because:
 	//1. reports may be null
-	//2. test the time durations of the reports
-	//cant do anythign else because there may be missing data
-	type args struct {
-		ctx           context.Context
-		minutereports []*genpoller.CarbonForecast
-	}
+	//2. reports need to span the length of the total report duration
 	dateErr := errors.New("incorrect date error")
-	//date1: ""
-	testDates := &genpoller.Period{}
+	nilReportsErr := errors.New("no reports error")
+	
 	tests := []struct {
-		name    string
-		dateErr error
-	}{
-		{name: "success", dateErr: nil},
-		{name: "date Error", dateErr: dateErr},
+		name           string
+		datesError     error
+		nilReportsErr  error
+		ctx            context.Context
+		expectedOutput []*genpoller.Period
+	}{ 
+		{name: "success", datesError: nil},
+		{name: "date Error", datesError: dateErr},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetDates(tt.args.ctx, tt.args.minutereports)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetDates() error = %v, wantErr %v", err, tt.wantErr)
+			mockReports = append(mockReports, mockMinuteReportOne)
+			got, err := GetDates(tt.ctx, mockReports)
+			if got == nil {
+				t.Errorf("GetDates() error = %v, wantErr %v", tt.nilReportsErr, nilReportsErr)
+			}
+			if err != nil {
+				t.Errorf("GetDates() error = %v, wantErr %v", tt.datesError, dateErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetDates() = %v, want %v", got, tt.want)
+			//check length of returned reports instead
+			//not sure what this is
+			if len(got) != 4 {
+
 			}
 		})
 	}
 }
-
 func Test_pollersrvc_Update(t *testing.T) {
-	carbonaraErrNotFound := carbonara.ErrNotFound{Err: fmt.Errorf("Error not found")}
-	carbonaraServerError := carbonara.ServerError{Err: fmt.Errorf("Server error")}
-	carbonaraNoDataError := carbonara.NoData{Err: fmt.Errorf("No Data error")}
-	
-	type fields struct {
-		csc        carbonara.Client
-		dbc        storage.Client
-		ctx        context.Context
-		cancel     context.CancelFunc
-		startDates []string
-	}
-	type args struct {
-		ctx context.Context
-	}
+	downloadError := errors.New("download error")
+	serverError := errors.New("server error")
+	datesError := errors.New("download error")
+	clickhouseError := errors.New("server error")
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name            string
+		downloadError   error
+		serverError     error
+		datesError      error
+		clickhouseError error
+		expectedError   error
 	}{
-		{}
+		{name: "no error", downloadError: nil, serverError: nil, datesError: nil, clickhouseError: nil, expectedError: nil},
+		{name: "server error", downloadError: nil, serverError: serverError, datesError: nil, clickhouseError: nil, expectedError: serverError},
+		{name: "download error", downloadError: downloadError, serverError: nil, datesError: nil, clickhouseError: nil, expectedError: downloadError},
+		{name: "dates error", downloadError: downloadError, serverError: serverError, datesError: datesError, clickhouseError: nil, expectedError: datesError},
+		{name: "clickhouse error", downloadError: nil, serverError: nil, datesError: nil, clickhouseError: clickhouseError, expectedError: clickhouseError},
 	}
 	for _, tt := range tests {
-		carbonarac := carbonara.NewMock(t)
-		for i := 0; i < 13; i++ {
-			carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
-				return mockReport, nil
-
-			})
-		}
-
-
-
 		t.Run(tt.name, func(t *testing.T) {
-			s := &pollersrvc{
-				csc:        tt.fields.csc,
-				dbc:        tt.fields.dbc,
-				ctx:        tt.fields.ctx,
-				cancel:     tt.fields.cancel,
-				startDates: tt.fields.startDates,
+			carbonarac := carbonara.NewMock(t)
+			if downloadError != nil {
+				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
+					return nil, downloadError
+				})
 			}
-			if err := s.Update(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("pollersrvc.Update() error = %v, wantErr %v", err, tt.wantErr)
+			if serverError != nil {
+				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
+					return nil, serverError
+				})
 			}
+			if datesError != nil {
+				if downloadError != nil {
+					carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
+						return nil, datesError
+					})
+				}
+			}
+			stc := storage.NewMock(t)
+			if clickhouseError != nil {
+				stc.AddGetAggregateReportsFunc(func(ctx context.Context, dates []*genpoller.Period, r string, duration string) ([]*genpoller.CarbonForecast, error) {
+					return nil, clickhouseError
+				})
+				stc.AddSaveCarbonReportsFunc(func(ctx context.Context, reps []*genpoller.CarbonForecast) error {
+					return clickhouseError
+				})
+			}
+
+			for i := 0; i < 13; i++ {
+				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
+					return mockReports, nil
+
+				})
+			}
+
+			ctx := context.Background()
+			svc := NewPoller(ctx, carbonarac, stc)
+			err := svc.Update(ctx)
+			if err != nil {
+				if err != tt.expectedError {
+					t.Errorf("pollersrvc.Update() error = %v, wantErr %v", err, tt.expectedError)
+				}
+			}
+
 		})
 	}
 }
+
+
