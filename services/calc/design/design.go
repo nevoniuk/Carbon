@@ -25,13 +25,6 @@ var _ = Service("calc", func() {
 	})
 })
 
-var EmissionsPayload = Type("EmissionsPayload", func() {
-	Description("Period is the range to get data for, interval is the time unit at which to parse the data by.")
-	Field(1, "Period", Period, "Period")
-	Field(2, "Interval", design.IntervalType, "Interval")
-	Required("Period", "Interval")
-})
-
 var AllReports = Type("AllReports", func() {
 	Description("CO2 intensity reports, power reports, and CO2 emission reports")
 	Field(1, "CarbonIntensityReports", ArrayOf(CarbonReport), "CarbonIntensityReports")
@@ -44,8 +37,9 @@ var RequestPayload = Type("RequestPayload", func() {
 	Description("Payload wraps the payload for past-values GetValues() and carbon poller service")
 	Field(1, "OrgID", UUID, "OrgID")
 	Field(2, "Duration", Period, "Duration")
-	Field(3, "FacilityID", String, "FacilityID")
+	Field(3, "FacilityID", UUID, "FacilityID")
 	Field(4, "Interval", design.IntervalType, "Interval")
+	Field(5, "LocationID", UUID, "LocationID")
 	Required("OrgID", "Duration", "Interval", "FacilityID")
 })
 
@@ -55,8 +49,10 @@ var EmissionsReport = Type("EmissionsReport", func() {
 	Field(2, "Interval", design.IntervalType, "Interval")
 	Field(3, "Points", ArrayOf(DataPoint), "Points")
 	Field(4, "OrgID", UUID, "OrgID")
-	Field(5, "FacilityID", String, "FacilityID")
-	Required("Duration", "Points", "OrgID", "Interval", "FacilityID")
+	Field(5, "FacilityID", UUID, "FacilityID")
+	Field(5, "LocationID", UUID, "LocationID")
+	Field(5, "Region", design.RegionName, "Region")
+	Required("Duration", "Points", "OrgID", "Interval", "FacilityID", "LocationID", "Region")
 })
 
 var CarbonReport = Type("CarbonReport", func() {
@@ -87,13 +83,11 @@ var DataPoint = Type("DataPoint", func() {
 var ElectricalReport = Type("ElectricalReport", func() {
 	Description("Energy Generation Report from the Past values function GetValues")
 	Field(1, "Duration", Period, "Duration")
-	Field(2, "OrgID", UUID, "OrgID")
-	Field(3, "GeneratedRate", Float64, "GeneratedRate", func() {
+	Field(2, "Power", Float64, "Power", func() {
 		Description("Power meter data in KWh")
 	})
-	Field(4, "Interval", design.IntervalType, "Interval")
-	Field(5, "FacilityID", String, "FacilityID")
-	Required("OrgID", "Duration", "GeneratedRate", "Interval", "FacilityID")
+	Field(3, "Interval", design.IntervalType, "Interval")
+	Required("Duration", "Power", "Interval")
 })
 
 var Period = Type("Period", func() {
