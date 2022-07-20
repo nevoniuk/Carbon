@@ -10,6 +10,7 @@ var IntervalType = Type("IntervalType", func() {
 	Field(1, "Kind", String, "Interval type kind", func() {
 		Enum("minute", "hourly", "daily", "weekly", "monthly")
 	})
+	Required("minute", "hourly", "daily", "weekly", "monthly")
 	
 })
 
@@ -18,4 +19,5 @@ var RegionName = Type("RegionName", func() {
 	Field(1, "Region", String, "Acceptable region name", func() {
 		Enum("CAISO", "AESO", "BPA", "ERCO", "IESO", "ISONE", "MISO","NYISO", "NYISO.NYCW", "NYISO.NYLI", "NYISO.NYUP", "PJM", "SPP")
 	})
+	Required("CAISO", "AESO", "BPA", "ERCO", "IESO", "ISONE", "MISO","NYISO", "NYISO.NYCW", "NYISO.NYLI", "NYISO.NYUP", "PJM", "SPP")
 })
