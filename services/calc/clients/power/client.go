@@ -22,7 +22,8 @@ type (
 		getPower goa.Endpoint
 		getControlPointID goa.Endpoint
 	}
-	
+	// ErrNotFound is returned when a facility config is not found.
+	ErrPowerReportsNotFound struct{ Err error }
 )
 
 func New(conn *grpc.ClientConn) Client {
@@ -51,12 +52,12 @@ func (c *client) GetPower(ctx context.Context, orgID string, controlPoint string
 	res, err := c.getPower(ctx, &p) //res is value *genvalues.HistoricalValues: discrete points, analog points and structures
 	
 	if err != nil {
-		return nil, fmt.Errorf("Error in GetPower: %s\n", err)
+		return nil, fmt.Errorf("error in GetPower: %s\n", err)
 	}
 	newRes, err := toPower(res)
 	//TODO: Roman has to implement errors in his design file so i can implement error handling
 	if err != nil {
-		return nil, fmt.Errorf("Error in GetPower: %s\n", err)
+		return nil, ErrPowerReportsNotFound{Err: fmt.Errorf("power reports for org %s not found", orgID)}
 	}
 	return newRes, nil
 }
@@ -81,6 +82,7 @@ func toPower(r interface{}) ([]*gencalc.ElectricalReport, error) {
 func getControlPointID(ctx context.Context, orgID string, agentName string, pointName string) (uuid.UUID, error) {
 	return nil, nil
 }
+func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }
 
 
 

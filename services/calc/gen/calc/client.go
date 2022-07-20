@@ -25,7 +25,7 @@ func NewClient(historicalCarbonEmissions goa.Endpoint) *Client {
 	}
 }
 
-// HistoricalCarbonEmissions calls the "Historical_Carbon_Emissions" endpoint
+// HistoricalCarbonEmissions calls the "historical_carbon_emissions" endpoint
 // of the "calc" service.
 func (c *Client) HistoricalCarbonEmissions(ctx context.Context, p *RequestPayload) (res *AllReports, err error) {
 	var ires interface{}

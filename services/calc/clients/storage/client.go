@@ -9,19 +9,17 @@ import (
 )
 
 type (
-
-
 	Client interface {
 		Name() string
 		Init(context.Context, bool) error
 		Ping(context.Context) error
 		GetCarbonReports(context.Context, []*gencalc.Period, string, string) ([]*gencalc.CarbonReport, error)
-		
 	}
-
 	client struct {
 		chcon clickhouse.Conn
 	}
+	// ErrNotFound is returned when carbon reports for given input are not found.
+	ErrNotFound struct{ Err error }
 )
 const(
 	timeFormat = "2006-01-02T15:04:05-07:00"
@@ -64,7 +62,9 @@ func (c *client) Init(ctx context.Context, test bool) error {
 				) Engine =  MergeTree()
 				ORDER BY (start)
 	`) 
-	
+	if err != nil {
+		return fmt.Errorf("failed to create power reports table")
+	}
 	return err	
 }
 
@@ -97,13 +97,15 @@ func (c *client) GetCarbonReports(ctx context.Context, duration []*gencalc.Perio
 		err := rows.Scan(&averagegen)
 
 		if err != nil {
-			return nil, fmt.Errorf("Error could not get report [%s]", err)
+			return nil, ErrNotFound{Err: fmt.Errorf("could not get carbon intensity report for start %s and end %s", period.StartTime, period.EndTime)}
 		}
 		var duration = &gencalc.Period{StartTime: period.StartTime, EndTime: period.EndTime}
-		report = &gencalc.CarbonReport{GeneratedRate: averagegen, Duration: duration, DurationType: intervalType, Region: region}
+		report = &gencalc.CarbonReport{GeneratedRate: averagegen, Duration: duration, Interval: intervalType, Region: region}
 		reports = append(reports, report)	
 	}
 
 	return reports, nil
 }
+
+func (err ErrNotFound) Error() string { return err.Err.Error() }
 

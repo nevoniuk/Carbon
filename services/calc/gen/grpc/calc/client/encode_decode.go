@@ -18,7 +18,7 @@ import (
 )
 
 // BuildHistoricalCarbonEmissionsFunc builds the remote method to invoke for
-// "calc" service "Historical_Carbon_Emissions" endpoint.
+// "calc" service "historical_carbon_emissions" endpoint.
 func BuildHistoricalCarbonEmissionsFunc(grpccli calcpb.CalcClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {
 	return func(ctx context.Context, reqpb interface{}, opts ...grpc.CallOption) (interface{}, error) {
 		for _, opt := range cliopts {
@@ -32,21 +32,21 @@ func BuildHistoricalCarbonEmissionsFunc(grpccli calcpb.CalcClient, cliopts ...gr
 }
 
 // EncodeHistoricalCarbonEmissionsRequest encodes requests sent to calc
-// Historical_Carbon_Emissions endpoint.
+// historical_carbon_emissions endpoint.
 func EncodeHistoricalCarbonEmissionsRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
 	payload, ok := v.(*calc.RequestPayload)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "Historical_Carbon_Emissions", "*calc.RequestPayload", v)
+		return nil, goagrpc.ErrInvalidType("calc", "historical_carbon_emissions", "*calc.RequestPayload", v)
 	}
 	return NewProtoHistoricalCarbonEmissionsRequest(payload), nil
 }
 
 // DecodeHistoricalCarbonEmissionsResponse decodes responses from the calc
-// Historical_Carbon_Emissions endpoint.
+// historical_carbon_emissions endpoint.
 func DecodeHistoricalCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr metadata.MD) (interface{}, error) {
 	message, ok := v.(*calcpb.HistoricalCarbonEmissionsResponse)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "Historical_Carbon_Emissions", "*calcpb.HistoricalCarbonEmissionsResponse", v)
+		return nil, goagrpc.ErrInvalidType("calc", "historical_carbon_emissions", "*calcpb.HistoricalCarbonEmissionsResponse", v)
 	}
 	if err := ValidateHistoricalCarbonEmissionsResponse(message); err != nil {
 		return nil, err

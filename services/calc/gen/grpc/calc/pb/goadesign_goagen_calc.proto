@@ -25,8 +25,7 @@ message HistoricalCarbonEmissionsRequest {
 	Period duration = 2;
 	// FacilityID
 	string facility_id = 3;
-	// Interval
-	IntervalType interval = 4;
+	string interval = 4;
 	// LocationID
 	string location_id = 5;
 }
@@ -36,12 +35,6 @@ message Period {
 	string start_time = 1;
 	// End time
 	string end_time = 2;
-}
-// Defines the interval or 'granularity' types by which to obtain Carbon
-// Intensity reports and Power reports
-message IntervalType {
-	// Interval type kind
-	string kind = 1;
 }
 
 message HistoricalCarbonEmissionsResponse {
@@ -58,16 +51,8 @@ message CarbonReport {
 	double generated_rate = 1;
 	// Duration
 	Period duration = 2;
-	// Interval
-	IntervalType interval = 3;
-	// Region
-	RegionName region = 4;
-}
-// Defines the region by which to obtain Carbon Intensity reports and Power
-// reports
-message RegionName {
-	// Acceptable region name
-	string region = 1;
+	string interval = 3;
+	string region = 4;
 }
 // Energy Generation Report from the Past values function GetValues
 message ElectricalReport {
@@ -75,15 +60,13 @@ message ElectricalReport {
 	Period duration = 1;
 	// Power meter data in KWh
 	double power = 2;
-	// Interval
-	IntervalType interval = 3;
+	string interval = 3;
 }
 // Carbon/Energy Generation Report
 message EmissionsReport {
 	// Duration
 	Period duration = 1;
-	// Interval
-	IntervalType interval = 2;
+	string interval = 2;
 	// Points
 	repeated DataPoint points = 3;
 	// OrgID
@@ -92,8 +75,7 @@ message EmissionsReport {
 	string facility_id = 5;
 	// LocationID
 	string location_id = 6;
-	// Region
-	RegionName region = 7;
+	string region = 7;
 }
 // Contains carbon emissions in terms of DataPoints, which can be used as
 // points for a time/CO2 emissions graph

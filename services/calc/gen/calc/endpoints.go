@@ -31,7 +31,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 }
 
 // NewHistoricalCarbonEmissionsEndpoint returns an endpoint function that calls
-// the method "Historical_Carbon_Emissions" of service "calc".
+// the method "historical_carbon_emissions" of service "calc".
 func NewHistoricalCarbonEmissionsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*RequestPayload)

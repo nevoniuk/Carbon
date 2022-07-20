@@ -17,18 +17,18 @@ import (
 )
 
 // EncodeHistoricalCarbonEmissionsResponse encodes responses from the "calc"
-// service "Historical_Carbon_Emissions" endpoint.
+// service "historical_carbon_emissions" endpoint.
 func EncodeHistoricalCarbonEmissionsResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {
 	result, ok := v.(*calc.AllReports)
 	if !ok {
-		return nil, goagrpc.ErrInvalidType("calc", "Historical_Carbon_Emissions", "*calc.AllReports", v)
+		return nil, goagrpc.ErrInvalidType("calc", "historical_carbon_emissions", "*calc.AllReports", v)
 	}
 	resp := NewProtoHistoricalCarbonEmissionsResponse(result)
 	return resp, nil
 }
 
 // DecodeHistoricalCarbonEmissionsRequest decodes requests sent to "calc"
-// service "Historical_Carbon_Emissions" endpoint.
+// service "historical_carbon_emissions" endpoint.
 func DecodeHistoricalCarbonEmissionsRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
 	var (
 		message *calcpb.HistoricalCarbonEmissionsRequest
@@ -36,7 +36,7 @@ func DecodeHistoricalCarbonEmissionsRequest(ctx context.Context, v interface{}, 
 	)
 	{
 		if message, ok = v.(*calcpb.HistoricalCarbonEmissionsRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("calc", "Historical_Carbon_Emissions", "*calcpb.HistoricalCarbonEmissionsRequest", v)
+			return nil, goagrpc.ErrInvalidType("calc", "historical_carbon_emissions", "*calcpb.HistoricalCarbonEmissionsRequest", v)
 		}
 		if err := ValidateHistoricalCarbonEmissionsRequest(message); err != nil {
 			return nil, err

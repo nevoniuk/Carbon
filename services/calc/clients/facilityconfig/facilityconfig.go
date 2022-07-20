@@ -50,10 +50,11 @@ type(
 	}
 
 	// ErrNotFound is returned when a facility config is not found.
-	ErrNotFound struct{ Err error }
+	ErrFacilityNotFound struct{ Err error }
 
-	// ErrNoConfig is returned when no schedule type is specified.
-	ErrNoConfig struct{ Err error }
+	// ErrNotFound is returned when a location config is not found.
+	ErrLocationNotFound struct{ Err error }
+
 )
 var (
 	FacilityDataFilePath = "deploy/facility_data"
@@ -93,7 +94,7 @@ func findOrg(ctx context.Context, env, orgID string) (string, error) {
 			return filepath.Dir(path), nil
 		}
 	}
-	return "", &ErrNotFound{fmt.Errorf("org %s not found", orgID)}
+	return "", ErrFacilityNotFound{Err: fmt.Errorf("org %s not found", orgID)}
 }
 
 // findFacility returns the path to the facility config for the given org and facility IDs.
@@ -122,7 +123,7 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 		}
 	}
 	if facilityPath == "" {
-		return "", &ErrNotFound{fmt.Errorf("facility config not found for org path %s facility %s", path, facilityID)}
+		return "", &ErrFacilityNotFound{fmt.Errorf("facility config not found for org path %s facility %s", path, facilityID)}
 	}
 	return facilityPath, nil
 }
@@ -159,7 +160,7 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 		}
 	}
 	if locationPath == "" {
-		return "", &ErrNotFound{errors.New("location config not found")}
+		return "", &ErrLocationNotFound{errors.New("location config not found")}
 	}
 	return locationPath, nil
 
@@ -257,5 +258,5 @@ func readField(ctx context.Context, path, field string) string {
 
 // timeRegex is a regular expression for parsing 24 hour time strings.
 var timeRegex = regexp.MustCompile(`^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])$`)
-func (err ErrNotFound) Error() string { return err.Err.Error() }
-func (err ErrNoConfig) Error() string { return err.Err.Error() }
+func (err ErrFacilityNotFound) Error() string { return err.Err.Error() }
+func (err ErrLocationNotFound) Error() string { return err.Err.Error() }

@@ -9,6 +9,8 @@ package calc
 
 import (
 	"context"
+
+	goa "goa.design/goa/v3/pkg"
 )
 
 // Service to interpret CO2 emissions through power and carbon intensity data
@@ -26,10 +28,10 @@ const ServiceName = "calc"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [1]string{"Historical_Carbon_Emissions"}
+var MethodNames = [1]string{"historical_carbon_emissions"}
 
 // AllReports is the result type of the calc service
-// Historical_Carbon_Emissions method.
+// historical_carbon_emissions method.
 type AllReports struct {
 	// CarbonIntensityReports
 	CarbonIntensityReports []*CarbonReport
@@ -45,10 +47,8 @@ type CarbonReport struct {
 	GeneratedRate float64
 	// Duration
 	Duration *Period
-	// Interval
-	Interval *IntervalType
-	// Region
-	Region *RegionName
+	Interval string
+	Region   string
 }
 
 // Contains carbon emissions in terms of DataPoints, which can be used as
@@ -65,17 +65,15 @@ type ElectricalReport struct {
 	// Duration
 	Duration *Period
 	// Power meter data in KWh
-	Power float64
-	// Interval
-	Interval *IntervalType
+	Power    float64
+	Interval string
 }
 
 // Carbon/Energy Generation Report
 type EmissionsReport struct {
 	// Duration
 	Duration *Period
-	// Interval
-	Interval *IntervalType
+	Interval string
 	// Points
 	Points []*DataPoint
 	// OrgID
@@ -84,15 +82,7 @@ type EmissionsReport struct {
 	FacilityID UUID
 	// LocationID
 	LocationID UUID
-	// Region
-	Region *RegionName
-}
-
-// Defines the interval or 'granularity' types by which to obtain Carbon
-// Intensity reports and Power reports
-type IntervalType struct {
-	// Interval type kind
-	Kind *string
+	Region     string
 }
 
 // Period of time from start to end for any report type
@@ -103,15 +93,8 @@ type Period struct {
 	EndTime string
 }
 
-// Defines the region by which to obtain Carbon Intensity reports and Power
-// reports
-type RegionName struct {
-	// Acceptable region name
-	Region *string
-}
-
 // RequestPayload is the payload type of the calc service
-// Historical_Carbon_Emissions method.
+// historical_carbon_emissions method.
 type RequestPayload struct {
 	// OrgID
 	OrgID UUID
@@ -119,11 +102,28 @@ type RequestPayload struct {
 	Duration *Period
 	// FacilityID
 	FacilityID UUID
-	// Interval
-	Interval *IntervalType
+	Interval   string
 	// LocationID
-	LocationID *UUID
+	LocationID UUID
 }
 
 // Universally unique identifier
 type UUID string
+
+// MakeReportsNotFound builds a goa.ServiceError from an error.
+func MakeReportsNotFound(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "reports_not_found",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
+	}
+}
+
+// MakeNotFound builds a goa.ServiceError from an error.
+func MakeNotFound(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "not_found",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
+	}
+}

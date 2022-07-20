@@ -34,9 +34,7 @@ func UsageExamples() string {
          "StartTime": "2020-01-01T00:00:00Z"
       },
       "FacilityID": "Facere reiciendis.",
-      "Interval": {
-         "Kind": "weekly"
-      },
+      "Interval": "daily",
       "LocationID": "Facere reiciendis.",
       "OrgID": "Facere reiciendis."
    }'` + "\n" +
@@ -156,9 +154,7 @@ Example:
          "StartTime": "2020-01-01T00:00:00Z"
       },
       "FacilityID": "Facere reiciendis.",
-      "Interval": {
-         "Kind": "weekly"
-      },
+      "Interval": "daily",
       "LocationID": "Facere reiciendis.",
       "OrgID": "Facere reiciendis."
    }'

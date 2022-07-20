@@ -2,7 +2,8 @@ package design
 
 import (
 	. "goa.design/goa/v3/dsl"
-	"github.com/crossnokaye/carbon/types/design"
+	"github.com/crossnokaye/carbon/model"
+	//"github.com/crossnokaye/carbon/types/design"
 )
 
 var _ = API("Calc", func() {
@@ -16,12 +17,22 @@ var _ = API("Calc", func() {
 
 var _ = Service("calc", func() {
 	Description("Service to interpret CO2 emissions through power and carbon intensity data")
-	//historicalcarbonemissions
-	Method("Historical_Carbon_Emissions", func() {
+	Error("reports_not_found", func() {
+		Description("Carbon reports not found")
+	})
+	Error("not_found", func() {
+		Description("facilty or location not found")
+	})
+	GRPC(func() {
+		Response("not_found", CodeNotFound)
+	})
+	Method("historical_carbon_emissions", func() {
 		Description("This endpoint is used by a front end service to return carbon emission reports")
 		Payload(RequestPayload)
 		Result(AllReports)
-		GRPC(func() {})
+		GRPC(func() {
+			Response("not_found", CodeNotFound)
+		})
 	})
 })
 
@@ -38,20 +49,20 @@ var RequestPayload = Type("RequestPayload", func() {
 	Field(1, "OrgID", UUID, "OrgID")
 	Field(2, "Duration", Period, "Duration")
 	Field(3, "FacilityID", UUID, "FacilityID")
-	Field(4, "Interval", design.IntervalType, "Interval")
+	Field(4, "Interval", String, IntervalFunc)
 	Field(5, "LocationID", UUID, "LocationID")
-	Required("OrgID", "Duration", "Interval", "FacilityID")
+	Required("OrgID", "Duration", "Interval", "FacilityID", "LocationID")
 })
 
 var EmissionsReport = Type("EmissionsReport", func() {
 	Description("Carbon/Energy Generation Report")
 	Field(1, "Duration", Period, "Duration")
-	Field(2, "Interval", design.IntervalType, "Interval")
+	Field(2, "Interval", String, IntervalFunc)
 	Field(3, "Points", ArrayOf(DataPoint), "Points")
 	Field(4, "OrgID", UUID, "OrgID")
 	Field(5, "FacilityID", UUID, "FacilityID")
 	Field(6, "LocationID", UUID, "LocationID")
-	Field(7, "Region", design.RegionName, "Region")
+	Field(7, "Region", String, RegionFunc)
 	Required("Duration", "Points", "OrgID", "Interval", "FacilityID", "LocationID", "Region")
 })
 
@@ -61,8 +72,8 @@ var CarbonReport = Type("CarbonReport", func() {
 		Description("This is in units of (lbs of CO2/MWh)")
 	})
 	Field(2, "Duration", Period, "Duration")
-	Field(3, "Interval", design.IntervalType, "Interval")
-	Field(4, "Region", design.RegionName, "Region")
+	Field(3, "Interval", String, IntervalFunc)
+	Field(4, "Region", String, RegionFunc)
 	Required("GeneratedRate", "Region", "Duration", "Interval")
 })
 
@@ -86,7 +97,7 @@ var ElectricalReport = Type("ElectricalReport", func() {
 	Field(2, "Power", Float64, "Power", func() {
 		Description("Power meter data in KWh")
 	})
-	Field(3, "Interval", design.IntervalType, "Interval")
+	Field(3, "Interval", String, IntervalFunc)
 	Required("Duration", "Power", "Interval")
 })
 
@@ -108,4 +119,12 @@ var UUID = Type("UUID", String, func() {
 	Format(FormatUUID)
 })
 
+var IntervalFunc =  func() {
+	Enum(model.Minute, model.Hourly, model.Daily, model.Weekly, model.Monthly)
+}
+
+var RegionFunc = func() {
+	Enum(model.Caiso, model.Aeso, model.Bpa, model.Erco, model.Ieso, model.Isone, model.Miso, model.Nyiso, model.Nyiso_nycw,
+		 model.Nyiso_nyli, model.Nyiso_nyup, model.Pjm, model.Spp)
+}
 
