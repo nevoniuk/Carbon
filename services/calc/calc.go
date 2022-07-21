@@ -113,8 +113,7 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReports []*gencal
 		carbonemissions := toKWh * powerReports[i].Power
 		dataPoints = append(dataPoints, &gencalc.DataPoint{Time: r.Duration.StartTime, CarbonFootprint:carbonemissions})
 	}
-	emissionsreport := &gencalc.EmissionsReport{Duration: carbonReports[0].Duration, Interval: carbonReports[0].Interval, Points: dataPoints}
-	return emissionsreport, nil
+	return &gencalc.EmissionsReport{Duration: carbonReports[0].Duration, Interval: carbonReports[0].Interval, Points: dataPoints}, nil
 }
 
 //getLocationData uses a facility config client to get the following input for past-values service: control point name for power meter, formula for power conversion, and region for carbonemissions

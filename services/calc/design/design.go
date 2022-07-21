@@ -3,7 +3,6 @@ package design
 import (
 	. "goa.design/goa/v3/dsl"
 	"github.com/crossnokaye/carbon/model"
-	//"github.com/crossnokaye/carbon/types/design"
 )
 
 var _ = API("Calc", func() {
