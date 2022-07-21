@@ -30,10 +30,8 @@ var _ = Service("Poller", func() {
 		Result(ArrayOf(CarbonForecast))
 		Error("server_error", ErrorResult, "Error with Singularity Server.")
 		Error("no_data", ErrorResult, "No new data available for any region")
-		Error("region_not_found", ErrorResult, "The given region is not represented by Singularity")
 		GRPC(func() {
 			Response("no_data", CodeNotFound)
-			Response("region_not_found", CodeNotFound)
 			Response("server_error", CodeNotFound)
 		})
 	})

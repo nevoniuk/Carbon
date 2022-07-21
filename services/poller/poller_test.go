@@ -5,14 +5,11 @@ import (
 	"errors"
 	"testing"
 	"time"
-
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
-
 var testRegion = regions[0]
-
 func Test_pollersrvc_CarbonEmissions(t *testing.T) {
 	//testing 10 minute period
 	downloadError := errors.New("download error")
@@ -67,13 +64,15 @@ func Test_pollersrvc_CarbonEmissions(t *testing.T) {
 			res, err := svc.CarbonEmissions(ctx, startTime.Format(timeFormat), endTime.Format(timeFormat), testRegion)
 			if tt.expectedOutput != nil {
 				if err == nil {
-					//validate output here
-
-					t.Errorf("carbonEmissions did not return an error")
+					if len(res) != len(tt.expectedOutput) {
+						t.Errorf("carbonEmissions did not return correct output")
+					} else {
+						t.Errorf("carbonEmissions did not return an error")
+					}
 				} else if errors.As(err, tt.apiErr.Error()) {
 					t.Errorf("carbonEmissions returned error: %v, want %v", err, tt.apiErr.Error())
 				}
-			} else { //no expected output
+			} else {
 				if errors.As(err, tt.apiErr.Error()) {
 					t.Errorf("carbonEmissions returned error: %v, want %v", err, tt.apiErr.Error())
 				}
@@ -144,32 +143,21 @@ func TestGetDates(t *testing.T) {
 	}
 }
 func Test_pollersrvc_Update(t *testing.T) {
-	//this function won't actually call Update() because its runs on an unknown input(i.e time since last download)
-	//testCase start and end times:
 	var startTimeOne = time.Date(2021, time.June, 1, 0, 0, 0, 0, nil)
-	var endTimeTwo = time.Date(2021, time.June, 1, 1, 20, 0, 0, nil)
-	//this will return 16 5 min reports
-	//check length after get emissions
+	var startTimeTwo = time.Date(2021, time.June, 1, 1, 0, 0, 0, nil)
+	var endTime = time.Date(2021, time.June, 1, 1, 20, 0, 0, nil)
+	var mockReportOne = &genpoller.CarbonForecast{
+		Duration:     &genpoller.Period{StartTime: startTimeOne.Format(timeFormat), EndTime: startTimeTwo.Format(timeFormat)},
+		DurationType: reportdurations[0],
+	}
+	var mockReportTwo = &genpoller.CarbonForecast{
+		Duration:     &genpoller.Period{StartTime: startTimeTwo.Format(timeFormat), EndTime: endTime.Format(timeFormat)},
+		DurationType: reportdurations[0],
+		Region:       testRegion,
+	}
 	var mockReports []*genpoller.CarbonForecast
-	var mockReps []*genpoller.Period
-
-	var startTimeOne = time.Date(2021, time.June, 1, 0, 0, 0, 0, nil)
-	var startTimeTwo = time.Date(2021, time.June, 1, 1, 10, 0, 0, nil)
-	var endTimeOne = time.Date(2021, time.June, 1, 1, 10, 0, 0, nil)
-	
-	var invalidEndTime = time.Date(2021, time.February, 1, 1, 20, 0, 0, nil)
-
-	var mockReportOne = &genpoller.CarbonForecast {
-		Duration: &genpoller.Period{StartTime: startTimeOne.Format(timeFormat), EndTime: endTimeOne.Format(timeFormat)},
-	}
-	var mockReportTwo = &genpoller.CarbonForecast {
-		Duration: &genpoller.Period{StartTime: startTimeTwo.Format(timeFormat), EndTime: endTimeTwo.Format(timeFormat)},
-	}
-	var invalidReport = &genpoller.CarbonForecast {
-		Duration: &genpoller.Period{StartTime: startTimeOne.Format(timeFormat), EndTime: invalidEndTime.Format(timeFormat)},
-	}
-	mockRes := &genpoller.Period{StartTime: startTimeOne.Format(timeFormat), EndTime: startTimeOne.Format(timeFormat)}
-	mockReps = append(mockReps, mockRes)
+	mockReports = append(mockReports, mockReportOne)
+	mockReports = append(mockReports, mockReportTwo)
 	downloadError := errors.New("download error")
 	serverError := errors.New("server error")
 	clickhouseError := errors.New("server error")
@@ -197,17 +185,12 @@ func Test_pollersrvc_Update(t *testing.T) {
 				})
 			}
 			if serverError != nil {
-				endTimeTwo = invalidEndTime
 				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
 					return nil, serverError
 				})
 			}
-
 			stc := storage.NewMock(t)
 			if clickhouseError != nil {
-				//throw an error in client if bad reports are about to be saved
-				//give bad input to save reports and give bad dates for save carbon reports
-
 				stc.AddGetAggregateReportsFunc(func(ctx context.Context, dates []*genpoller.Period, r string, duration string) ([]*genpoller.CarbonForecast, error) {
 					return nil, clickhouseError
 				})
@@ -215,58 +198,26 @@ func Test_pollersrvc_Update(t *testing.T) {
 					return clickhouseError
 				})
 			}
-			//called once
-			carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
-				return mockMinuteReports, nil
-			})
-			stc.AddGetAggregateReportsFunc(func(ctx context.Context, dates []*genpoller.Period, r string, duration string) ([]*genpoller.CarbonForecast, error) {
+
+			for i := 0; i < 13; i++ {
+				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string, reps []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
+					return mockReports, nil
+				})
+			}
+			stc.SetGetAggregateReportsFunc(func(ctx context.Context, dates []*genpoller.Period, r string, duration string) ([]*genpoller.CarbonForecast, error) {
 				return nil, nil
 			})
-			stc.AddSaveCarbonReportsFunc(func(ctx context.Context, reps []*genpoller.CarbonForecast) error {
+			stc.SetSaveCarbonReportsFunc(func(ctx context.Context, reps []*genpoller.CarbonForecast) error {
 				return nil
 			})
 			ctx := context.Background()
 			svc := NewPoller(ctx, carbonarac, stc)
 			for i := 0; i < 13; i++ {
-				minreps, err := svc.CarbonEmissions(ctx, startTimeOne.Format(timeFormat), endTimeTwo.Format(timeFormat), testRegion)
+				err := svc.Update(ctx)
 				if !errors.As(err, tt.expectedError) {
-
-				} else if err != nil && len(minreps) != 16 {
-					//not enough reports returned
-				}
-
-				dateConfigs, datesErr := GetDates(ctx, minreps)
-				if !errors.As(datesErr, tt.expectedError) {
-
-				} else if err != nil {
-					//check date configs
-				}
-				//minreps
-				err = svc.dbc.SaveCarbonReports(ctx, minreps)
-				if !errors.As(err, tt.expectedError) {
-
-				}
-			for j := 0; j < len(dateConfigs); j++ {
-				if dateConfigs[j] != nil {
-					fmt.Printf("j is %d\n", j)
-					aggErr := s.AggregateData(ctx, regions[i], dateConfigs[j], reportdurations[j])
-					if aggErr != nil {
-						fmt.Errorf("Error from aggregate data %s\n", aggErr)
-						return aggErr
-					}
-				}
-			}
-				
-			}
-			ctx := context.Background()
-			svc := NewPoller(ctx, carbonarac, stc)
-			err := svc.Update(ctx)
-			if err != nil {
-				if err != tt.expectedError {
 					t.Errorf("pollersrvc.Update() error = %v, wantErr %v", err, tt.expectedError)
 				}
 			}
-
 		})
 	}
 }
@@ -333,3 +284,4 @@ func Test_pollersrvc_AggregateData(t *testing.T) {
 		})
 	}
 }
+

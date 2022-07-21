@@ -22,6 +22,8 @@ type (
 	client struct {
 		chcon clickhouse.Conn
 	}
+	NoReportsError struct{ Err error }
+	IncorrectReportsError struct{ Err error }
 )
 const(
 	//timeFormat is used to parse times in order to store time as ISO8601 format
@@ -104,26 +106,22 @@ func (c *client) Init(ctx context.Context, test bool) error {
 }
 //SaveCarbonReports saves CO2 intensity reports in clickhouse
 func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.CarbonForecast) (error) {
-	
 	res, err := c.chcon.PrepareBatch(ctx, `Insert INTO carbondb.carbon_reports (start,
 		 end, generatedrate, marginalrate, consumedrate, generatedsource, region, duration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`)
 	if err != nil {
+		var err = IncorrectReportsError{Err: fmt.Errorf("reports could not be saved in the specified format")}
 		return fmt.Errorf("Error in Save Carbon Reports [%s]", err)
 	}
 
 	for _, report := range reports {
 		
 		var startTime, err1 = time.Parse(timeFormat, report.Duration.StartTime)
-		fmt.Println("save reports start time is")
-		fmt.Println(startTime)
 		if err1 != nil {
 			return fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
 			report.Duration.StartTime, report, err1)
 		}
 	
 		var endTime, err2 = time.Parse(timeFormat, report.Duration.EndTime)
-		fmt.Println("save reports endtime is ")
-		fmt.Println(endTime)
 		if err2 != nil {
 			return fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
 			report.Duration.EndTime, report, err2)
@@ -132,10 +130,10 @@ func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.Car
 		if err := res.Append(startTime.UTC(),
 			 endTime.UTC(), report.GeneratedRate, report.MarginalRate,
 			  report.ConsumedRate, report.Region, report.DurationType); err != nil {
-				return fmt.Errorf("Error saving carbon reports: [%s]", err)
+				var err = IncorrectReportsError{Err: fmt.Errorf("reports could not be saved in the specified format")}
+				return err
 			}
 	}
-
 	return res.Send()
 }
 //GetAggregateReports queries clickhouse for average CO2 intensity data
@@ -149,17 +147,14 @@ func (c *client) GetAggregateReports(ctx context.Context,
 	var averagecons float64
 	
 	for _, period := range periods {
-
 		var newstart, starterr = time.Parse(timeFormat, period.StartTime)
 		if starterr != nil {
 			return nil, starterr
 		}
-
 		var newend, enderr = time.Parse(timeFormat, period.EndTime)
 		if enderr != nil {
 			return nil, enderr
 		}
-		
 		rows := c.chcon.QueryRow(ctx,`
 		SELECT
 			AVG(generatedrate) AS generatedate,
@@ -174,7 +169,8 @@ func (c *client) GetAggregateReports(ctx context.Context,
 		err := rows.Scan(&averagegen, &averagemarg, &averagecons)
 
 		if err != nil {
-			return nil, fmt.Errorf("Error could not get report [%s]", err)
+			var NoReportsError = NoReportsError{Err: fmt.Errorf("no data for Region %s and start %s and end %s", region, period.StartTime, period.EndTime)}
+			return nil, NoReportsError.Err
 		}
 
 		aggdata = &genpoller.CarbonForecast{GeneratedRate: averagegen, MarginalRate: averagemarg, ConsumedRate: averagecons,
@@ -184,6 +180,9 @@ func (c *client) GetAggregateReports(ctx context.Context,
 
 	return finalaggdata, nil
 }
+
+func (err NoReportsError) Error() string { return err.Err.Error() }
+func (err IncorrectReportsError) Error() string { return err.Err.Error() }
 
 
 

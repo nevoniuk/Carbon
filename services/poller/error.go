@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"goa.design/clue/log"
 	goa "goa.design/goa/v3/pkg"
-
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
@@ -19,24 +17,28 @@ import (
 func mapAndLogError(ctx context.Context, err error) error {
 	var gerr *goa.ServiceError
 	if errors.As(err, &gerr) {
-		region_not_found
-		no_data
-		server_error
-		if gerr.Name == "region_not_found" {
-			return genpoller.MakeRegionNotFound()
+		if gerr.Name == "server_error" {
+			return genpoller.MakeServerError(gerr)
+		}
+		if gerr.Name == "no_data" {
+			return genpoller.MakeServerError(gerr)
 		}
 	}
-	var dbNotFound dynamo.ErrNotFound
-	if errors.As(err, &dbNotFound) {
-		return gencoordinator.MakeNotFound(dbNotFound)
+	var serverError carbonara.ServerError
+	var noDataError carbonara.NoDataError
+	if errors.As(err, &serverError) {
+		return genpoller.MakeServerError(serverError)
 	}
-	var fNotFound *facilityconfig.ErrNotFound
-	if errors.As(err, &fNotFound) {
-		return gencoordinator.MakeNotFound(fNotFound)
+	if errors.As(err, &noDataError) {
+		return genpoller.MakeNoData(noDataError)
 	}
-	var syncerNotFound syncer.ErrNotFound
-	if errors.As(err, &syncerNotFound) {
-		return gencoordinator.MakeNotFound(syncerNotFound)
+	var noReports *storage.NoReportsError
+	if errors.As(err, &noReports) {
+		return genpoller.MakeNoData(noReports)
+	}
+	var badReports *storage.IncorrectReportsError
+	if errors.As(err, &badReports) {
+		return genpoller.MakeNoData(badReports)
 	}
 	log.Error(ctx, err)
 	return err

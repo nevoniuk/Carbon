@@ -2,7 +2,9 @@ package pollerapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"goa.design/clue/log"
 	"time"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
@@ -15,6 +17,7 @@ type pollersrvc struct {
 	cancel context.CancelFunc
 	startDates []string
 }
+
 
 //timeFormat is used to parse times in order to store time as ISO8601 format
 var timeFormat = "2006-01-02T15:04:05-07:00"
@@ -87,24 +90,29 @@ Errors: server error, download error, dates error, clickhouse error
 func (s *pollersrvc) Update(ctx context.Context) error {
 	var timeNow = time.Now()
 	for i := 0; i < len(regions); i++ {
-		minutereports, emissionsError := s.CarbonEmissions(ctx, s.startDates[i], timeNow.Format(timeFormat), regions[i]) //returns single array of forecasts
-		if emissionsError != nil {
-			fmt.Errorf("Error from carbon emissions %s\n", emissionsError)
+		minutereports, err := s.CarbonEmissions(ctx, s.startDates[i], timeNow.Format(timeFormat), regions[i]) //returns single array of forecasts
+		var NoDataError carbonara.NoDataError
+		if !errors.As(err, NoDataError.Err) {
+			return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
+		} else if errors.As(err, NoDataError.Err) {
 			continue
 		}
-		dateConfigs, datesErr := GetDates(ctx, minutereports)
-		if datesErr != nil {
-			return datesErr
+		dateConfigs, err := GetDates(ctx, minutereports)
+		if err != nil {
+			log.Error(ctx, err)
+			return fmt.Errorf("error in GetDates: %v\n", err)
 		}
-		fmt.Println("5 MINUTE REPORTS:")
-		fmt.Println(len(minutereports))
-		s.dbc.SaveCarbonReports(ctx, minutereports)
+		err = s.dbc.SaveCarbonReports(ctx, minutereports)
+		if err != nil {
+			log.Error(ctx, err)
+			return fmt.Errorf("error in SaveCarbonReports: %v\n", err)
+		}
 		for j := 0; j < len(dateConfigs); j++ {
 			if dateConfigs[j] != nil {
-				fmt.Printf("j is %d\n", j)
 				aggErr := s.AggregateData(ctx, regions[i], dateConfigs[j], reportdurations[j])
 				if aggErr != nil {
-					fmt.Errorf("Error from aggregate data %s\n", aggErr)
+					log.Error(ctx, err)
+					fmt.Errorf("error from aggregate data %s\n", aggErr)
 					return aggErr
 				}
 			}
@@ -119,9 +127,7 @@ func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoll
 	var start = *input.Start
 	var end = *input.End
 	var region = *input.Region
-
 	var reports []*genpoller.CarbonForecast
-
 	reports, emissionsErr := ser.csc.GetEmissions(ctx, region, start, end, reports)
 	if emissionsErr != nil {
 		return nil, emissionsErr
@@ -133,65 +139,44 @@ func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoll
 //Errors: server error, download error(general error)
 func (ser *pollersrvc) CarbonEmissions(ctx context.Context, start string, end string, region string) ([]*genpoller.CarbonForecast, error) {
 	var reports []*genpoller.CarbonForecast
-	var startTime, err1 = time.Parse(timeFormat, start)
-	if err1 != nil {
-		return nil, err1
+	startTime, err := time.Parse(timeFormat, start)
+	if err != nil {
+		return nil, err
 	}
-	var finalendTime, err2 = time.Parse(timeFormat, end)
-	if err2 != nil {
-		return nil, err2
+	finalendTime, err := time.Parse(timeFormat, end)
+	if err != nil {
+		return nil, err
 	}
-//call per week
 	for startTime.Before(finalendTime) {
-		fmt.Printf("REGION IS %s\n", region)
-		fmt.Printf("START TIME IS %s\n", start)
-		
 		t, err := time.Parse(timeFormat, start)
-
 		if err != nil {
 			return nil, err
 		}
-		//BUG: does not work if time is within 6 days of end time
-		//if newTime is within 6 days of of the final end date then make calls to getemissions in sequences of days
-		//doesn't make a difference
-
 		newEndTime := t.AddDate(0, 0, 6)
 		if !newEndTime.Before(finalendTime) {
-			//set new time to previous date
-			//check if difference between startTime and endTime is less than a day, if it is then keep start as is and end as is
 			newEndTime = finalendTime 
 		}
-
-		fmt.Printf("END TIME IS %s\n", newEndTime.Format(timeFormat))
 		var emissionsErr error
 		reports, emissionsErr = ser.csc.GetEmissions(ctx, region, start, newEndTime.Format(timeFormat), reports)
 		if emissionsErr != nil {
 			return nil, emissionsErr
 		}
-
 		newEndTime = newEndTime.AddDate(0, 0, 1)
 		start = newEndTime.Format(timeFormat)
 	}
-
 	return reports, nil
 }
 
 //AggregateData gets aggregate reports for all report dates returned by GetDates and store them in clickhouse
 func (ser *pollersrvc) AggregateData(ctx context.Context, region string, dates []*genpoller.Period, duration string) (error) {
-
 	aggregateres, getErr := ser.dbc.GetAggregateReports(ctx, dates, region, duration)
-
-	fmt.Println(aggregateres)
 	if getErr != nil {
-		fmt.Errorf("Error from get carbon reports: %s\n", getErr)
 		return getErr
 	}
 	saveErr := ser.dbc.SaveCarbonReports(ctx, aggregateres)
 	if saveErr != nil {
-		fmt.Errorf("Error from save carbon reports: %s\n", saveErr)
 		return saveErr
 	}
-
 	return nil
 }
 
@@ -270,6 +255,7 @@ func GetDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 	}
 	return finalDates, nil
 }
+
 
 
 
