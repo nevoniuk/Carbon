@@ -17,7 +17,6 @@ var _ = API("Poller", func() {
 
 var _ = Service("Poller", func() {
 	Description("Service that provides forecasts to clickhouse from Carbonara API")
-
 	Method("update", func() {
 		Description("query Singularity's search endpoint and convert 5 min interval reports into averages")
 		Error("server_error", ErrorResult, "Error with Singularity Server.")
@@ -25,7 +24,6 @@ var _ = Service("Poller", func() {
 			Response("server_error", CodeNotFound)
 		})
 	})
-
 	Method("get_emissions_for_region", func() {
 		Description("query search endpoint for a region.")
 		Payload(CarbonPayload)
@@ -34,7 +32,7 @@ var _ = Service("Poller", func() {
 		Error("no_data", ErrorResult, "No new data available for any region")
 		Error("region_not_found", ErrorResult, "The given region is not represented by Singularity")
 		GRPC(func() {
-			Response("no_data", CodeOutOfRange)
+			Response("no_data", CodeNotFound)
 			Response("region_not_found", CodeNotFound)
 			Response("server_error", CodeNotFound)
 		})
