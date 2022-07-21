@@ -86,7 +86,6 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 
 	return resp, nil
 }
-
 //GetEmissions gets 5 min interval reports from the Carbonara API with pagination
 func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string, reports []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
 	var page = 1
@@ -108,6 +107,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 			fmt.Errorf("Error from get request: %s", err)
 			return nil, err
 		}
+		
 		//TODO:will delete this line
 		if carbonresp.ContentLength < 100 {
 			var noDataError = NoData{Err: fmt.Errorf("no data for Region %s", region)}
@@ -130,22 +130,23 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		
 		last = carbonData.Meta.Pagination.Last
 		var start = carbonData.Data[0].Start_date
-		
+		//obtain a way to make sure that report start dates are not repeated
 		for idx := 1; idx < len(carbonData.Data); idx++ {
-
 			if carbonData.Data == nil {
 				log.Infof(ctx, "nil carbon data element at index %d", idx)
 				continue
 			}
-
 			data := carbonData.Data[idx]
+			if data.Start_date == start { //don't read reports with the same start date
+				continue
+			}
 			end := data.Start_date
 			reportperiod := &genpoller.Period{StartTime: start, EndTime: end}
 			start = end
 			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.Generated_rate, MarginalRate: data.Data.Marginal_rate,
 					ConsumedRate: data.Data.Consumed_rate, Duration: reportperiod, DurationType: reportdurations[0], Region: data.Region}
 			reports = append(reports, report)
-	
+			
 		}
 		if carbonData.Meta.Pagination.This == carbonData.Meta.Pagination.Last {
 			return reports, nil
