@@ -46,10 +46,8 @@ type (
 			}`json:pagination`
 		}`json:"meta"`
 	}
-	ErrNotFound struct{ Err error }
 	ServerError struct{ Err error }
-	NoData struct{ Err error }
-	RegionNotFound struct{ Err error }
+	NoDataError struct{ Err error }
 )
 
 const (
@@ -75,12 +73,12 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 	}
 	
 	if err != nil {
-		var serverError = ErrNotFound{Err: fmt.Errorf("server error %d", resp.StatusCode)}
+		var serverError = ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
 		return resp, serverError.Err
 	}
 	
 	if resp.StatusCode != http.StatusOK {
-		var serverError = ErrNotFound{Err: fmt.Errorf("server error %d", resp.StatusCode)}
+		var serverError = ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
 		return resp, serverError.Err
 	}
 
@@ -95,32 +93,28 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		startime, "&end=", endtime, "&per_page=1000", "&page=", strconv.Itoa(page)}, "")
 		req, err := http.NewRequest("GET", carbonUrl, nil)
 		if err != nil {
-			fmt.Println(err)
 			return nil, err
 		}
 		req.Close = true
 		req.Header.Add("Content-Type", "application/json")
 		req.Header.Add("X-Api-Key", c.key)
-
 		carbonresp, err := c.HttpGetRequestCall(ctx, req)
 		if err != nil {
-			fmt.Errorf("Error from get request: %s", err)
 			return nil, err
 		}
 		
 		//TODO:will delete this line
 		if carbonresp.ContentLength < 100 {
-			var noDataError = NoData{Err: fmt.Errorf("no data for Region %s", region)}
+			var noDataError = NoDataError{Err: fmt.Errorf("no data for Region %s", region)}
 			return nil, noDataError.Err
 		}
-
 		defer carbonresp.Body.Close()
 		var carbonData Outermoststruct
 		err = json.NewDecoder(carbonresp.Body).Decode(&carbonData)
 		
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				var noDataError = NoData{Err: fmt.Errorf("no data for Region %s", region)}
+				var noDataError = NoDataError{Err: fmt.Errorf("no data for Region %s", region)}
 				return nil, noDataError.Err
 			} else {
 				err = fmt.Errorf("Error Decoding JSON Response: %s[%d]\n", err, http.StatusBadRequest)
@@ -130,14 +124,13 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		
 		last = carbonData.Meta.Pagination.Last
 		var start = carbonData.Data[0].Start_date
-		//obtain a way to make sure that report start dates are not repeated
 		for idx := 1; idx < len(carbonData.Data); idx++ {
 			if carbonData.Data == nil {
 				log.Infof(ctx, "nil carbon data element at index %d", idx)
 				continue
 			}
 			data := carbonData.Data[idx]
-			if data.Start_date == start { //don't read reports with the same start date
+			if data.Start_date == start {
 				continue
 			}
 			end := data.Start_date
@@ -156,3 +149,5 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 	return reports, nil
 }
 
+func (err ServerError) Error() string { return err.Err.Error() }
+func (err NoDataError) Error() string { return err.Err.Error() }
