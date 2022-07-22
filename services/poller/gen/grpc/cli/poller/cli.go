@@ -162,7 +162,7 @@ query search endpoint for a region.
 Example:
     %[1]s poller get-emissions-for-region --message '{
       "end": "2020-01-01T00:00:00Z",
-      "region": "Aut sit inventore itaque est.",
+      "region": "Exercitationem saepe aut sit inventore itaque est.",
       "start": "2020-01-01T00:00:00Z"
    }'
 `, os.Args[0])

@@ -85,12 +85,3 @@ func MakeNoData(err error) *goa.ServiceError {
 		Message: err.Error(),
 	}
 }
-
-// MakeRegionNotFound builds a goa.ServiceError from an error.
-func MakeRegionNotFound(err error) *goa.ServiceError {
-	return &goa.ServiceError{
-		Name:    "region_not_found",
-		ID:      goa.NewErrorID(),
-		Message: err.Error(),
-	}
-}

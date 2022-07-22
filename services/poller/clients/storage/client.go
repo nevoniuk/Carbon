@@ -51,24 +51,18 @@ func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 					MAX(start) as max_start
 			FROM 
 					carbondb.carbon_reports
-			
 			WHERE
 					region = $1
 			`, region).Scan(&start); err != nil {
 
 				return "", fmt.Errorf("Error in CheckDB: [%s]\n")
 			}
-	
-	fmt.Println("START IS")
-	fmt.Println(start)
-
 	if start.Year() < 2000 {
 		err = fmt.Errorf("No records for given region")
 		return "", err
 	}
 	start = start.UTC()
-
-	return start.Format("2006-01-02T15:04:05-07:00"), err
+	return start.Format(timeFormat), err
 }
 
 func (c *client) Init(ctx context.Context, test bool) error {
@@ -81,20 +75,22 @@ func (c *client) Init(ctx context.Context, test bool) error {
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
 		return err
 	}
-	var err error 
-	if err = c.chcon.Exec(ctx, `
+
+	/**
+	err := c.chcon.Exec(ctx, `
 			DROP TABLE carbondb.carbon_reports
-	`); err != nil {
+	`)
+	if err != nil {
 		return fmt.Errorf("Error initializing clickhouse[%s]", err)
 	}
-	if err = c.chcon.Exec(ctx, `
+	*/
+	if err := c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS carbondb.carbon_reports (
 					start DateTime,
 					end DateTime,
 					generatedrate Float64,
 					marginalrate Float64,
 					consumedrate Float64,
-					generatedsource String,
 					region String,
 					duration String
 				) Engine =  MergeTree()
@@ -102,58 +98,63 @@ func (c *client) Init(ctx context.Context, test bool) error {
 	`); err != nil {
 		return fmt.Errorf("Error initializing clickhouse[%s]", err)
 	}
-	return err
+	return nil
 }
+
 //SaveCarbonReports saves CO2 intensity reports in clickhouse
 func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.CarbonForecast) (error) {
 	res, err := c.chcon.PrepareBatch(ctx, `Insert INTO carbondb.carbon_reports (start,
-		 end, generatedrate, marginalrate, consumedrate, generatedsource, region, duration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`)
+		 end, generatedrate, marginalrate, consumedrate, region, duration) VALUES ($1, $2, $3, $4, $5, $6, $7)`)
+
 	if err != nil {
-		var err = IncorrectReportsError{Err: fmt.Errorf("reports could not be saved in the specified format")}
-		return fmt.Errorf("Error in Save Carbon Reports [%s]", err)
+		var invaliderr = IncorrectReportsError{Err: fmt.Errorf("error in save carbon reports [%w]\n", err)}
+		return invaliderr
+	}
+	var noRepErr = NoReportsError{Err: fmt.Errorf("no reports given in save carbon reports\n")}
+	if reports == nil {
+		return noRepErr
 	}
 
 	for _, report := range reports {
-		
 		var startTime, err1 = time.Parse(timeFormat, report.Duration.StartTime)
 		if err1 != nil {
-			return fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
+			return fmt.Errorf("timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
 			report.Duration.StartTime, report, err1)
 		}
 	
 		var endTime, err2 = time.Parse(timeFormat, report.Duration.EndTime)
 		if err2 != nil {
-			return fmt.Errorf("Timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
+			return fmt.Errorf("timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
 			report.Duration.EndTime, report, err2)
 		}
 
 		if err := res.Append(startTime.UTC(),
 			 endTime.UTC(), report.GeneratedRate, report.MarginalRate,
 			  report.ConsumedRate, report.Region, report.DurationType); err != nil {
-				var err = IncorrectReportsError{Err: fmt.Errorf("reports could not be saved in the specified format")}
-				return err
+				return IncorrectReportsError{Err: fmt.Errorf("reports could not be saved in the specified format: [%w]", err)}
 			}
 	}
 	return res.Send()
 }
+
 //GetAggregateReports queries clickhouse for average CO2 intensity data
 func (c *client) GetAggregateReports(ctx context.Context,
 	 periods []*genpoller.Period, region string, duration string) ([]*genpoller.CarbonForecast, error) {
-	
 	var finalaggdata []*genpoller.CarbonForecast
 	var aggdata *genpoller.CarbonForecast
 	var averagegen float64
 	var averagemarg float64
 	var averagecons float64
-	
-	for _, period := range periods {
-		var newstart, starterr = time.Parse(timeFormat, period.StartTime)
-		if starterr != nil {
-			return nil, starterr
+	for i, period := range periods {
+		newstart, err := time.Parse(timeFormat, period.StartTime)
+		if err != nil {
+			return nil, fmt.Errorf("timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
+			period.StartTime, i, err)
 		}
-		var newend, enderr = time.Parse(timeFormat, period.EndTime)
-		if enderr != nil {
-			return nil, enderr
+		newend, err := time.Parse(timeFormat, period.EndTime)
+		if err != nil {
+			return nil, fmt.Errorf("timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",
+			period.EndTime, i, err)
 		}
 		rows := c.chcon.QueryRow(ctx,`
 		SELECT
@@ -166,18 +167,14 @@ func (c *client) GetAggregateReports(ctx context.Context,
 			region = $1 AND start >= $2 AND end <= $3
 		GROUP BY region
 				`, region, newstart.UTC(), newend.UTC())
-		err := rows.Scan(&averagegen, &averagemarg, &averagecons)
-
+		err = rows.Scan(&averagegen, &averagemarg, &averagecons)
 		if err != nil {
-			var NoReportsError = NoReportsError{Err: fmt.Errorf("no data for Region %s and start %s and end %s", region, period.StartTime, period.EndTime)}
-			return nil, NoReportsError.Err
+			return nil, NoReportsError{Err: fmt.Errorf("no data for Region %s and start %s and end %s", region, period.StartTime, period.EndTime)}
 		}
-
 		aggdata = &genpoller.CarbonForecast{GeneratedRate: averagegen, MarginalRate: averagemarg, ConsumedRate: averagecons,
 			Duration: period, DurationType: duration, Region: region}
 		finalaggdata = append(finalaggdata, aggdata)	
 	}
-
 	return finalaggdata, nil
 }
 

@@ -32,11 +32,11 @@ func mapAndLogError(ctx context.Context, err error) error {
 	if errors.As(err, &noDataError) {
 		return genpoller.MakeNoData(noDataError)
 	}
-	var noReports *storage.NoReportsError
+	var noReports storage.NoReportsError
 	if errors.As(err, &noReports) {
 		return genpoller.MakeNoData(noReports)
 	}
-	var badReports *storage.IncorrectReportsError
+	var badReports storage.IncorrectReportsError
 	if errors.As(err, &badReports) {
 		return genpoller.MakeNoData(badReports)
 	}

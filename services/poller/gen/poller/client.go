@@ -42,7 +42,6 @@ func (c *Client) Update(ctx context.Context) (err error) {
 // GetEmissionsForRegion may return the following errors:
 //	- "server_error" (type *goa.ServiceError): Error with Singularity Server.
 //	- "no_data" (type *goa.ServiceError): No new data available for any region
-//	- "region_not_found" (type *goa.ServiceError): The given region is not represented by Singularity
 //	- error: internal error
 func (c *Client) GetEmissionsForRegion(ctx context.Context, p *CarbonPayload) (res []*CarbonForecast, err error) {
 	var ires interface{}
