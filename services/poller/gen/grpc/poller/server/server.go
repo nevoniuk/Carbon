@@ -87,8 +87,6 @@ func (s *Server) GetEmissionsForRegion(ctx context.Context, message *pollerpb.Ge
 		if errors.As(err, &en) {
 			switch en.ErrorName() {
 			case "no_data":
-				return nil, goagrpc.NewStatusError(codes.OutOfRange, err, goagrpc.NewErrorResponse(err))
-			case "region_not_found":
 				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
 			case "server_error":
 				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))

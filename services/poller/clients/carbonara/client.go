@@ -20,7 +20,7 @@ var reportdurations [6]string = [6]string{ "minute", "hourly", "daily", "weekly"
 
 type (
 	Client interface {
-		GetEmissions(context.Context, string, string, string, []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error)
+		GetEmissions(context.Context, string, string, string) ([]*genpoller.CarbonForecast, error)
 	}
 	client struct {
 		c *http.Client
@@ -85,7 +85,8 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 	return resp, nil
 }
 //GetEmissions gets 5 min interval reports from the Carbonara API with pagination
-func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string, reports []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
+func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string) ([]*genpoller.CarbonForecast, error) {
+	var reports []*genpoller.CarbonForecast
 	var page = 1
 	var last = 100 //dummy value
 	for page <= last {
@@ -93,33 +94,25 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		startime, "&end=", endtime, "&per_page=1000", "&page=", strconv.Itoa(page)}, "")
 		req, err := http.NewRequest("GET", carbonUrl, nil)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Error Making Request: %s\n", err)
 		}
 		req.Close = true
 		req.Header.Add("Content-Type", "application/json")
+		//replace with key after testing
 		req.Header.Add("X-Api-Key", c.key)
 		carbonresp, err := c.HttpGetRequestCall(ctx, req)
 		if err != nil {
 			return nil, err
 		}
-		
-		//TODO:will delete this line
-		if carbonresp.ContentLength < 100 {
-			var noDataError = NoDataError{Err: fmt.Errorf("no data for Region %s", region)}
-			return nil, noDataError.Err
-		}
 		defer carbonresp.Body.Close()
 		var carbonData Outermoststruct
 		err = json.NewDecoder(carbonresp.Body).Decode(&carbonData)
-		
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				var noDataError = NoDataError{Err: fmt.Errorf("no data for Region %s", region)}
 				return nil, noDataError.Err
-			} else {
-				err = fmt.Errorf("Error Decoding JSON Response: %s[%d]\n", err, http.StatusBadRequest)
 			}
-			return nil, err
+			return nil, fmt.Errorf("Error Decoding JSON Response: %s[%d]\n", err, http.StatusBadRequest)
 		}
 		
 		last = carbonData.Meta.Pagination.Last
