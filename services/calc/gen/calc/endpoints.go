@@ -15,37 +15,26 @@ import (
 
 // Endpoints wraps the "calc" service endpoints.
 type Endpoints struct {
-	HandleRequests  goa.Endpoint
-	GetCarbonReport goa.Endpoint
+	HistoricalCarbonEmissions goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "calc" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		HandleRequests:  NewHandleRequestsEndpoint(s),
-		GetCarbonReport: NewGetCarbonReportEndpoint(s),
+		HistoricalCarbonEmissions: NewHistoricalCarbonEmissionsEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "calc" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
-	e.HandleRequests = m(e.HandleRequests)
-	e.GetCarbonReport = m(e.GetCarbonReport)
+	e.HistoricalCarbonEmissions = m(e.HistoricalCarbonEmissions)
 }
 
-// NewHandleRequestsEndpoint returns an endpoint function that calls the method
-// "handle_requests" of service "calc".
-func NewHandleRequestsEndpoint(s Service) goa.Endpoint {
+// NewHistoricalCarbonEmissionsEndpoint returns an endpoint function that calls
+// the method "historical_carbon_emissions" of service "calc".
+func NewHistoricalCarbonEmissionsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*RequestPayload)
-		return s.HandleRequests(ctx, p)
-	}
-}
-
-// NewGetCarbonReportEndpoint returns an endpoint function that calls the
-// method "get_carbon_report" of service "calc".
-func NewGetCarbonReportEndpoint(s Service) goa.Endpoint {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.GetCarbonReport(ctx)
+		return s.HistoricalCarbonEmissions(ctx, p)
 	}
 }

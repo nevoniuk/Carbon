@@ -15,23 +15,24 @@ import (
 	calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
 )
 
-// BuildHandleRequestsPayload builds the payload for the calc handle_requests
-// endpoint from CLI flags.
-func BuildHandleRequestsPayload(calcHandleRequestsMessage string) (*calc.RequestPayload, error) {
+// BuildHistoricalCarbonEmissionsPayload builds the payload for the calc
+// historical_carbon_emissions endpoint from CLI flags.
+func BuildHistoricalCarbonEmissionsPayload(calcHistoricalCarbonEmissionsMessage string) (*calc.RequestPayload, error) {
 	var err error
-	var message calcpb.HandleRequestsRequest
+	var message calcpb.HistoricalCarbonEmissionsRequest
 	{
-		if calcHandleRequestsMessage != "" {
-			err = json.Unmarshal([]byte(calcHandleRequestsMessage), &message)
+		if calcHistoricalCarbonEmissionsMessage != "" {
+			err = json.Unmarshal([]byte(calcHistoricalCarbonEmissionsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Agent\": \"Repudiandae sint odit dolor quis occaecati.\",\n      \"Duration\": {\n         \"EndTime\": \"2020-01-01T00:00:00Z\",\n         \"StartTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"Interval\": \"hours, days, weeks, months, years\",\n      \"Org\": \"Facere reiciendis.\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Duration\": {\n         \"EndTime\": \"2020-01-01T00:00:00Z\",\n         \"StartTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"FacilityID\": \"Facere reiciendis.\",\n      \"Interval\": \"daily\",\n      \"LocationID\": \"Facere reiciendis.\",\n      \"OrgID\": \"Facere reiciendis.\"\n   }'")
 			}
 		}
 	}
 	v := &calc.RequestPayload{
-		Org:      calc.UUID(message.Org),
-		Agent:    message.Agent,
-		Interval: message.Interval,
+		OrgID:      calc.UUID(message.OrgId),
+		FacilityID: calc.UUID(message.FacilityId),
+		Interval:   message.Interval,
+		LocationID: calc.UUID(message.LocationId),
 	}
 	if message.Duration != nil {
 		v.Duration = protobufCalcpbPeriodToCalcPeriod(message.Duration)

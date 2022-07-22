@@ -15,30 +15,23 @@ import (
 
 // Client is the "calc" service client.
 type Client struct {
-	HandleRequestsEndpoint  goa.Endpoint
-	GetCarbonReportEndpoint goa.Endpoint
+	HistoricalCarbonEmissionsEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "calc" service client given the endpoints.
-func NewClient(handleRequests, getCarbonReport goa.Endpoint) *Client {
+func NewClient(historicalCarbonEmissions goa.Endpoint) *Client {
 	return &Client{
-		HandleRequestsEndpoint:  handleRequests,
-		GetCarbonReportEndpoint: getCarbonReport,
+		HistoricalCarbonEmissionsEndpoint: historicalCarbonEmissions,
 	}
 }
 
-// HandleRequests calls the "handle_requests" endpoint of the "calc" service.
-func (c *Client) HandleRequests(ctx context.Context, p *RequestPayload) (res *AllReports, err error) {
+// HistoricalCarbonEmissions calls the "historical_carbon_emissions" endpoint
+// of the "calc" service.
+func (c *Client) HistoricalCarbonEmissions(ctx context.Context, p *RequestPayload) (res *AllReports, err error) {
 	var ires interface{}
-	ires, err = c.HandleRequestsEndpoint(ctx, p)
+	ires, err = c.HistoricalCarbonEmissionsEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
 	return ires.(*AllReports), nil
-}
-
-// GetCarbonReport calls the "get_carbon_report" endpoint of the "calc" service.
-func (c *Client) GetCarbonReport(ctx context.Context) (err error) {
-	_, err = c.GetCarbonReportEndpoint(ctx, nil)
-	return
 }

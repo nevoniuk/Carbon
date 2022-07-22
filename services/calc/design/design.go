@@ -1,6 +1,9 @@
 package design
 
-import . "goa.design/goa/v3/dsl"
+import (
+	. "goa.design/goa/v3/dsl"
+	"github.com/crossnokaye/carbon/model"
+)
 
 var _ = API("Calc", func() {
 	Title("calc")
@@ -13,68 +16,64 @@ var _ = API("Calc", func() {
 
 var _ = Service("calc", func() {
 	Description("Service to interpret CO2 emissions through power and carbon intensity data")
-	Method("handle_requests", func() {
+	Error("reports_not_found", func() {
+		Description("Carbon reports not found")
+	})
+	Error("not_found", func() {
+		Description("facilty or location not found")
+	})
+	GRPC(func() {
+		Response("not_found", CodeNotFound)
+	})
+	Method("historical_carbon_emissions", func() {
 		Description("This endpoint is used by a front end service to return carbon emission reports")
 		Payload(RequestPayload)
 		Result(AllReports)
-		GRPC(func() {})
+		GRPC(func() {
+			Response("not_found", CodeNotFound)
+		})
 	})
-	Method("get_carbon_report", func() {
-		Description("Make reports available to external/R&D clients")
-		GRPC(func() {})
-	})
-
-})
-
-var EmissionsPayload = Type("EmissionsPayload", func() {
-	Description("Period is the range to get data for, interval is the time unit at which to parse the data by.")
-	Field(1, "Period", Period, "Period")
-	Field(2, "Interval", String, "Interval", func() {
-		Example("hours, days, weeks, months, years")
-	})
-	Required("Period", "Interval")
 })
 
 var AllReports = Type("AllReports", func() {
 	Description("CO2 intensity reports, power reports, and CO2 emission reports")
 	Field(1, "CarbonIntensityReports", ArrayOf(CarbonReport), "CarbonIntensityReports")
 	Field(2, "PowerReports", ArrayOf(ElectricalReport), "PowerReports")
-	Field(3, "TotalEmissionReports", ArrayOf(EmissionsReport), "TotalEmissionReports")
-	Required("CarbonIntensityReports", "PowerReports", "TotalEmissionReports")
+	Field(3, "TotalEmissionReport", EmissionsReport, "TotalEmissionReport")
+	Required("CarbonIntensityReports", "PowerReports", "TotalEmissionReport")
 })
 
 var RequestPayload = Type("RequestPayload", func() {
 	Description("Payload wraps the payload for past-values GetValues() and carbon poller service")
-	Field(1, "Org", UUID, "Org")
+	Field(1, "OrgID", UUID, "OrgID")
 	Field(2, "Duration", Period, "Duration")
-	Field(3, "Agent", String, "Agent")
-	Field(4, "Interval", String, "Interval", func() {
-		Example("hours, days, weeks, months, years")
-	})
-	Required("Org", "Duration", "Agent", "Interval")
+	Field(3, "FacilityID", UUID, "FacilityID")
+	Field(4, "Interval", String, IntervalFunc)
+	Field(5, "LocationID", UUID, "LocationID")
+	Required("OrgID", "Duration", "Interval", "FacilityID", "LocationID")
 })
 
 var EmissionsReport = Type("EmissionsReport", func() {
 	Description("Carbon/Energy Generation Report")
 	Field(1, "Duration", Period, "Duration")
-	Field(2, "DurationType", String, "DurationType")
+	Field(2, "Interval", String, IntervalFunc)
 	Field(3, "Points", ArrayOf(DataPoint), "Points")
-	Field(4, "Org", UUID, "Org")
-	Field(5, "Agent", String, "Agent")
-	
-	Required("Duration", "Points", "Org", "DurationType", "Agent")
+	Field(4, "OrgID", UUID, "OrgID")
+	Field(5, "FacilityID", UUID, "FacilityID")
+	Field(6, "LocationID", UUID, "LocationID")
+	Field(7, "Region", String, RegionFunc)
+	Required("Duration", "Points", "OrgID", "Interval", "FacilityID", "LocationID", "Region")
 })
 
 var CarbonReport = Type("CarbonReport", func() {
 	Description("Carbon Report from clickhouse")
-	
-	Field(1, "GeneratedRate", Float64, "GeneratedRate")
-	Field(2, "Duration", Period, "Duration")
-	Field(3, "DurationType", String, "DurationType")
-	Field(4, "Region", String, "Region", func() {
-		Example("MISO, ISO...")
+	Field(1, "GeneratedRate", Float64, "GeneratedRate", func() {
+		Description("This is in units of (lbs of CO2/MWh)")
 	})
-	Required("GeneratedRate", "Region", "Duration", "DurationType")
+	Field(2, "Duration", Period, "Duration")
+	Field(3, "Interval", String, IntervalFunc)
+	Field(4, "Region", String, RegionFunc)
+	Required("GeneratedRate", "Region", "Duration", "Interval")
 })
 
 var DataPoint = Type("DataPoint", func() {
@@ -94,23 +93,11 @@ var DataPoint = Type("DataPoint", func() {
 var ElectricalReport = Type("ElectricalReport", func() {
 	Description("Energy Generation Report from the Past values function GetValues")
 	Field(1, "Duration", Period, "Duration")
-	Field(2, "Org", UUID, "Org")
-	Field(3, "Agent", String, "Agent")
-	Field(4, "Stamp", PowerStamp, "Stamp")
-	Field(5, "IntervalType", String, "IntervalType")
-
-	Required("Org", "Duration", "Agent", "Stamp", "IntervalType")
-})
-
-var PowerStamp = Type("PowerStamp", func() {
-	Description("Used by Electrical Report to store power meter data from GetValues()")
-	Field(1, "Time", String, "Time", func() {
-		Format(FormatDateTime)
+	Field(2, "Power", Float64, "Power", func() {
+		Description("Power meter data in KWh")
 	})
-	Field(2, "GeneratedRate", Float64, "GeneratedRate", func() {
-		Description("power stamp in KW")
-	})
-	Required("GeneratedRate", "Time")
+	Field(3, "Interval", String, IntervalFunc)
+	Required("Duration", "Power", "Interval")
 })
 
 var Period = Type("Period", func() {
@@ -131,4 +118,12 @@ var UUID = Type("UUID", String, func() {
 	Format(FormatUUID)
 })
 
+var IntervalFunc =  func() {
+	Enum(model.Minute, model.Hourly, model.Daily, model.Weekly, model.Monthly)
+}
+
+var RegionFunc = func() {
+	Enum(model.Caiso, model.Aeso, model.Bpa, model.Erco, model.Ieso, model.Isone, model.Miso, model.Nyiso, model.Nyiso_nycw,
+		 model.Nyiso_nyli, model.Nyiso_nyup, model.Pjm, model.Spp)
+}
 

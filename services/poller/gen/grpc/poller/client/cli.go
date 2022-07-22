@@ -3,7 +3,8 @@
 // Poller gRPC client CLI support package
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/poller/design
+// $ goa gen github.com/crossnokaye/carbon/services/poller/design -o
+// services/poller
 
 package client
 

@@ -12,6 +12,7 @@ import (
 
 	calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
 	goagrpc "goa.design/goa/v3/grpc"
+	goapb "goa.design/goa/v3/grpc/pb"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc"
 )
@@ -30,33 +31,23 @@ func NewClient(cc *grpc.ClientConn, opts ...grpc.CallOption) *Client {
 	}
 }
 
-// HandleRequests calls the "HandleRequests" function in calcpb.CalcClient
-// interface.
-func (c *Client) HandleRequests() goa.Endpoint {
+// HistoricalCarbonEmissions calls the "HistoricalCarbonEmissions" function in
+// calcpb.CalcClient interface.
+func (c *Client) HistoricalCarbonEmissions() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
-			BuildHandleRequestsFunc(c.grpccli, c.opts...),
-			EncodeHandleRequestsRequest,
-			DecodeHandleRequestsResponse)
+			BuildHistoricalCarbonEmissionsFunc(c.grpccli, c.opts...),
+			EncodeHistoricalCarbonEmissionsRequest,
+			DecodeHistoricalCarbonEmissionsResponse)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {
-			return nil, goa.Fault(err.Error())
-		}
-		return res, nil
-	}
-}
-
-// GetCarbonReport calls the "GetCarbonReport" function in calcpb.CalcClient
-// interface.
-func (c *Client) GetCarbonReport() goa.Endpoint {
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		inv := goagrpc.NewInvoker(
-			BuildGetCarbonReportFunc(c.grpccli, c.opts...),
-			nil,
-			nil)
-		res, err := inv.Invoke(ctx, v)
-		if err != nil {
-			return nil, goa.Fault(err.Error())
+			resp := goagrpc.DecodeError(err)
+			switch message := resp.(type) {
+			case *goapb.ErrorResponse:
+				return nil, goagrpc.NewServiceError(message)
+			default:
+				return nil, goa.Fault(err.Error())
+			}
 		}
 		return res, nil
 	}

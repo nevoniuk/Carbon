@@ -15,7 +15,7 @@ import (
 
 
     ch "github.com/ClickHouse/clickhouse-go/v2"
-    "github.com/crossnokaye/facilityconfig/envloader"
+    //"github.com/crossnokaye/facilityconfig/envloader"
     gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
     calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
     calcsvr "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/server"
@@ -26,7 +26,7 @@ import (
     //clients
     "github.com/crossnokaye/carbon/clients/clickhouse"
     "github.com/crossnokaye/carbon/services/calc/clients/storage"
-	"github.com/crossnokaye/carbon/services/calc/clients/power_server"
+	"github.com/crossnokaye/carbon/services/calc/clients/facilityconfig"
 
     goagrpcmiddleware "goa.design/goa/v3/grpc/middleware"
     grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -133,8 +133,7 @@ func main() {
 	}
 
     //3.initialize power_server repo with the env loader
-    powerRepo := power_server.New(envloader.MustNew(*env))
-    
+    facilityRepo := facilityconfig.New(*env)
 	//4.initialize power client with past val grpc connection
     pastValConn, err := grpc.Dial(*pastValaddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -142,12 +141,11 @@ func main() {
         return
 	}
     pwc := pastvalsvc.New(pastValConn)
-
 	// Initialize the services and endpoints
 	log.Print(ctx, log.KV{K: "creating", V: "service endpoints"})
 
 	var calcSvc gencalc.Service
-	calcSvc = calcapi.NewCalc(ctx, pwc, dbc, powerRepo)
+	calcSvc = calcapi.NewCalc(ctx, pwc, dbc, facilityRepo)
     endpoints := gencalc.NewEndpoints(calcSvc)
 	
 

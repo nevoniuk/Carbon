@@ -9,15 +9,15 @@ package calc
 
 import (
 	"context"
+
+	goa "goa.design/goa/v3/pkg"
 )
 
 // Service to interpret CO2 emissions through power and carbon intensity data
 type Service interface {
 	// This endpoint is used by a front end service to return carbon emission
 	// reports
-	HandleRequests(context.Context, *RequestPayload) (res *AllReports, err error)
-	// Make reports available to external/R&D clients
-	GetCarbonReport(context.Context) (err error)
+	HistoricalCarbonEmissions(context.Context, *RequestPayload) (res *AllReports, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -28,31 +28,31 @@ const ServiceName = "calc"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"handle_requests", "get_carbon_report"}
+var MethodNames = [1]string{"historical_carbon_emissions"}
 
-// AllReports is the result type of the calc service handle_requests method.
+// AllReports is the result type of the calc service
+// historical_carbon_emissions method.
 type AllReports struct {
 	// CarbonIntensityReports
 	CarbonIntensityReports []*CarbonReport
 	// PowerReports
 	PowerReports []*ElectricalReport
-	// TotalEmissionReports
-	TotalEmissionReports []*EmissionsReport
+	// TotalEmissionReport
+	TotalEmissionReport *EmissionsReport
 }
 
 // Carbon Report from clickhouse
 type CarbonReport struct {
-	// GeneratedRate
+	// This is in units of (lbs of CO2/MWh)
 	GeneratedRate float64
 	// Duration
 	Duration *Period
-	// DurationType
-	DurationType string
-	// Region
-	Region string
+	Interval string
+	Region   string
 }
 
-// Contains a time stamp with its respective x&y coordinates
+// Contains carbon emissions in terms of DataPoints, which can be used as
+// points for a time/CO2 emissions graph
 type DataPoint struct {
 	// Time
 	Time string
@@ -64,28 +64,25 @@ type DataPoint struct {
 type ElectricalReport struct {
 	// Duration
 	Duration *Period
-	// Org
-	Org UUID
-	// Agent
-	Agent string
-	// Stamp
-	Stamp *PowerStamp
-	// IntervalType
-	IntervalType string
+	// Power meter data in KWh
+	Power    float64
+	Interval string
 }
 
 // Carbon/Energy Generation Report
 type EmissionsReport struct {
 	// Duration
 	Duration *Period
-	// DurationType
-	DurationType string
+	Interval string
 	// Points
 	Points []*DataPoint
-	// Org
-	Org UUID
-	// Agent
-	Agent string
+	// OrgID
+	OrgID UUID
+	// FacilityID
+	FacilityID UUID
+	// LocationID
+	LocationID UUID
+	Region     string
 }
 
 // Period of time from start to end for any report type
@@ -96,26 +93,37 @@ type Period struct {
 	EndTime string
 }
 
-// Used by Electrical Report to store power meter data from GetValues()
-type PowerStamp struct {
-	// Time
-	Time string
-	// power stamp in KW
-	GeneratedRate float64
-}
-
-// RequestPayload is the payload type of the calc service handle_requests
-// method.
+// RequestPayload is the payload type of the calc service
+// historical_carbon_emissions method.
 type RequestPayload struct {
-	// Org
-	Org UUID
+	// OrgID
+	OrgID UUID
 	// Duration
 	Duration *Period
-	// Agent
-	Agent string
-	// Interval
-	Interval string
+	// FacilityID
+	FacilityID UUID
+	Interval   string
+	// LocationID
+	LocationID UUID
 }
 
 // Universally unique identifier
 type UUID string
+
+// MakeReportsNotFound builds a goa.ServiceError from an error.
+func MakeReportsNotFound(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "reports_not_found",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
+	}
+}
+
+// MakeNotFound builds a goa.ServiceError from an error.
+func MakeNotFound(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "not_found",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
+	}
+}

@@ -55,7 +55,6 @@ require (
 	golang.org/x/tools v0.1.10 // indirect
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/genproto v0.0.0-20220531173845-685668d2de03 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
@@ -64,4 +63,5 @@ require (
 	github.com/crossnokaye/past-values v0.0.5
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	goa.design/clue v0.7.0
+	gopkg.in/yaml.v3 v3.0.1
 )
