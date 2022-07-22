@@ -27,14 +27,14 @@ type (
 	Outermoststruct struct {
 		Data []struct {
 			Data struct {
-				Generated_rate float64 `json:"generated_rate"`
-				Marginal_rate  float64 `json:"marginal_rate"`
-				Consumed_rate  float64 `json:"consumed_rate"`
+				GeneratedRate float64 `json:"generated_rate"`
+				MarginalRate  float64 `json:"marginal_rate"`
+				ConsumedRate  float64 `json:"consumed_rate"`
 			}`json:"data"`
 			Meta struct {
-				Generated_emissions_source  string `json:"generated_emissions_source"`
+				GeneratedEmissionsSource  string `json:"generated_emissions_source"`
 			}`json:"meta"`
-			Start_date string `json:"start_date"`
+			StartDate string `json:"start_date"`
 			Region     string `json:"region"`
 		}`json:"data"`
 		Meta struct {
@@ -112,21 +112,21 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		}
 		
 		last = carbonData.Meta.Pagination.Last
-		var start = carbonData.Data[0].Start_date
+		var start = carbonData.Data[0].StartDate
 		for idx := 1; idx < len(carbonData.Data); idx++ {
 			if carbonData.Data == nil {
 				fmt.Errorf("nil carbon data element at index %d", idx)
 				continue
 			}
 			data := carbonData.Data[idx]
-			if data.Start_date == start {
+			if data.StartDate == start {
 				continue
 			}
-			end := data.Start_date
+			end := data.StartDate
 			reportperiod := &genpoller.Period{StartTime: start, EndTime: end}
 			start = end
-			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.Generated_rate, MarginalRate: data.Data.Marginal_rate,
-					ConsumedRate: data.Data.Consumed_rate, Duration: reportperiod, DurationType: reportdurations[0], Region: data.Region}
+			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.GeneratedRate, MarginalRate: data.Data.MarginalRate,
+					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, DurationType: reportdurations[0], Region: data.Region}
 			reports = append(reports, report)
 			
 		}
