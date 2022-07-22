@@ -88,7 +88,7 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string) ([]*genpoller.CarbonForecast, error) {
 	var reports []*genpoller.CarbonForecast
 	var page = 1
-	var last = 100 //dummy value
+	var last = 100
 	for page <= last {
 		carbonUrl := strings.Join([]string{cs_url, "region_events/search?", "region=", region, "&event_type=carbon_intensity&start=",
 		startime, "&end=", endtime, "&per_page=1000", "&page=", strconv.Itoa(page)}, "")
@@ -98,7 +98,6 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		}
 		req.Close = true
 		req.Header.Add("Content-Type", "application/json")
-		//replace with key after testing
 		req.Header.Add("X-Api-Key", c.key)
 		carbonresp, err := c.HttpGetRequestCall(ctx, req)
 		if err != nil {
@@ -119,7 +118,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		var start = carbonData.Data[0].Start_date
 		for idx := 1; idx < len(carbonData.Data); idx++ {
 			if carbonData.Data == nil {
-				log.Infof(ctx, "nil carbon data element at index %d", idx)
+				fmt.Errorf("nil carbon data element at index %d", idx)
 				continue
 			}
 			data := carbonData.Data[idx]
