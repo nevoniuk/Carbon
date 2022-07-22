@@ -107,12 +107,11 @@ func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.Car
 		 end, generatedrate, marginalrate, consumedrate, region, duration) VALUES ($1, $2, $3, $4, $5, $6, $7)`)
 
 	if err != nil {
-		var invaliderr = IncorrectReportsError{Err: fmt.Errorf("error in save carbon reports [%w]\n", err)}
-		return invaliderr
+		return IncorrectReportsError{Err: fmt.Errorf("error in save carbon reports [%w]\n", err)}
 	}
-	var noRepErr = NoReportsError{Err: fmt.Errorf("no reports given in save carbon reports\n")}
+
 	if reports == nil {
-		return noRepErr
+		return NoReportsError{Err: fmt.Errorf("no reports given in save carbon reports\n")}
 	}
 
 	for _, report := range reports {

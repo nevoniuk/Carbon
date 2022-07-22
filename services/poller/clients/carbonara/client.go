@@ -10,9 +10,7 @@ import (
 	"time"
 	"errors"
 	"io"
-
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
-	"goa.design/clue/log"
 )
 
 //reportdurations maintains the interval length of each report
@@ -108,8 +106,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		err = json.NewDecoder(carbonresp.Body).Decode(&carbonData)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				var noDataError = NoDataError{Err: fmt.Errorf("no data for Region %s", region)}
-				return nil, noDataError.Err
+				return nil, NoDataError{Err: fmt.Errorf("no data for Region %s", region)}
 			}
 			return nil, fmt.Errorf("Error Decoding JSON Response: %s[%d]\n", err, http.StatusBadRequest)
 		}
