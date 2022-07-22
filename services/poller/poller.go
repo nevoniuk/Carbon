@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"goa.design/clue/log"
 	"time"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
