@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"goa.design/clue/log"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
+	"github.com/crossnokaye/carbon/model"
 )
 type pollersrvc struct {
 	csc carbonara.Client
@@ -16,18 +18,22 @@ type pollersrvc struct {
 	cancel context.CancelFunc
 	startDates []string
 }
-//timeFormat is used to parse times in order to store time as ISO8601 format
+// timeFormat is used to parse times in order to store time as ISO8601 format
 var timeFormat = "2006-01-02T15:04:05-07:00"
-//regions maintains all the regions that Singularity returns CO2 intensity for
-var regions [13]string = [13]string{"CAISO", "AESO", "BPA", "ERCO", "IESO",
-"ISONE", "MISO",
- "NYISO", "NYISO.NYCW",
-  "NYISO.NYLI", "NYISO.NYUP",
-   "PJM", "SPP"} 
-//reportdurations maintains the interval length of each report
-var reportdurations [5]string = [5]string{ "minute", "hourly", "daily", "weekly", "monthly"}
-var regionstartdate = "2020-01-01T00:00:00+00:00"
-var AesoStartDate = "2020-05-15T16:00:00+00:00"
+
+// regions maintains all the valid regions that Singularity will calculate carbon intensity
+var regions [13]string = [13]string{model.Caiso, model.Aeso, model.Bpa, model.Erco, model.Ieso,
+model.Isone, model.Miso,
+ model.Nyiso, model.Nyiso_nycw,
+  model.Nyiso_nyli, model.Nyiso_nyup,
+   model.Pjm, model.Spp} 
+
+// reportdurations maintains the interval length of each report using constants from the model directory
+var reportdurations [5]string = [5]string{ model.Minute, model.Hourly, model.Hourly, model.Weekly, model.Monthly}
+// common start date for regions
+const regionstartdate = "2020-01-01T00:00:00+00:00"
+// The AESO region start date is earlier than other region start dates
+const AesoStartDate = "2020-05-15T16:00:00+00:00"
 
 // NewPoller returns the Poller service implementation.
 func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *pollersrvc {
@@ -39,12 +45,6 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		cancel: 			cancel,
 		startDates:		    []string{},
 	}
-	regions = [...]string{ "CAISO", "AESO", "BPA", "ERCO", "IESO",
-       "ISONE", "MISO",
-        "NYISO", "NYISO.NYCW",
-         "NYISO.NYLI", "NYISO.NYUP",
-          "PJM", "SPP"} 
-	
 	times := s.EnsurePastData(ctx)
 	s = &pollersrvc{
 		csc:				csc,
@@ -56,7 +56,7 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 	return s
 }
 
-//EnsurePastData will query clickhouse for the most recent report date
+// EnsurePastData will query clickhouse for the most recent report date
 func (s *pollersrvc) EnsurePastData(ctx context.Context) (startDates []string) {
 	var dates []string
 	for i := 0; i < len(regions); i++ {
@@ -65,7 +65,7 @@ func (s *pollersrvc) EnsurePastData(ctx context.Context) (startDates []string) {
 			dates = append(dates, date)
 		} else {
 			var defaultDate string
-			if regions[i] == "AESO" {
+			if regions[i] == model.Aeso {
 				defaultDate = AesoStartDate
 			} else {defaultDate = regionstartdate}
 			dates = append(dates, defaultDate)
@@ -74,15 +74,11 @@ func (s *pollersrvc) EnsurePastData(ctx context.Context) (startDates []string) {
 	return dates
 }
 
-//Update will fetch the latest reports for all regions and return either a server or no-data error
+// Update will fetch the latest reports for all regions and return either a server or no-data error
 func (s *pollersrvc) Update(ctx context.Context) error {
 	var finalEndTime = time.Now()
 	for i := 0; i < len(regions); i++ {
-		startTime, err := time.Parse(timeFormat, s.startDates[i])
-		if err != nil {
-			return fmt.Errorf("timestamp %s in observation %v could not be parsed into a time correctly error: [%s]",s.startDates[i],
-			i, err)
-		}
+		startTime, _ := time.Parse(timeFormat, s.startDates[i])
 		for startTime.Before(finalEndTime) {
 			newEndTime := startTime.AddDate(0, 0, 6)
 			if !newEndTime.Before(finalEndTime) {
@@ -94,8 +90,9 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 				if !errors.As(err, &NoDataError) {
 					return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
 				}
+				continue
 			}
-			dateConfigs, err := GetDates(ctx, minreports)
+			dateConfigs, err := getDates(ctx, minreports)
 			if err != nil {
 				log.Error(ctx, err)
 				continue
@@ -106,7 +103,7 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			}
 			for j := 0; j < len(dateConfigs); j++ {
 				if dateConfigs[j] != nil {
-					aggErr := s.AggregateData(ctx, regions[i], dateConfigs[j], reportdurations[j])
+					aggErr := s.aggregateData(ctx, regions[i], dateConfigs[j], reportdurations[j])
 					if aggErr != nil {
 						return mapAndLogErrorf(ctx,  "failed to get Average Carbon Reports:%w\n", aggErr)
 					}
@@ -120,60 +117,21 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 }
 
 
-//R&D can use this function to obtain CO2 intensity reports for a specific region
+// R&D can use this function to obtain CO2 intensity reports for a specific region
 func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoller.CarbonPayload) ([]*genpoller.CarbonForecast, error) {
-	var start = *input.Start
-	var end = *input.End
-	var region = *input.Region
+	var start = input.Start
+	var end = input.End
+	var region = input.Region
 	var reports []*genpoller.CarbonForecast
 	reports, err := ser.csc.GetEmissions(ctx, region, start, end)
-	var serverError carbonara.ServerError
 	if err != nil {
-		if !errors.As(err, &serverError) {
-			return nil, mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
-		}
-		return nil, fmt.Errorf("error in GetEmissionsForRegion: %v\n", err)
+		return nil, mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
 	}
 	return reports, err
 }
 
-//CarbonEmissions is a helper function to calculate API calls in 7 day intervals
-func (ser *pollersrvc) CarbonEmissions(ctx context.Context, start string, end string, region string) ([]*genpoller.CarbonForecast, error) {
-	var reports []*genpoller.CarbonForecast
-	startTime, err := time.Parse(timeFormat, start)
-	if err != nil {
-		return nil, err
-	}
-	finalendTime, err := time.Parse(timeFormat, end)
-	if err != nil {
-		return nil, err
-	}
-	for startTime.Before(finalendTime) {
-		t, errr := time.Parse(timeFormat, start)
-		if errr != nil {
-			return nil, errr
-		}
-		newEndTime := t.AddDate(0, 0, 6)
-		if !newEndTime.Before(finalendTime) {
-			newEndTime = finalendTime 
-		}
-		var err error
-		reports, err = ser.csc.GetEmissions(ctx, region, start, newEndTime.Format(timeFormat))
-		if err != nil {
-			return nil, mapAndLogError(ctx, err)
-		}
-		err = ser.dbc.SaveCarbonReports(ctx, reports)
-		if err != nil {
-			return nil, mapAndLogError(ctx, err)
-		}
-		newEndTime = newEndTime.AddDate(0, 0, 1)
-		start = newEndTime.Format(timeFormat)
-	}
-	return reports, nil
-}
-
-//AggregateData gets aggregate reports for all report dates returned by GetDates and store them in clickhouse
-func (ser *pollersrvc) AggregateData(ctx context.Context, region string, dates []*genpoller.Period, duration string) (error) {
+// AggregateData gets aggregate reports for all report dates returned by GetDates and store them in clickhouse
+func (ser *pollersrvc) aggregateData(ctx context.Context, region string, dates []*genpoller.Period, duration string) (error) {
 	aggregateres, getErr := ser.dbc.GetAggregateReports(ctx, dates, region, duration)
 	if getErr != nil {
 		return getErr
@@ -185,16 +143,12 @@ func (ser *pollersrvc) AggregateData(ctx context.Context, region string, dates [
 	return nil
 }
 
-//GetDates gets all the report dates that are used as input to clickhouse queries and obtain aggregate CO2 intensity data
-func GetDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
+// GetDates gets all the report dates that are used as input to clickhouse queries and obtain aggregate CO2 intensity data
+func getDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
 	if minutereports == nil {
 		return nil, fmt.Errorf("no reports for get dates")
 	}
-	var initialstart, err = time.Parse(timeFormat, minutereports[0].Duration.StartTime)
-	if err != nil {
-		return nil, fmt.Errorf("timestamp %s in observation %v could not be parsed into a time correctly error: [%s]", minutereports[0].Duration.StartTime,
-		0, err)
-	}
+	var initialstart, _ = time.Parse(timeFormat, minutereports[0].Duration.StartTime)
 	var finalDates [][]*genpoller.Period
 	var hourlyDates []*genpoller.Period
 	var dailyDates []*genpoller.Period
@@ -212,12 +166,8 @@ func GetDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 	}
 	var previous = initialstart
 	var weekcounter = 0
-	for i, event := range minutereports {
-		var time, err = time.Parse(timeFormat, event.Duration.StartTime)
-		if err != nil {
-			return nil, fmt.Errorf("timestamp %s in observation %v could not be parsed into a time correctly error: [%s]", event.Duration.StartTime,
-			i, err)
-		}
+	for _, event := range minutereports {
+		var time, _ = time.Parse(timeFormat, event.Duration.StartTime)
 		var month = time.Month()
 		var day = time.Day()
 		var hour = time.Hour()

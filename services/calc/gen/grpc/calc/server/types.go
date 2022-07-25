@@ -3,7 +3,7 @@
 // calc gRPC server types
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 package server
 
@@ -57,6 +57,9 @@ func NewProtoHistoricalCarbonEmissionsResponse(result *calc.AllReports) *calcpb.
 			if val.Duration != nil {
 				message.PowerReports[i].Duration = svcCalcPeriodToCalcpbPeriod(val.Duration)
 			}
+			if val.Payload != nil {
+				message.PowerReports[i].Payload = svcCalcPastValPayloadToCalcpbPastValPayload(val.Payload)
+			}
 		}
 	}
 	if result.TotalEmissionReport != nil {
@@ -69,7 +72,7 @@ func NewProtoHistoricalCarbonEmissionsResponse(result *calc.AllReports) *calcpb.
 // HistoricalCarbonEmissionsRequest.
 func ValidateHistoricalCarbonEmissionsRequest(message *calcpb.HistoricalCarbonEmissionsRequest) (err error) {
 	if message.Duration == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("Duration", "message"))
+		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "message"))
 	}
 	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.OrgId), goa.FormatUUID))
 
@@ -81,7 +84,7 @@ func ValidateHistoricalCarbonEmissionsRequest(message *calcpb.HistoricalCarbonEm
 	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.FacilityId), goa.FormatUUID))
 
 	if !(message.Interval == "minute" || message.Interval == "hourly" || message.Interval == "daily" || message.Interval == "weekly" || message.Interval == "monthly") {
-		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.Interval", message.Interval, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.interval", message.Interval, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
 	}
 	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.LocationId), goa.FormatUUID))
 
@@ -97,9 +100,9 @@ func ValidateUUID(message string) (err error) {
 
 // ValidatePeriod runs the validations defined on Period.
 func ValidatePeriod(message *calcpb.Period) (err error) {
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.StartTime", message.StartTime, goa.FormatDateTime))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.start_time", message.StartTime, goa.FormatDateTime))
 
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.EndTime", message.EndTime, goa.FormatDateTime))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.end_time", message.EndTime, goa.FormatDateTime))
 
 	return
 }
@@ -126,6 +129,26 @@ func svcCalcPeriodToCalcpbPeriod(v *calc.Period) *calcpb.Period {
 	return res
 }
 
+// svcCalcPastValPayloadToCalcpbPastValPayload builds a value of type
+// *calcpb.PastValPayload from a value of type *calc.PastValPayload.
+func svcCalcPastValPayloadToCalcpbPastValPayload(v *calc.PastValPayload) *calcpb.PastValPayload {
+	res := &calcpb.PastValPayload{
+		OrgId:           v.OrgID,
+		PastValInterval: v.PastValInterval,
+		Interval:        v.Interval,
+		ControlPoint:    v.ControlPoint,
+		AgentName:       v.AgentName,
+	}
+	if v.Formula != nil {
+		res.Formula = *v.Formula
+	}
+	if v.Duration != nil {
+		res.Duration = svcCalcPeriodToCalcpbPeriod(v.Duration)
+	}
+
+	return res
+}
+
 // svcCalcEmissionsReportToCalcpbEmissionsReport builds a value of type
 // *calcpb.EmissionsReport from a value of type *calc.EmissionsReport.
 func svcCalcEmissionsReportToCalcpbEmissionsReport(v *calc.EmissionsReport) *calcpb.EmissionsReport {
@@ -147,6 +170,26 @@ func svcCalcEmissionsReportToCalcpbEmissionsReport(v *calc.EmissionsReport) *cal
 				CarbonFootprint: val.CarbonFootprint,
 			}
 		}
+	}
+
+	return res
+}
+
+// protobufCalcpbPastValPayloadToCalcPastValPayload builds a value of type
+// *calc.PastValPayload from a value of type *calcpb.PastValPayload.
+func protobufCalcpbPastValPayloadToCalcPastValPayload(v *calcpb.PastValPayload) *calc.PastValPayload {
+	res := &calc.PastValPayload{
+		OrgID:           v.OrgId,
+		PastValInterval: v.PastValInterval,
+		Interval:        v.Interval,
+		ControlPoint:    v.ControlPoint,
+		AgentName:       v.AgentName,
+	}
+	if v.Formula != "" {
+		res.Formula = &v.Formula
+	}
+	if v.Duration != nil {
+		res.Duration = protobufCalcpbPeriodToCalcPeriod(v.Duration)
 	}
 
 	return res

@@ -2,22 +2,20 @@ package carbonara
 
 import (
 	"context"
-	"strconv"
 	"encoding/json"
-	"net/http"
+	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
-	"errors"
-	"io"
+	"github.com/crossnokaye/carbon/model"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
-
-//reportdurations maintains the interval length of each report
-var reportdurations [6]string = [6]string{ "minute", "hourly", "daily", "weekly", "monthly", "yearly"}
-
 type (
 	Client interface {
+		// GetEmissions talks to the Singularity 'Search' endpoint and returns carbon intensity reports in 5 minute intervals
 		GetEmissions(context.Context, string, string, string) ([]*genpoller.CarbonForecast, error)
 	}
 	client struct {
@@ -31,9 +29,6 @@ type (
 				MarginalRate  float64 `json:"marginal_rate"`
 				ConsumedRate  float64 `json:"consumed_rate"`
 			}`json:"data"`
-			Meta struct {
-				GeneratedEmissionsSource  string `json:"generated_emissions_source"`
-			}`json:"meta"`
 			StartDate string `json:"start_date"`
 			Region     string `json:"region"`
 		}`json:"data"`
@@ -49,7 +44,7 @@ type (
 )
 
 const (
-	//timeFormat is used to parse times in order to store time as ISO8601 format
+	// timeFormat is used to parse times in order to store time as ISO8601 format
 	timeFormat = "2006-01-02T15:04:05-07:00"
 	cs_url     = "https://api.singularity.energy/v1/"
 )
@@ -82,7 +77,7 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 
 	return resp, nil
 }
-//GetEmissions gets 5 min interval reports from the Carbonara API with pagination
+// GetEmissions gets 5 min interval reports from the Carbonara API with pagination
 func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string) ([]*genpoller.CarbonForecast, error) {
 	var reports []*genpoller.CarbonForecast
 	var page = 1
@@ -92,7 +87,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 		startime, "&end=", endtime, "&per_page=1000", "&page=", strconv.Itoa(page)}, "")
 		req, err := http.NewRequest("GET", carbonUrl, nil)
 		if err != nil {
-			return nil, fmt.Errorf("Error Making Request: %s\n", err)
+			return nil, fmt.Errorf("Error Making Request: %w\n", err)
 		}
 		req.Close = true
 		req.Header.Add("Content-Type", "application/json")
@@ -108,7 +103,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 			if errors.Is(err, io.EOF) {
 				return nil, NoDataError{Err: fmt.Errorf("no data for Region %s", region)}
 			}
-			return nil, fmt.Errorf("Error Decoding JSON Response: %s[%d]\n", err, http.StatusBadRequest)
+			return nil, fmt.Errorf("Error Decoding JSON Response: %w[%d]\n", err, http.StatusBadRequest)
 		}
 		
 		last = carbonData.Meta.Pagination.Last
@@ -126,7 +121,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 			reportperiod := &genpoller.Period{StartTime: start, EndTime: end}
 			start = end
 			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.GeneratedRate, MarginalRate: data.Data.MarginalRate,
-					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, DurationType: reportdurations[0], Region: data.Region}
+					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, DurationType: model.Minute, Region: data.Region}
 			reports = append(reports, report)
 			
 		}

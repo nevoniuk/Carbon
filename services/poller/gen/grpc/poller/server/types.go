@@ -25,15 +25,10 @@ func NewProtoUpdateResponse() *pollerpb.UpdateResponse {
 // "get_emissions_for_region" endpoint of the "Poller" service from the gRPC
 // request type.
 func NewGetEmissionsForRegionPayload(message *pollerpb.GetEmissionsForRegionRequest) *poller.CarbonPayload {
-	v := &poller.CarbonPayload{}
-	if message.Region != "" {
-		v.Region = &message.Region
-	}
-	if message.Start != "" {
-		v.Start = &message.Start
-	}
-	if message.End != "" {
-		v.End = &message.End
+	v := &poller.CarbonPayload{
+		Region: message.Region,
+		Start:  message.Start,
+		End:    message.End,
 	}
 	return v
 }
@@ -61,12 +56,13 @@ func NewProtoGetEmissionsForRegionResponse(result []*poller.CarbonForecast) *pol
 // ValidateGetEmissionsForRegionRequest runs the validations defined on
 // GetEmissionsForRegionRequest.
 func ValidateGetEmissionsForRegionRequest(message *pollerpb.GetEmissionsForRegionRequest) (err error) {
-	if message.Start != "" {
-		err = goa.MergeErrors(err, goa.ValidateFormat("message.start", message.Start, goa.FormatDateTime))
+	if !(message.Region == "CAISO" || message.Region == "AESO" || message.Region == "BPA" || message.Region == "ERCO" || message.Region == "IESO" || message.Region == "ISONE" || message.Region == "MISO" || message.Region == "NYISO" || message.Region == "NYISO.NYCW" || message.Region == "NYISO.NYLI" || message.Region == "NYISO.NYUP" || message.Region == "PJM" || message.Region == "SPP") {
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.region", message.Region, []interface{}{"CAISO", "AESO", "BPA", "ERCO", "IESO", "ISONE", "MISO", "NYISO", "NYISO.NYCW", "NYISO.NYLI", "NYISO.NYUP", "PJM", "SPP"}))
 	}
-	if message.End != "" {
-		err = goa.MergeErrors(err, goa.ValidateFormat("message.end", message.End, goa.FormatDateTime))
-	}
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.start", message.Start, goa.FormatDateTime))
+
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.end", message.End, goa.FormatDateTime))
+
 	return
 }
 

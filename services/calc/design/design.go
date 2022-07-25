@@ -37,80 +37,103 @@ var _ = Service("calc", func() {
 
 var AllReports = Type("AllReports", func() {
 	Description("CO2 intensity reports, power reports, and CO2 emission reports")
-	Field(1, "CarbonIntensityReports", ArrayOf(CarbonReport), "CarbonIntensityReports")
-	Field(2, "PowerReports", ArrayOf(ElectricalReport), "PowerReports")
-	Field(3, "TotalEmissionReport", EmissionsReport, "TotalEmissionReport")
-	Required("CarbonIntensityReports", "PowerReports", "TotalEmissionReport")
+	Field(1, "carbon_intensity_reports", ArrayOf(CarbonReport), "CarbonIntensityReports", func() {
+		MinLength(1)
+	})
+	Field(2, "power_reports", ArrayOf(ElectricalReport), "PowerReports", func() {
+		MinLength(1)
+	})
+	Field(3, "total_emission_report", EmissionsReport, "TotalEmissionReport")
+	Required("carbon_intensity_reports", "power_reports", "total_emission_report")
 })
 
 var RequestPayload = Type("RequestPayload", func() {
+	Description("Payload wraps the payload for to use the facility config client and poller client")
+	Field(1, "orgID", UUID, "OrgID")
+	Field(2, "duration", Period, "Duration")
+	Field(3, "facilityID", UUID, "FacilityID")
+	Field(4, "interval", String, IntervalFunc)
+	Field(5, "locationID", UUID, "LocationID")
+	Required("orgID", "duration", "interval", "facilityID", "locationID")
+})
+
+var PastValPayload = Type("PastValPayload", func() {
 	Description("Payload wraps the payload for past-values GetValues() and carbon poller service")
-	Field(1, "OrgID", UUID, "OrgID")
-	Field(2, "Duration", Period, "Duration")
-	Field(3, "FacilityID", UUID, "FacilityID")
-	Field(4, "Interval", String, IntervalFunc)
-	Field(5, "LocationID", UUID, "LocationID")
-	Required("OrgID", "Duration", "Interval", "FacilityID", "LocationID")
+	Field(1, "orgID", String, "OrgID")
+	Field(2, "duration", Period, "Duration")
+	Field(3, "past_val_interval", Int64, "PastValInterval")
+	Field(4, "interval", String, IntervalFunc)
+	Field(5, "control_point", String, "ControlPoint", func() {
+		MinLength(1)
+	})
+	Field(6, "formula", String, "Formula", func() {
+		MinLength(1)
+	})
+	Field(7, "agent_name", String, "AgentName", func() {
+		MinLength(1)
+	})
+	Required("orgID", "duration", "interval", "past_val_interval", "control_point", "agent_name")
 })
 
 var EmissionsReport = Type("EmissionsReport", func() {
 	Description("Carbon/Energy Generation Report")
-	Field(1, "Duration", Period, "Duration")
-	Field(2, "Interval", String, IntervalFunc)
-	Field(3, "Points", ArrayOf(DataPoint), "Points")
-	Field(4, "OrgID", UUID, "OrgID")
-	Field(5, "FacilityID", UUID, "FacilityID")
-	Field(6, "LocationID", UUID, "LocationID")
-	Field(7, "Region", String, RegionFunc)
-	Required("Duration", "Points", "OrgID", "Interval", "FacilityID", "LocationID", "Region")
+	Field(1, "duration", Period, "Duration")
+	Field(2, "interval", String, IntervalFunc)
+	Field(3, "points", ArrayOf(DataPoint), "Points")
+	Field(4, "orgID", UUID, "OrgID")
+	Field(5, "facilityID", UUID, "FacilityID")
+	Field(6, "locationID", UUID, "LocationID")
+	Field(7, "region", String, RegionFunc)
+	Required("duration", "points", "orgID", "interval", "facilityID", "locationID", "region")
 })
 
 var CarbonReport = Type("CarbonReport", func() {
 	Description("Carbon Report from clickhouse")
-	Field(1, "GeneratedRate", Float64, "GeneratedRate", func() {
+	Field(1, "generated_rate", Float64, "GeneratedRate", func() {
 		Description("This is in units of (lbs of CO2/MWh)")
 	})
-	Field(2, "Duration", Period, "Duration")
-	Field(3, "Interval", String, IntervalFunc)
-	Field(4, "Region", String, RegionFunc)
-	Required("GeneratedRate", "Region", "Duration", "Interval")
+	Field(2, "duration", Period, "Duration")
+	Field(3, "interval", String, IntervalFunc)
+	Field(4, "region", String, RegionFunc)
+	Required("generated_rate", "region", "duration", "interval")
 })
 
 var DataPoint = Type("DataPoint", func() {
 	Description("Contains carbon emissions in terms of DataPoints, which can be used as points for a time/CO2 emissions graph")
-	Field(1, "Time", String, "Time", func() {
+	Field(1, "time", String, "Time", func() {
 		Format(FormatDateTime)
 		Example("2020-01-01T00:00:00Z")
 	})
-	Field(2, "CarbonFootprint", Float64, "CarbonFootprint", func() {
+	Field(2, "carbon_footprint", Float64, "CarbonFootprint", func() {
 		Example(37.8267)
 		Description("carbon footprint is the lbs of CO2 emissions")
 	})
 
-	Required("Time", "CarbonFootprint")
+	Required("time", "carbon_footprint")
 })
 
 var ElectricalReport = Type("ElectricalReport", func() {
 	Description("Energy Generation Report from the Past values function GetValues")
-	Field(1, "Duration", Period, "Duration")
-	Field(2, "Power", Float64, "Power", func() {
+	Field(1, "duration", Period, "Duration")
+	Field(2, "power", Float64, "Power", func() {
 		Description("Power meter data in KWh")
 	})
-	Field(3, "Interval", String, IntervalFunc)
-	Required("Duration", "Power", "Interval")
+	Field(3, "interval", String, IntervalFunc)
+	Field(4, "payload", PastValPayload, "Payload")
+	Required("duration", "power", "interval", "payload")
 })
 
 var Period = Type("Period", func() {
 	Description("Period of time from start to end for any report type")
-	Field(1, "StartTime", String, "Start time", func() {
+	Field(1, "start_time", String, "Start time", func() {
 		Format(FormatDateTime)
 		Example("2020-01-01T00:00:00Z")
 	})
-	Field(2, "EndTime", String, "End time", func() {
+	Field(2, "end_time", String, "End time", func() {
 		Format(FormatDateTime)
 		Example("2020-01-01T00:00:00Z")
 	})
-	Required("StartTime", "EndTime")
+	Required("start_time", "end_time")
 })
 
 var UUID = Type("UUID", String, func() {

@@ -42,8 +42,7 @@ type CarbonForecast struct {
 	// consumed_rate
 	ConsumedRate float64
 	// Duration
-	Duration *Period
-	// duration_type
+	Duration     *Period
 	DurationType string
 	// region
 	Region string
@@ -53,11 +52,11 @@ type CarbonForecast struct {
 // get_emissions_for_region method.
 type CarbonPayload struct {
 	// region
-	Region *string
+	Region string
 	// start
-	Start *string
+	Start string
 	// end
-	End *string
+	End string
 }
 
 // Period of time from start to end of Forecast
