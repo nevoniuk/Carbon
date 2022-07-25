@@ -18,6 +18,7 @@ var _ = Service("Poller", func() {
 	Description("Service that provides forecasts to clickhouse from Carbonara API")
 	Method("update", func() {
 		Description("query Singularity's search endpoint and convert 5 min interval reports into averages")
+		Payload(UpdatePayload)
 		Error("server_error", ErrorResult, "Error with Singularity Server.")
 		GRPC(func() {
 			Response("server_error", CodeNotFound)
@@ -37,6 +38,18 @@ var _ = Service("Poller", func() {
 	
 })
 
+
+var UpdatePayload = Type("UpdatePayload", func() {
+	Description("Payload for Update function")
+	Field(1, "start_time", String, "start date/time to obtain carbon intensity reports", func() {
+		Format(FormatDateTime)
+	})
+	Field(2, "end_time", String, "end date/time to obtain carbon intensity reports", func() {
+		Format(FormatDateTime)
+	})
+	Field(3, "region", String, "region", RegionFunc)
+	Required("start_time", "end_time", "region")
+})
 var CarbonForecast = Type("CarbonForecast", func() {
 	Description("Emissions Forecast")
 	Field(1, "generated_rate", Float64, "generated_rate")

@@ -22,6 +22,12 @@ service Poller {
 }
 
 message UpdateRequest {
+	// start date/time to obtain carbon intensity reports
+	string start_time = 1;
+	// end date/time to obtain carbon intensity reports
+	string end_time = 2;
+	// region
+	string region = 3;
 }
 
 message UpdateResponse {

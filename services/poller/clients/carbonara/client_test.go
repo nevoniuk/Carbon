@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 	"errors"
-
-	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
 //TODO: figure out how to encode API key - may come with client
@@ -31,7 +29,6 @@ func TestGetEmissions(t *testing.T) {
 		region   string
 		startime string
 		endtime  string
-		reports  []*genpoller.CarbonForecast
 	}
 
 	//define end result reports here and error
@@ -58,7 +55,7 @@ func TestGetEmissions(t *testing.T) {
 			cl := New(&http.Client{Transport: roundTripFunc(tt.roundTripFn)}, key).(*client)
 			ctx := context.Background()
 			testRegion := "CAISO"
-			got, err := cl.GetEmissions(ctx, testRegion, startTime, endTime, nil)
+			got, err := cl.GetEmissions(ctx, testRegion, startTime, endTime)
 			if tt.expectedErr != "" {
 				if err == nil {
 					t.Errorf("GetEmissions did not return an error")

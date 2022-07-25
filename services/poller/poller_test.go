@@ -9,7 +9,9 @@ import (
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
+ 
 var testRegion = regions[0]
+/**
 func Test_pollersrvc_CarbonEmissions(t *testing.T) {
 	//testing 10 minute period
 	downloadError := errors.New("download error")
@@ -80,6 +82,7 @@ func Test_pollersrvc_CarbonEmissions(t *testing.T) {
 		})
 	}
 }
+*/
 //BUG: does get dates assume dates are sequential
 func TestGetDates(t *testing.T) {
 	var mockReports []*genpoller.CarbonForecast
@@ -125,7 +128,7 @@ func TestGetDates(t *testing.T) {
 				mockReports = append(mockReports, mockReportTwo)
 			}
 			ctx := context.Background()
-			got, err := GetDates(ctx, mockReports)
+			got, err := getDates(ctx, mockReports)
 			if !errors.As(err, tt.expectedError) {
 				t.Errorf("GetDates() error = %v, wantErr %v", err, tt.expectedError)
 				return
@@ -143,18 +146,21 @@ func TestGetDates(t *testing.T) {
 	}
 }
 func Test_pollersrvc_Update(t *testing.T) {
-	var startTimeOne = time.Date(2021, time.June, 1, 0, 0, 0, 0, nil)
-	var startTimeTwo = time.Date(2021, time.June, 1, 1, 0, 0, 0, nil)
-	var endTime = time.Date(2021, time.June, 1, 1, 20, 0, 0, nil)
+	//test case: 
+	var startTime= time.Date(2021, time.June, 1, 0, 0, 0, 0, nil)
+	var endTime = time.Date(2021, time.June, 1, 1, 0, 0, 0, nil)
+	//var endTime = time.Date(2021, time.June, 1, 1, 20, 0, 0, nil)
 	var mockReportOne = &genpoller.CarbonForecast{
-		Duration:     &genpoller.Period{StartTime: startTimeOne.Format(timeFormat), EndTime: startTimeTwo.Format(timeFormat)},
+		Duration:     &genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat)},
 		DurationType: reportdurations[0],
 	}
+	/**
 	var mockReportTwo = &genpoller.CarbonForecast{
 		Duration:     &genpoller.Period{StartTime: startTimeTwo.Format(timeFormat), EndTime: endTime.Format(timeFormat)},
 		DurationType: reportdurations[0],
 		Region:       testRegion,
 	}
+	*/
 	var mockReports []*genpoller.CarbonForecast
 	mockReports = append(mockReports, mockReportOne)
 	mockReports = append(mockReports, mockReportTwo)
@@ -211,12 +217,12 @@ func Test_pollersrvc_Update(t *testing.T) {
 				return nil
 			})
 			ctx := context.Background()
+			//this is where we set the test environment
 			svc := NewPoller(ctx, carbonarac, stc)
-			for i := 0; i < 13; i++ {
-				err := svc.Update(ctx)
-				if !errors.As(err, tt.expectedError) {
-					t.Errorf("pollersrvc.Update() error = %v, wantErr %v", err, tt.expectedError)
-				}
+			payload := &genpoller.UpdatePayload{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat), Region: testRegion}
+			err := svc.Update(ctx, payload)
+			if !errors.As(err, tt.expectedError) {
+				t.Errorf("pollersrvc.Update() error = %v, wantErr %v", err, tt.expectedError)
 			}
 		})
 	}

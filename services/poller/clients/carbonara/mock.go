@@ -9,7 +9,7 @@ import (
 
 type(
 
-	GetEmissionsFunc func(context.Context, string, string, string, []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error)
+	GetEmissionsFunc func(context.Context, string, string, string) ([]*genpoller.CarbonForecast, error)
 	
 	Mock struct {
 		m *mock.Mock
@@ -26,9 +26,9 @@ func (m *Mock) AddGetEmissionsFunc(f GetEmissionsFunc) { m.m.Add("GetEmissions",
 func (m *Mock) SetGetEmissionsFunc(f GetEmissionsFunc) { m.m.Set("GetEmissions", f) }
 
 // GetEmissions provides a mock function with given fields: _a0, _a1, _a2, _a3, _a4
-func (m *Mock) GetEmissions(ctx context.Context, region string, start string, end string, reports []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
+func (m *Mock) GetEmissions(ctx context.Context, region string, start string, end string) ([]*genpoller.CarbonForecast, error) {
 	if f := m.m.Next("GetEmissions"); f != nil {
-		return f.(GetEmissionsFunc)(ctx, region, start, end, reports)
+		return f.(GetEmissionsFunc)(ctx, region, start, end)
 	}
 	m.t.Error("unexpected GetEmissions call")
 	return nil, nil
