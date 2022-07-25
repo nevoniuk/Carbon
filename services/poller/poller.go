@@ -27,7 +27,6 @@ model.Isone, model.Miso,
  model.Nyiso, model.Nyiso_nycw,
   model.Nyiso_nyli, model.Nyiso_nyup,
    model.Pjm, model.Spp} 
-
 // reportdurations maintains the interval length of each report using constants from the model directory
 var reportdurations [5]string = [5]string{ model.Minute, model.Hourly, model.Hourly, model.Weekly, model.Monthly}
 // common start date for regions
