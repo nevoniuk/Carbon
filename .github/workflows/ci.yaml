@@ -10,6 +10,7 @@ on:
 env:
   GOPRIVATE: "github.com/crossnokaye/*"
 jobs:
+
   tests:
     runs-on: ubuntu-latest
     steps:
@@ -29,6 +30,7 @@ jobs:
             ${{ runner.os }}-go-v1-
       - name: tests
         run: "true"
+
   build:
     strategy:
       matrix:
@@ -59,3 +61,22 @@ jobs:
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
+
+  update_branches:
+    needs: [tests, build]
+    runs-on: ubuntu-20.04
+    outputs:
+      sha: ${{ steps.update_branches.outputs.sha }}
+    steps:
+      - run: |
+          git config --global core.autocrlf false
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          token: ${{ secrets.ROBOT_TOKEN }}
+      - name: update_branches
+        id: update_branches
+        uses: ./.github/actions/update-branches
+        with:
+          github_token: ${{secrets.ROBOT_TOKEN }}
