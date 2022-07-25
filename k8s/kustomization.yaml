@@ -7,7 +7,5 @@ commonAnnotations:
 
 resources:
   - ./namespace.yaml
-  - ./login/
-  - ./entitlements/
-  - ./acl/
+  - ./poller/
 
