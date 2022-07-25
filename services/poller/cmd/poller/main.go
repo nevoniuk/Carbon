@@ -38,13 +38,10 @@ func main() {
 		grpcaddr  = flag.String("grpc-addr", "0.0.0.0:12201", "gRPC listen address")
 		httpaddr  = flag.String("http-addr", "0.0.0.0:12202", "HTTP listen address")
 		agentaddr = flag.String("agent-addr", ":4317", "Grafana agent listen address")
-
-
 		chaddr = flag.String("ch-addr", os.Getenv("CLICKHOUSE_ADDR"), "ClickHouse host address")
 		chuser = flag.String("ch-user", os.Getenv("CLICKHOUSE_USER"), "ClickHouse user")
 		chpwd  = flag.String("ch-pwd", os.Getenv("CLICKHOUSE_PASSWORD"), "ClickHouse password")
 		chssl  = flag.Bool("ch-ssl", os.Getenv("CLICKHOUSE_SSL") != "", "ClickHouse connection SSL")
-
 		debug = flag.Bool("debug", false, "Enable debug logs")
 		//test  = flag.Bool("test", os.Getenv("TEST_ENV") != "", "Enable test mode")
 		carbonKey = flag.String("singularity-key", os.Getenv("SINGULARITY_API_KEY"), "The API key for Singularity")
