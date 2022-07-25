@@ -7,7 +7,8 @@ metadata:
 spec:
   # Every Monday at 12AM
   #doesn't matter
-  schedule: "0 12 * * 1"
+  #schedule: "0 12 * * 1"
+  schedule: "*/15 * * * *"
   concurrencyPolicy: Replace
   startingDeadlineSeconds: 1200
   jobTemplate:
@@ -23,14 +24,20 @@ spec:
             runAsUser: 100001
           containers:
           - name: poller-cron
-            image: fullstorydev/grpcurl:v1.8.6
-            imagePullPolicy: Always
+            image: ${REPOSITORY_BASE_URL}/crossnokaye/carbon/poller:${VERSION}
             args:
-            - -plaintext
-            - -vv
-            - -max-time=30.0
-            - poller.carbon.svc.cluster.local.:12500
-            - poller.Poller.Update
+              - "-agent-addr=grafana-agent-deployment.monitoring.svc.cluster.local.:4317"
+            env:
+              - name: CLICKHOUSE_ADDR
+                value: "${CLICKHOUSE_ADDR}"
+              - name: CLICKHOUSE_USER
+                value: "${CLICKHOUSE_USER}"
+              - name: CLICKHOUSE_PASSWORD
+                value: "${CLICKHOUSE_PASSWORD}"
+              - name: CLICKHOUSE_SSL
+                value: "${CLICKHOUSE_SSL}"
+              - name: SINGULARITY_API_KEY
+                value: "${SINGULARITY_API_KEY}"
             securityContext:
               readOnlyRootFilesystem: true
             resources:
