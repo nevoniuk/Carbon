@@ -1,5 +1,4 @@
 package calcapi
-
 import (
 	"context"
 	"fmt"
@@ -8,14 +7,12 @@ import (
 	"errors"
 	"goa.design/clue/log"
 	goa "goa.design/goa/v3/pkg"
-	//errors as
 	"github.com/crossnokaye/carbon/model"
 	"github.com/crossnokaye/carbon/services/calc/clients/facilityconfig"
 	"github.com/crossnokaye/carbon/services/calc/clients/power"
 	"github.com/crossnokaye/carbon/services/calc/clients/storage"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 )
-
 type (
 	calcSvc struct {
 	psc power.Client
@@ -26,7 +23,9 @@ type (
 	}
 	uuidArray []struct{}
 )
-const (timeFormat = "2006-01-02T15:04:05-07:00")
+// timeFormat is used to parse times in order to store time as ISO8601 format
+const timeFormat = "2006-01-02T15:04:05-07:00"
+// constants below are used to log errors that aren't goa service errors
 const (
 	FailedToGetCarbonReports = "failed to get carbon reports from clickhouse"
 	FailedToGetLocationData = "failed to get location data"
@@ -45,67 +44,45 @@ func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, fc facil
 	return s
 }
 
-//HandleRequests will output the CO2 intensity, Power Meter, and resulting CO2 emission reports
+// HistoricalCarbonEmissions will output the CO2 intensity, Power Meter, and resulting CO2 emission reports
 func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.RequestPayload) (*gencalc.AllReports, error) {
-	if req.Interval == "" {
-		return nil, fmt.Errorf("requested interval is null\n",)
-	}
-
 	dates, err := s.getDates(ctx, req.Interval, req.Duration)
 	if err != nil {
-		log.Errorf(ctx, err, "error parsing time in getDates:%s\n", err)
+		log.Errorf(ctx, err, "error parsing time in getDates:%w\n", err)
 		return nil, err
 	}
 
 	var res *facilityconfig.Carbon
-	var facilitynotFound facilityconfig.ErrFacilityNotFound
-	var locationnotFound facilityconfig.ErrLocationNotFound
-
 	res, err = s.getLocationData(ctx, string(req.OrgID), string(req.FacilityID), string(req.LocationID))
-	if !errors.As(err, &facilitynotFound) && !errors.As(err, &locationnotFound)  {
+	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetLocationData, err)
-	} else if err != nil {
-		mapAndLogError(ctx, err)
 	}
+	singularityRegion, controlPointName, formula, agentName := res.Region, res.ControlPointName, res.Formula, res.AgentName
 
-	singularityRegion, controlPointName, formula := res.Region, res.ControlPointName, res.Formula
-
-	var carbonnotFound storage.ErrNotFound
-	carbonReports, err := s.getEmissions(ctx, dates, req.Interval, singularityRegion)
-	if !errors.As(err, &carbonnotFound) {
+	carbonReports, err := s.getCarbonIntensityData(ctx, dates, req.Interval, singularityRegion)
+	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetCarbonReports, err)
-	} else if err != nil {
-		mapAndLogError(ctx, err)
 	}
 		
-	endTime, err := time.Parse(timeFormat, req.Duration.EndTime)
-	if err != nil {
-		return nil, fmt.Errorf("parsing time err: %s\n", err)
-	}
-	startTime, err:= time.Parse(timeFormat, req.Duration.StartTime)
-	if err != nil {
-		return nil, fmt.Errorf("parsing time err: %s\n", err)
-	}
+	endTime, _ := time.Parse(timeFormat, req.Duration.EndTime)
+	startTime, _ := time.Parse(timeFormat, req.Duration.StartTime)
 	difference := endTime.Sub(startTime)
 	duration := difference.Nanoseconds()
 	
-	powerReports, err := s.getPower(ctx, string(req.OrgID), req.Duration, controlPointName, duration, req.Interval, &formula)
-	var powernotFound power.ErrPowerReportsNotFound
-	if !errors.As(err, &powernotFound) {
+	powerReports, err := s.getPower(ctx, string(req.OrgID), req.Duration, controlPointName, duration, req.Interval, &formula, agentName)
+	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetPowerReports, err)
-	} else if err != nil {
-		mapAndLogError(ctx, err)
 	}
 	
 	emissionReport, err := calculateCarbonEmissionsReport(ctx, carbonReports, powerReports)
 	if err != nil {
-		return nil, fmt.Errorf("error from CalculateReports: %s\n", err)
+		log.Errorf(ctx, err, "error calcualting carbon emission reports:%w\n", err)
+		return nil, err
 	}
 	return &gencalc.AllReports{CarbonIntensityReports: carbonReports, PowerReports: powerReports,TotalEmissionReport: emissionReport}, nil
 }
 
-//CalculateReports yields lbs of CO2 given CO2 intensity(CO2lbs/MWh) and Power(KWh) reports
-//Assumes that each report has the same duration and interval type
+// calculateCarbonEmissionsReport yields lbs of CO2 given CO2 intensity(CO2lbs/MWh) and Power(KWh) reports
 func calculateCarbonEmissionsReport(ctx context.Context, carbonReports []*gencalc.CarbonReport, powerReports []*gencalc.ElectricalReport) (*gencalc.EmissionsReport, error) {
 	var dataPoints []*gencalc.DataPoint
 	for i, r := range carbonReports {
@@ -116,7 +93,7 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReports []*gencal
 	return &gencalc.EmissionsReport{Duration: carbonReports[0].Duration, Interval: carbonReports[0].Interval, Points: dataPoints}, nil
 }
 
-//getLocationData uses a facility config client to get the following input for past-values service: control point name for power meter, formula for power conversion, and region for carbonemissions
+// getLocationData uses a facility config client to get the following input for past-values service: control point name for power meter, formula for power conversion, and region for carbonemissions
 func (s *calcSvc) getLocationData(ctx context.Context, orgID string, facilityID string, locationID string) (*facilityconfig.Carbon, error) {
 	carbonData, err := s.fc.GetCarbonConfig(ctx, orgID, facilityID, locationID)
 	if err != nil {
@@ -125,27 +102,24 @@ func (s *calcSvc) getLocationData(ctx context.Context, orgID string, facilityID 
 	return carbonData, nil
 }
 
-//GetPower is a wrapper function for talking to the power client. Right now there is only a power meter
-//at Oxnard so this will only work for that power meter
-func (s *calcSvc) getPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval string, formula *string) ([]*gencalc.ElectricalReport, error) {
+/**
+getPower is a wrapper function for talking to the power client. Right now there is only a power meter
+at Oxnard so this will only work for that power meter
+*/
+func (s *calcSvc) getPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval string, formula *string, agentname string) ([]*gencalc.ElectricalReport, error) {
 	var reports []*gencalc.ElectricalReport
-	if cpaliasname == "" {
-		return nil, fmt.Errorf("no Control Point\n")
-	}
-	if formula == nil {
-		return nil, fmt.Errorf("no Formula\n")
-	}
-	
-	reports, err := s.psc.GetPower(ctx, orgID, cpaliasname, pastValInterval, dateRange.StartTime, dateRange.EndTime, formula)
+	payloadDuration := &gencalc.Period{StartTime: dateRange.StartTime, EndTime: dateRange.EndTime}
+	payload := &gencalc.PastValPayload{OrgID: orgID, Duration: payloadDuration, PastValInterval: pastValInterval, ControlPoint: cpaliasname, Formula: formula, AgentName: agentname}
+	reports, err := s.psc.GetPower(ctx, payload)
 	if err != nil {
-		return nil, fmt.Errorf("error from GetPower: %s\n", err)
+		return nil, err
 	}
 
 	return reports, nil
 }
 
-//GetEmissions is a wrapper function for talking to storage client
-func (s *calcSvc) getEmissions(ctx context.Context, dates []*gencalc.Period, interval string, region string) ([]*gencalc.CarbonReport, error) {
+// getCarbonIntensityData is a wrapper function for talking to storage client
+func (s *calcSvc) getCarbonIntensityData(ctx context.Context, dates []*gencalc.Period, interval string, region string) ([]*gencalc.CarbonReport, error) {
 	reports, err := s.dbc.GetCarbonReports(ctx, dates, interval, region)
 	if err != nil {
 		return nil, err
@@ -153,25 +127,16 @@ func (s *calcSvc) getEmissions(ctx context.Context, dates []*gencalc.Period, int
 	return reports, nil
 }
 
-//GetDates returns an array of dates for the storage client in order to correctly query for carbon reports
+// getDates returns an array of dates for the storage client in order to correctly query for carbon reports
 func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *gencalc.Period) ([]*gencalc.Period, error) {
 	var newDates []*gencalc.Period
-	initialstart, err1 := time.Parse(timeFormat, duration.StartTime)
-	if err1 != nil {
-		log.Error(ctx, err1, log.KV{K: "msg", V: "failed to parse time"})
-		return nil, err1
-	}
-	end, err2 := time.Parse(timeFormat, duration.EndTime)
-	if err2 != nil {
-		log.Error(ctx, err2, log.KV{K: "msg", V: "failed to parse time"})
-		return nil, err2
-	}
-
+	initialstart, _ := time.Parse(timeFormat, duration.StartTime)
+	end, _ := time.Parse(timeFormat, duration.EndTime)
 	var diff = initialstart.Sub(end)
 	var datesCount int
 	var durationType int
 	
-	switch intervalType{
+	switch intervalType {
 	case model.Minute: 
 		datesCount = int(math.Ceil(diff.Minutes()))
 		durationType = int(time.Minute)
@@ -204,10 +169,15 @@ func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *g
 	return newDates, nil
 }
 
-
+// mapAndLogErrorf maps client errors to a coordinator service error responses using
+// the format string.
 func mapAndLogErrorf(ctx context.Context, format string, a ...interface{}) error {
 	return mapAndLogError(ctx, fmt.Errorf(format, a...))
 }
+
+// mapAndLogError maps client errors to a coordinator service error responses.
+// It logs the error using the context if it does not map to a design error
+// (i.e. is unexpected).
 func mapAndLogError(ctx context.Context, err error) error {
 	var gerr *goa.ServiceError
 	if errors.As(err, &gerr) {

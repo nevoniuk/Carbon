@@ -3,7 +3,7 @@
 // calc gRPC client CLI support package
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 package cli
 
@@ -29,14 +29,14 @@ func UsageCommands() string {
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
 	return os.Args[0] + ` calc historical-carbon-emissions --message '{
-      "Duration": {
-         "EndTime": "2020-01-01T00:00:00Z",
-         "StartTime": "2020-01-01T00:00:00Z"
+      "duration": {
+         "end_time": "2020-01-01T00:00:00Z",
+         "start_time": "2020-01-01T00:00:00Z"
       },
-      "FacilityID": "Facere reiciendis.",
-      "Interval": "daily",
-      "LocationID": "Facere reiciendis.",
-      "OrgID": "Facere reiciendis."
+      "facilityID": "Facere reiciendis.",
+      "interval": "daily",
+      "locationID": "Facere reiciendis.",
+      "orgID": "Facere reiciendis."
    }'` + "\n" +
 		""
 }
@@ -149,14 +149,14 @@ This endpoint is used by a front end service to return carbon emission reports
 
 Example:
     %[1]s calc historical-carbon-emissions --message '{
-      "Duration": {
-         "EndTime": "2020-01-01T00:00:00Z",
-         "StartTime": "2020-01-01T00:00:00Z"
+      "duration": {
+         "end_time": "2020-01-01T00:00:00Z",
+         "start_time": "2020-01-01T00:00:00Z"
       },
-      "FacilityID": "Facere reiciendis.",
-      "Interval": "daily",
-      "LocationID": "Facere reiciendis.",
-      "OrgID": "Facere reiciendis."
+      "facilityID": "Facere reiciendis.",
+      "interval": "daily",
+      "locationID": "Facere reiciendis.",
+      "orgID": "Facere reiciendis."
    }'
 `, os.Args[0])
 }

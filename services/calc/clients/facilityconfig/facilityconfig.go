@@ -22,6 +22,7 @@ import (
 
 type(
 	Client interface {
+		// GetCarbonConfig obtains the above carbon configuration for the given input
 		GetCarbonConfig(ctx context.Context, orgID string, facilityID string, locationID string) (*Carbon, error)
 	}
 	client struct {
@@ -46,7 +47,7 @@ type(
 		ControlPointName string 
 		Formula string
 		Region string 
-		AgentID string
+		AgentName string
 	}
 
 	// ErrNotFound is returned when a facility config is not found.
@@ -55,27 +56,34 @@ type(
 	// ErrNotFound is returned when a location config is not found.
 	ErrLocationNotFound struct{ Err error }
 
+	// ErrConfigNotFound is returned when a Carbon config is not found or invalid
+	ErrConfigNotFound struct { Err error }
+
 )
-var (
-	FacilityDataFilePath = "deploy/facility_data"
-)
+
+var FacilityDataFilePath = "deploy/facility_data"
+
 // New returns a new client for the facility config data.
 func New(env string) Client {
 	return &client{env: env}
 }
 
-//GetCarbonConfig obtains the above carbon configuration for the given input
+// GetCarbonConfig will load the data from a location.yaml file into a Carbon struct
 func (c *client) GetCarbonConfig(ctx context.Context, orgID string, facilityID string, locationID string) (*Carbon, error) {
 	path, config, err := loadLocationConfig(ctx, c.env, orgID, facilityID, locationID)
 	if err != nil {
 		return nil, err
 	}
-	id, err := findAgentIDFromLocation(ctx, c.env, orgID, facilityID, path)
-	if err != nil {
-		return nil, err
+	name, err := findAgentNameFromLocation(ctx, c.env, orgID, facilityID, path)
+	if err != nil || name == "" {
+		return nil, ErrConfigNotFound{fmt.Errorf("could not find the agent name for location %s with err: %w\n", path, err)}
 	}
 	carbon := &Carbon{OrgID: orgID, FacilityID: facilityID, BuildingID: locationID, ControlPointName: config.Carbon.ControlPointName, Formula: config.Carbon.Formula, 
-	Region: config.Carbon.SingularityRegion, AgentID: id}
+	Region: config.Carbon.SingularityRegion, AgentName: name}
+	err = validate(carbon)
+	if err != nil {
+		return nil, ErrConfigNotFound{fmt.Errorf("could not get carbon config with err: %w\n", err)}
+	}
 	return carbon, nil
 }
 
@@ -127,7 +135,7 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 	}
 	return facilityPath, nil
 }
-//findLocation will find the location path from location/building ID instead of the agentID
+// findLocation will find the location path from location/building ID instead of the agentID
 func findLocation(ctx context.Context, env string, orgID string, facilityID string, locationID string) (string, error) {
 	path, err := findFacility(ctx, env, orgID, facilityID)
 	if err != nil {
@@ -160,19 +168,19 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 		}
 	}
 	if locationPath == "" {
-		return "", &ErrLocationNotFound{errors.New("location config not found")}
+		return "", &ErrLocationNotFound{fmt.Errorf("location config not found for org %s and facility %s\n", orgID, facilityID)}
 	}
 	return locationPath, nil
 
 }
 
-//findAgentIDFromLocation is a separate function to take in the location path and return the agent ID for a location
-func findAgentIDFromLocation(ctx context.Context, env, orgID, facilityID, locationPath string) (string, error) {
+// findAgentIDFromLocation is a separate function to take in the location path and return the agent ID for a location
+func findAgentNameFromLocation(ctx context.Context, env, orgID, facilityID, locationPath string) (string, error) {
 	if locationPath == "" {
 		return "", fmt.Errorf("No location path")
 	}
 	var agentPath = filepath.Join(filepath.Dir(locationPath), "agent.yaml")
-	read := readID(ctx, agentPath)
+	read := readName(ctx, agentPath)
 	return read, nil
 }
 
@@ -223,14 +231,17 @@ func mapAgentToNonProd(name string) string {
 	return ""
 }
 
+// readID returns the ID field for a given path
 func readID(ctx context.Context, path string) string {
 	return readField(ctx, path, "id")
 }
 
+// readName returns the Name field for given path
 func readName(ctx context.Context, path string) string {
 	return readField(ctx, path, "name")
 }
 
+// readField returns the given field for the given pth
 func readField(ctx context.Context, path, field string) string {
 	cfg, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -255,8 +266,23 @@ func readField(ctx context.Context, path, field string) string {
 	return ""
 }
 
+// validate will ensure the Carbon struct is not null
+func validate(fc *Carbon) error {
+	if fc.AgentName == "" {
+		return &ErrConfigNotFound{errors.New("agent name not specified")}
+	}
+	if fc.BuildingID == "" {
+		return &ErrConfigNotFound{errors.New("no building id")}
+	}
+	if fc.ControlPointName == "" {
+		return &ErrConfigNotFound{errors.New("control point name not specified")}
+	}
+	return nil
+}
+
 
 // timeRegex is a regular expression for parsing 24 hour time strings.
 var timeRegex = regexp.MustCompile(`^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])$`)
 func (err ErrFacilityNotFound) Error() string { return err.Err.Error() }
 func (err ErrLocationNotFound) Error() string { return err.Err.Error() }
+func (err ErrConfigNotFound) Error() string { return err.Err.Error() }

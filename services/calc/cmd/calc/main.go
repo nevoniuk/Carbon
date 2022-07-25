@@ -15,7 +15,6 @@ import (
 
 
     ch "github.com/ClickHouse/clickhouse-go/v2"
-    //"github.com/crossnokaye/facilityconfig/envloader"
     gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
     calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
     calcsvr "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/server"
@@ -23,7 +22,6 @@ import (
     calcapi "github.com/crossnokaye/carbon/services/calc"
     pastvalsvc "github.com/crossnokaye/carbon/services/calc/clients/power"
 
-    //clients
     "github.com/crossnokaye/carbon/clients/clickhouse"
     "github.com/crossnokaye/carbon/services/calc/clients/storage"
 	"github.com/crossnokaye/carbon/services/calc/clients/facilityconfig"

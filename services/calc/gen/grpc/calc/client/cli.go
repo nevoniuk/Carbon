@@ -3,7 +3,7 @@
 // calc gRPC client CLI support package
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 package client
 
@@ -24,7 +24,7 @@ func BuildHistoricalCarbonEmissionsPayload(calcHistoricalCarbonEmissionsMessage 
 		if calcHistoricalCarbonEmissionsMessage != "" {
 			err = json.Unmarshal([]byte(calcHistoricalCarbonEmissionsMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"Duration\": {\n         \"EndTime\": \"2020-01-01T00:00:00Z\",\n         \"StartTime\": \"2020-01-01T00:00:00Z\"\n      },\n      \"FacilityID\": \"Facere reiciendis.\",\n      \"Interval\": \"daily\",\n      \"LocationID\": \"Facere reiciendis.\",\n      \"OrgID\": \"Facere reiciendis.\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"duration\": {\n         \"end_time\": \"2020-01-01T00:00:00Z\",\n         \"start_time\": \"2020-01-01T00:00:00Z\"\n      },\n      \"facilityID\": \"Facere reiciendis.\",\n      \"interval\": \"daily\",\n      \"locationID\": \"Facere reiciendis.\",\n      \"orgID\": \"Facere reiciendis.\"\n   }'")
 			}
 		}
 	}

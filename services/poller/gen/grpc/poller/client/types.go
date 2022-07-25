@@ -24,15 +24,10 @@ func NewProtoUpdateRequest() *pollerpb.UpdateRequest {
 // NewProtoGetEmissionsForRegionRequest builds the gRPC request type from the
 // payload of the "get_emissions_for_region" endpoint of the "Poller" service.
 func NewProtoGetEmissionsForRegionRequest(payload *poller.CarbonPayload) *pollerpb.GetEmissionsForRegionRequest {
-	message := &pollerpb.GetEmissionsForRegionRequest{}
-	if payload.Region != nil {
-		message.Region = *payload.Region
-	}
-	if payload.Start != nil {
-		message.Start = *payload.Start
-	}
-	if payload.End != nil {
-		message.End = *payload.End
+	message := &pollerpb.GetEmissionsForRegionRequest{
+		Region: payload.Region,
+		Start:  payload.Start,
+		End:    payload.End,
 	}
 	return message
 }
@@ -73,21 +68,27 @@ func ValidateGetEmissionsForRegionResponse(message *pollerpb.GetEmissionsForRegi
 // ValidateCarbonForecast runs the validations defined on CarbonForecast.
 func ValidateCarbonForecast(message *pollerpb.CarbonForecast) (err error) {
 	if message.Duration == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("Duration", "message"))
+		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "message"))
 	}
 	if message.Duration != nil {
 		if err2 := ValidatePeriod(message.Duration); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}
+	if !(message.DurationType == "minute" || message.DurationType == "hourly" || message.DurationType == "daily" || message.DurationType == "weekly" || message.DurationType == "monthly") {
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.duration_type", message.DurationType, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
+	}
+	if !(message.Region == "CAISO" || message.Region == "AESO" || message.Region == "BPA" || message.Region == "ERCO" || message.Region == "IESO" || message.Region == "ISONE" || message.Region == "MISO" || message.Region == "NYISO" || message.Region == "NYISO.NYCW" || message.Region == "NYISO.NYLI" || message.Region == "NYISO.NYUP" || message.Region == "PJM" || message.Region == "SPP") {
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.region", message.Region, []interface{}{"CAISO", "AESO", "BPA", "ERCO", "IESO", "ISONE", "MISO", "NYISO", "NYISO.NYCW", "NYISO.NYLI", "NYISO.NYUP", "PJM", "SPP"}))
+	}
 	return
 }
 
 // ValidatePeriod runs the validations defined on Period.
 func ValidatePeriod(message *pollerpb.Period) (err error) {
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.startTime", message.StartTime, goa.FormatDateTime))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.start_time", message.StartTime, goa.FormatDateTime))
 
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.endTime", message.EndTime, goa.FormatDateTime))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.end_time", message.EndTime, goa.FormatDateTime))
 
 	return
 }
