@@ -29,7 +29,11 @@ func UsageCommands() string {
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` poller update` + "\n" +
+	return os.Args[0] + ` poller update --message '{
+      "end_time": "1980-10-29T12:08:35Z",
+      "region": "NYISO.NYLI",
+      "start_time": "2005-10-25T17:33:58Z"
+   }'` + "\n" +
 		""
 }
 
@@ -39,7 +43,8 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 	var (
 		pollerFlags = flag.NewFlagSet("poller", flag.ContinueOnError)
 
-		pollerUpdateFlags = flag.NewFlagSet("update", flag.ExitOnError)
+		pollerUpdateFlags       = flag.NewFlagSet("update", flag.ExitOnError)
+		pollerUpdateMessageFlag = pollerUpdateFlags.String("message", "", "")
 
 		pollerGetEmissionsForRegionFlags       = flag.NewFlagSet("get-emissions-for-region", flag.ExitOnError)
 		pollerGetEmissionsForRegionMessageFlag = pollerGetEmissionsForRegionFlags.String("message", "", "")
@@ -115,7 +120,7 @@ func ParseEndpoint(cc *grpc.ClientConn, opts ...grpc.CallOption) (goa.Endpoint, 
 			switch epn {
 			case "update":
 				endpoint = c.Update()
-				data = nil
+				data, err = pollerc.BuildUpdatePayload(*pollerUpdateMessageFlag)
 			case "get-emissions-for-region":
 				endpoint = c.GetEmissionsForRegion()
 				data, err = pollerc.BuildGetEmissionsForRegionPayload(*pollerGetEmissionsForRegionMessageFlag)
@@ -144,12 +149,17 @@ Additional help:
 `, os.Args[0])
 }
 func pollerUpdateUsage() {
-	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller update
+	fmt.Fprintf(os.Stderr, `%[1]s [flags] poller update -message JSON
 
 query Singularity's search endpoint and convert 5 min interval reports into averages
+    -message JSON: 
 
 Example:
-    %[1]s poller update
+    %[1]s poller update --message '{
+      "end_time": "1980-10-29T12:08:35Z",
+      "region": "NYISO.NYLI",
+      "start_time": "2005-10-25T17:33:58Z"
+   }'
 `, os.Args[0])
 }
 
@@ -162,7 +172,7 @@ query search endpoint for a region.
 Example:
     %[1]s poller get-emissions-for-region --message '{
       "end": "2020-01-01T00:00:00Z",
-      "region": "ERCO",
+      "region": "BPA",
       "start": "2020-01-01T00:00:00Z"
    }'
 `, os.Args[0])

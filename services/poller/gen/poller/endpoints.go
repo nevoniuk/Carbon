@@ -38,7 +38,8 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 // "update" of service "Poller".
 func NewUpdateEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		return nil, s.Update(ctx)
+		p := req.(*UpdatePayload)
+		return nil, s.Update(ctx, p)
 	}
 }
 

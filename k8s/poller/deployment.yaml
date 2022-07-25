@@ -32,6 +32,17 @@ spec:
           image: ${REPOSITORY_BASE_URL}/crossnokaye/carbon/poller:${VERSION}
           args:
             - "-agent-addr=grafana-agent-deployment.monitoring.svc.cluster.local.:4317"
+          env:
+            - name: CLICKHOUSE_ADDR
+              value: "${CLICKHOUSE_ADDR}"
+            - name: CLICKHOUSE_USER
+              value: "${CLICKHOUSE_USER}"
+            - name: CLICKHOUSE_PASSWORD
+              value: "${CLICKHOUSE_PASSWORD}"
+            - name: CLICKHOUSE_SSL
+              value: "${CLICKHOUSE_SSL}"
+            - name: SINGULARITY_API_KEY
+              value: "${SINGULARITY_API_KEY}"
           ports:
             - containerPort: 12500
               name: grpc

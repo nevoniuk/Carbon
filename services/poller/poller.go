@@ -52,6 +52,12 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		cancel: 			cancel,
 		startDates:		    times,
 	}
+	// kronjob only needs to create a 'NewPoller' instead of running Update
+	end := time.Now().Format(timeFormat)
+	for i := 0; i < len(regions); i++ {
+		payload := &genpoller.UpdatePayload{StartTime: times[i], EndTime: end, Region: regions[i]}
+		s.Update(ctx, payload)
+	}
 	return s
 }
 
@@ -74,43 +80,42 @@ func (s *pollersrvc) EnsurePastData(ctx context.Context) (startDates []string) {
 }
 
 // Update will fetch the latest reports for all regions and return either a server or no-data error
-func (s *pollersrvc) Update(ctx context.Context) error {
-	var finalEndTime = time.Now()
-	for i := 0; i < len(regions); i++ {
-		startTime, _ := time.Parse(timeFormat, s.startDates[i])
-		for startTime.Before(finalEndTime) {
-			newEndTime := startTime.AddDate(0, 0, 6)
-			if !newEndTime.Before(finalEndTime) {
-				newEndTime = finalEndTime 
-			}
-			minreports, err := s.csc.GetEmissions(ctx, regions[i], startTime.Format(timeFormat), newEndTime.Format(timeFormat))
-			var NoDataError carbonara.NoDataError
-			if err != nil {
-				if !errors.As(err, &NoDataError) {
-					return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
-				}
-				continue
-			}
-			dateConfigs, err := getDates(ctx, minreports)
-			if err != nil {
-				log.Error(ctx, err)
-				continue
-			}
-			err = s.dbc.SaveCarbonReports(ctx, minreports)
-			if err != nil {
-				return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
-			}
-			for j := 0; j < len(dateConfigs); j++ {
-				if dateConfigs[j] != nil {
-					aggErr := s.aggregateData(ctx, regions[i], dateConfigs[j], reportdurations[j])
-					if aggErr != nil {
-						return mapAndLogErrorf(ctx,  "failed to get Average Carbon Reports:%w\n", aggErr)
-					}
-				}
-			}
-			newEndTime = newEndTime.AddDate(0, 0, 1)
-			startTime = newEndTime
+func (s *pollersrvc) Update(ctx context.Context, payload *genpoller.UpdatePayload) error {
+	finalEndTime, _ := time.Parse(timeFormat, payload.EndTime)
+	startTime, _ := time.Parse(timeFormat, payload.StartTime)
+	region := payload.Region
+	for startTime.Before(finalEndTime) {
+		newEndTime := startTime.AddDate(0, 0, 6)
+		if !newEndTime.Before(finalEndTime) {
+			newEndTime = finalEndTime 
 		}
+		minreports, err := s.csc.GetEmissions(ctx, region, startTime.Format(timeFormat), newEndTime.Format(timeFormat))
+		var NoDataError carbonara.NoDataError
+		if err != nil {
+			if !errors.As(err, &NoDataError) {
+				return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
+			}
+			continue
+		}
+		dateConfigs, err := getDates(ctx, minreports)
+		if err != nil {
+			log.Error(ctx, err)
+			continue
+		}
+		err = s.dbc.SaveCarbonReports(ctx, minreports)
+		if err != nil {
+			return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
+		}
+		for j := 0; j < len(dateConfigs); j++ {
+			if dateConfigs[j] != nil {
+				aggErr := s.aggregateData(ctx, region, dateConfigs[j], reportdurations[j])
+				if aggErr != nil {
+					return mapAndLogErrorf(ctx,  "failed to get Average Carbon Reports:%w\n", aggErr)
+				}
+			}
+		}
+		newEndTime = newEndTime.AddDate(0, 0, 1)
+		startTime = newEndTime
 	}
 	return nil
 }

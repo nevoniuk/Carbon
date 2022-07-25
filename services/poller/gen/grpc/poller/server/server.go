@@ -44,7 +44,7 @@ func New(e *poller.Endpoints, uh goagrpc.UnaryHandler) *Server {
 // "update" endpoint.
 func NewUpdateHandler(endpoint goa.Endpoint, h goagrpc.UnaryHandler) goagrpc.UnaryHandler {
 	if h == nil {
-		h = goagrpc.NewUnaryHandler(endpoint, nil, EncodeUpdateResponse)
+		h = goagrpc.NewUnaryHandler(endpoint, DecodeUpdateRequest, EncodeUpdateResponse)
 	}
 	return h
 }

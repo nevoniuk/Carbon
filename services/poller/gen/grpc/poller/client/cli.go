@@ -16,6 +16,28 @@ import (
 	poller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 
+// BuildUpdatePayload builds the payload for the Poller update endpoint from
+// CLI flags.
+func BuildUpdatePayload(pollerUpdateMessage string) (*poller.UpdatePayload, error) {
+	var err error
+	var message pollerpb.UpdateRequest
+	{
+		if pollerUpdateMessage != "" {
+			err = json.Unmarshal([]byte(pollerUpdateMessage), &message)
+			if err != nil {
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"end_time\": \"1980-10-29T12:08:35Z\",\n      \"region\": \"NYISO.NYLI\",\n      \"start_time\": \"2005-10-25T17:33:58Z\"\n   }'")
+			}
+		}
+	}
+	v := &poller.UpdatePayload{
+		StartTime: message.StartTime,
+		EndTime:   message.EndTime,
+		Region:    message.Region,
+	}
+
+	return v, nil
+}
+
 // BuildGetEmissionsForRegionPayload builds the payload for the Poller
 // get_emissions_for_region endpoint from CLI flags.
 func BuildGetEmissionsForRegionPayload(pollerGetEmissionsForRegionMessage string) (*poller.CarbonPayload, error) {
@@ -25,7 +47,7 @@ func BuildGetEmissionsForRegionPayload(pollerGetEmissionsForRegionMessage string
 		if pollerGetEmissionsForRegionMessage != "" {
 			err = json.Unmarshal([]byte(pollerGetEmissionsForRegionMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"end\": \"2020-01-01T00:00:00Z\",\n      \"region\": \"ERCO\",\n      \"start\": \"2020-01-01T00:00:00Z\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"end\": \"2020-01-01T00:00:00Z\",\n      \"region\": \"BPA\",\n      \"start\": \"2020-01-01T00:00:00Z\"\n   }'")
 			}
 		}
 	}
