@@ -33,10 +33,10 @@ func UsageExamples() string {
          "end_time": "2020-01-01T00:00:00Z",
          "start_time": "2020-01-01T00:00:00Z"
       },
-      "facilityID": "Facere reiciendis.",
+      "facility_id": "Facere reiciendis.",
       "interval": "daily",
-      "locationID": "Facere reiciendis.",
-      "orgID": "Facere reiciendis."
+      "location_id": "Facere reiciendis.",
+      "org_id": "Facere reiciendis."
    }'` + "\n" +
 		""
 }
@@ -153,10 +153,10 @@ Example:
          "end_time": "2020-01-01T00:00:00Z",
          "start_time": "2020-01-01T00:00:00Z"
       },
-      "facilityID": "Facere reiciendis.",
+      "facility_id": "Facere reiciendis.",
       "interval": "daily",
-      "locationID": "Facere reiciendis.",
-      "orgID": "Facere reiciendis."
+      "location_id": "Facere reiciendis.",
+      "org_id": "Facere reiciendis."
    }'
 `, os.Args[0])
 }

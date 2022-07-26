@@ -37,7 +37,7 @@ func (c *Client) Update() goa.Endpoint {
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		inv := goagrpc.NewInvoker(
 			BuildUpdateFunc(c.grpccli, c.opts...),
-			EncodeUpdateRequest,
+			nil,
 			nil)
 		res, err := inv.Invoke(ctx, v)
 		if err != nil {

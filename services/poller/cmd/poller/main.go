@@ -12,7 +12,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"goa.design/clue/health"
@@ -23,7 +22,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-
 	"github.com/crossnokaye/carbon/clients/clickhouse"
 	pollerapi "github.com/crossnokaye/carbon/services/poller"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
@@ -43,7 +41,6 @@ func main() {
 		chpwd  = flag.String("ch-pwd", os.Getenv("CLICKHOUSE_PASSWORD"), "ClickHouse password")
 		chssl  = flag.Bool("ch-ssl", os.Getenv("CLICKHOUSE_SSL") != "", "ClickHouse connection SSL")
 		debug = flag.Bool("debug", false, "Enable debug logs")
-		//test  = flag.Bool("test", os.Getenv("TEST_ENV") != "", "Enable test mode")
 		carbonKey = flag.String("singularity-key", os.Getenv("SINGULARITY_API_KEY"), "The API key for Singularity")
 	)
 	flag.Parse()
