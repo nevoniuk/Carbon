@@ -35,13 +35,13 @@ func New(conn *grpc.ClientConn) Client {
 
 // GetPower will call the Past Value functions "FindControlPointConfigsByName" and "GetValues" to get control point ID's and power data
 func (c *client) GetPower(ctx context.Context, payload *gencalc.PastValPayload) ([]*gencalc.ElectricalReport, error) {
-	var cpIDs []genvalues.UUID
 	pointIDs, err := c.getControlPointID(ctx, payload.OrgID, payload.AgentName, payload.ControlPoint)
 	if err != nil {
-		return nil, &ErrPowerReportsNotFound{fmt.Errorf("control point id not found for name %s for agent with err: %w\n", payload.ControlPoint, payload.AgentName, err)}
+		return nil, &ErrPowerReportsNotFound{fmt.Errorf("control point id not found for name %s for agent %s with err: %w\n", payload.ControlPoint, payload.AgentName, err)}
 	}
-	for _, p := range pointIDs {
-		cpIDs = append(cpIDs, *p.ID)
+	cpIDs := make([]genvalues.UUID, len(pointIDs))
+	for i, p := range pointIDs {
+    	cpIDs[i] = *p.ID
 	}
 	p := &genvalues.ValuesQuery{
 		OrgID: genvalues.UUID(payload.OrgID),

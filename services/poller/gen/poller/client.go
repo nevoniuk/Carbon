@@ -32,8 +32,8 @@ func NewClient(update, getEmissionsForRegion goa.Endpoint) *Client {
 // Update may return the following errors:
 //	- "server_error" (type *goa.ServiceError): Error with Singularity Server.
 //	- error: internal error
-func (c *Client) Update(ctx context.Context, p *UpdatePayload) (err error) {
-	_, err = c.UpdateEndpoint(ctx, p)
+func (c *Client) Update(ctx context.Context) (err error) {
+	_, err = c.UpdateEndpoint(ctx, nil)
 	return
 }
 

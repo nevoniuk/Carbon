@@ -16,12 +16,8 @@ import (
 
 // NewProtoUpdateRequest builds the gRPC request type from the payload of the
 // "update" endpoint of the "Poller" service.
-func NewProtoUpdateRequest(payload *poller.UpdatePayload) *pollerpb.UpdateRequest {
-	message := &pollerpb.UpdateRequest{
-		StartTime: payload.StartTime,
-		EndTime:   payload.EndTime,
-		Region:    payload.Region,
-	}
+func NewProtoUpdateRequest() *pollerpb.UpdateRequest {
+	message := &pollerpb.UpdateRequest{}
 	return message
 }
 

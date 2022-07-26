@@ -32,15 +32,6 @@ func BuildUpdateFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) 
 	}
 }
 
-// EncodeUpdateRequest encodes requests sent to Poller update endpoint.
-func EncodeUpdateRequest(ctx context.Context, v interface{}, md *metadata.MD) (interface{}, error) {
-	payload, ok := v.(*poller.UpdatePayload)
-	if !ok {
-		return nil, goagrpc.ErrInvalidType("Poller", "update", "*poller.UpdatePayload", v)
-	}
-	return NewProtoUpdateRequest(payload), nil
-}
-
 // BuildGetEmissionsForRegionFunc builds the remote method to invoke for
 // "Poller" service "get_emissions_for_region" endpoint.
 func BuildGetEmissionsForRegionFunc(grpccli pollerpb.PollerClient, cliopts ...grpc.CallOption) goagrpc.RemoteFunc {

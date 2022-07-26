@@ -24,28 +24,6 @@ func EncodeUpdateResponse(ctx context.Context, v interface{}, hdr, trlr *metadat
 	return resp, nil
 }
 
-// DecodeUpdateRequest decodes requests sent to "Poller" service "update"
-// endpoint.
-func DecodeUpdateRequest(ctx context.Context, v interface{}, md metadata.MD) (interface{}, error) {
-	var (
-		message *pollerpb.UpdateRequest
-		ok      bool
-	)
-	{
-		if message, ok = v.(*pollerpb.UpdateRequest); !ok {
-			return nil, goagrpc.ErrInvalidType("Poller", "update", "*pollerpb.UpdateRequest", v)
-		}
-		if err := ValidateUpdateRequest(message); err != nil {
-			return nil, err
-		}
-	}
-	var payload *poller.UpdatePayload
-	{
-		payload = NewUpdatePayload(message)
-	}
-	return payload, nil
-}
-
 // EncodeGetEmissionsForRegionResponse encodes responses from the "Poller"
 // service "get_emissions_for_region" endpoint.
 func EncodeGetEmissionsForRegionResponse(ctx context.Context, v interface{}, hdr, trlr *metadata.MD) (interface{}, error) {

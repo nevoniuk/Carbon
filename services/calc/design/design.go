@@ -49,17 +49,17 @@ var AllReports = Type("AllReports", func() {
 
 var RequestPayload = Type("RequestPayload", func() {
 	Description("Payload wraps the payload for to use the facility config client and poller client")
-	Field(1, "orgID", UUID, "OrgID")
+	Field(1, "org_id", UUID, "OrgID")
 	Field(2, "duration", Period, "Duration")
-	Field(3, "facilityID", UUID, "FacilityID")
+	Field(3, "facility_id", UUID, "FacilityID")
 	Field(4, "interval", String, IntervalFunc)
-	Field(5, "locationID", UUID, "LocationID")
-	Required("orgID", "duration", "interval", "facilityID", "locationID")
+	Field(5, "location_id", UUID, "LocationID")
+	Required("org_id", "duration", "interval", "facility_id", "location_id")
 })
 
 var PastValPayload = Type("PastValPayload", func() {
 	Description("Payload wraps the payload for past-values GetValues() and carbon poller service")
-	Field(1, "orgID", String, "OrgID")
+	Field(1, "org_id", String, "OrgID")
 	Field(2, "duration", Period, "Duration")
 	Field(3, "past_val_interval", Int64, "PastValInterval")
 	Field(4, "interval", String, IntervalFunc)
@@ -72,7 +72,7 @@ var PastValPayload = Type("PastValPayload", func() {
 	Field(7, "agent_name", String, "AgentName", func() {
 		MinLength(1)
 	})
-	Required("orgID", "duration", "interval", "past_val_interval", "control_point", "agent_name")
+	Required("org_id", "duration", "interval", "past_val_interval", "control_point", "agent_name")
 })
 
 var EmissionsReport = Type("EmissionsReport", func() {
@@ -80,11 +80,11 @@ var EmissionsReport = Type("EmissionsReport", func() {
 	Field(1, "duration", Period, "Duration")
 	Field(2, "interval", String, IntervalFunc)
 	Field(3, "points", ArrayOf(DataPoint), "Points")
-	Field(4, "orgID", UUID, "OrgID")
-	Field(5, "facilityID", UUID, "FacilityID")
-	Field(6, "locationID", UUID, "LocationID")
+	Field(4, "org_id", UUID, "OrgID")
+	Field(5, "facility_id", UUID, "FacilityID")
+	Field(6, "location_id", UUID, "LocationID")
 	Field(7, "region", String, RegionFunc)
-	Required("duration", "points", "orgID", "interval", "facilityID", "locationID", "region")
+	Required("duration", "points", "org_id", "interval", "facility_id", "location_id", "region")
 })
 
 var CarbonReport = Type("CarbonReport", func() {

@@ -20,7 +20,7 @@ type pollersrvc struct {
 }
 // timeFormat is used to parse times in order to store time as ISO8601 format
 var timeFormat = "2006-01-02T15:04:05-07:00"
-
+var timeNow = time.Now()
 // regions maintains all the valid regions that Singularity will calculate carbon intensity
 var regions [13]string = [13]string{model.Caiso, model.Aeso, model.Bpa, model.Erco, model.Ieso,
 model.Isone, model.Miso,
@@ -52,12 +52,6 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		cancel: 			cancel,
 		startDates:		    times,
 	}
-	// kronjob only needs to create a 'NewPoller' instead of running Update
-	end := time.Now().Format(timeFormat)
-	for i := 0; i < len(regions); i++ {
-		payload := &genpoller.UpdatePayload{StartTime: times[i], EndTime: end, Region: regions[i]}
-		s.Update(ctx, payload)
-	}
 	return s
 }
 
@@ -78,44 +72,52 @@ func (s *pollersrvc) EnsurePastData(ctx context.Context) (startDates []string) {
 	}
 	return dates
 }
-
 // Update will fetch the latest reports for all regions and return either a server or no-data error
-func (s *pollersrvc) Update(ctx context.Context, payload *genpoller.UpdatePayload) error {
-	finalEndTime, _ := time.Parse(timeFormat, payload.EndTime)
-	startTime, _ := time.Parse(timeFormat, payload.StartTime)
-	region := payload.Region
-	for startTime.Before(finalEndTime) {
-		newEndTime := startTime.AddDate(0, 0, 6)
-		if !newEndTime.Before(finalEndTime) {
-			newEndTime = finalEndTime 
-		}
-		minreports, err := s.csc.GetEmissions(ctx, region, startTime.Format(timeFormat), newEndTime.Format(timeFormat))
-		var NoDataError carbonara.NoDataError
-		if err != nil {
-			if !errors.As(err, &NoDataError) {
-				return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
+func (s *pollersrvc) Update(ctx context.Context) error {
+	finalEndTime, _ := time.Parse(timeFormat, timeNow.Format(timeFormat))
+	for i := 0; i < len(regions); i++ {
+		startTime, _ := time.Parse(timeFormat, s.startDates[i])
+		region := regions[i]
+		for startTime.Before(finalEndTime) {
+			newEndTime := startTime.AddDate(0, 0, 6)
+			if !newEndTime.Before(finalEndTime) {
+				newEndTime = finalEndTime 
 			}
-			continue
-		}
-		dateConfigs, err := getDates(ctx, minreports)
-		if err != nil {
-			log.Error(ctx, err)
-			continue
-		}
-		err = s.dbc.SaveCarbonReports(ctx, minreports)
-		if err != nil {
-			return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
-		}
-		for j := 0; j < len(dateConfigs); j++ {
-			if dateConfigs[j] != nil {
-				aggErr := s.aggregateData(ctx, region, dateConfigs[j], reportdurations[j])
-				if aggErr != nil {
-					return mapAndLogErrorf(ctx,  "failed to get Average Carbon Reports:%w\n", aggErr)
+			minreports, err := s.csc.GetEmissions(ctx, region, startTime.Format(timeFormat), newEndTime.Format(timeFormat))
+			var NoDataError carbonara.NoDataError
+			if err != nil {
+				if !errors.As(err, &NoDataError) {
+					return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
+				}
+				newEndTime = newEndTime.AddDate(0, 0, 1)
+				startTime = newEndTime
+				continue
+			}
+			dateConfigs, err := getDates(ctx, minreports)
+			if err != nil {
+				log.Error(ctx, err)
+				newEndTime = newEndTime.AddDate(0, 0, 1)
+				startTime = newEndTime
+				continue
+			}
+			err = s.dbc.SaveCarbonReports(ctx, minreports)
+			if err != nil {
+				return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
+			}
+			for j := 0; j < len(dateConfigs); j++ {
+				if dateConfigs[j] != nil {
+					res, aggErr := s.aggregateData(ctx, region, dateConfigs[j], reportdurations[j])
+					if aggErr != nil {
+						return mapAndLogErrorf(ctx,  "failed to get Average Carbon Reports:%w\n", aggErr)
+					}
+					if res == nil {
+						log.Error(ctx, fmt.Errorf("No aggregate reports returned for region %s and interval type %s\n", regions[i], reportdurations[j]))
+					}
 				}
 			}
+			newEndTime = newEndTime.AddDate(0, 0, 1)
+			startTime = newEndTime
 		}
-		newEndTime = newEndTime.AddDate(0, 0, 1)
-		startTime = newEndTime
 	}
 	return nil
 }
@@ -135,19 +137,19 @@ func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoll
 }
 
 // AggregateData gets aggregate reports for all report dates returned by GetDates and store them in clickhouse
-func (ser *pollersrvc) aggregateData(ctx context.Context, region string, dates []*genpoller.Period, duration string) (error) {
+func (ser *pollersrvc) aggregateData(ctx context.Context, region string, dates []*genpoller.Period, duration string) ([]*genpoller.CarbonForecast, error) {
 	aggregateres, getErr := ser.dbc.GetAggregateReports(ctx, dates, region, duration)
 	if getErr != nil {
-		return getErr
+		return nil, getErr
 	}
 	saveErr := ser.dbc.SaveCarbonReports(ctx, aggregateres)
 	if saveErr != nil {
-		return saveErr
+		return nil, saveErr
 	}
-	return nil
+	return aggregateres, nil
 }
 
-// GetDates gets all the report dates that are used as input to clickhouse queries and obtain aggregate CO2 intensity data
+// getDates gets all the report dates that are used as input to clickhouse queries and obtain aggregate CO2 intensity data
 func getDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
 	if minutereports == nil {
 		return nil, fmt.Errorf("no reports for get dates")

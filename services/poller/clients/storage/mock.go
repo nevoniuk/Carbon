@@ -24,9 +24,7 @@ type(
 		t *testing.T
 	}
 )
-
 var _ Client = (*Mock)(nil)
-
 func NewMock(t *testing.T) *Mock {
 	return &Mock{mock.New(), t}
 }

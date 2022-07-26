@@ -18,7 +18,7 @@ import (
 type Service interface {
 	// query Singularity's search endpoint and convert 5 min interval reports into
 	// averages
-	Update(context.Context, *UpdatePayload) (err error)
+	Update(context.Context) (err error)
 	// query search endpoint for a region.
 	GetEmissionsForRegion(context.Context, *CarbonPayload) (res []*CarbonForecast, err error)
 }
@@ -65,16 +65,6 @@ type Period struct {
 	StartTime string
 	// End time
 	EndTime string
-}
-
-// UpdatePayload is the payload type of the Poller service update method.
-type UpdatePayload struct {
-	// start date/time to obtain carbon intensity reports
-	StartTime string
-	// end date/time to obtain carbon intensity reports
-	EndTime string
-	// region
-	Region string
 }
 
 // MakeServerError builds a goa.ServiceError from an error.
