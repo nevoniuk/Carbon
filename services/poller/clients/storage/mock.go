@@ -53,16 +53,16 @@ func (m *Mock) CheckDB(ctx context.Context, region string) (string, error) {
 	if f := m.m.Next("CheckDB"); f != nil {
 		return f.(CheckDBFunc)(ctx, region)
 	}
-	m.t.Error("unexpected SaveRates call")
+	m.t.Error("unexpected CheckDB call")
 	return "", nil
 }
 
 // GetAggregateReportsFunc provides a mock function with given fields: context, dates, region ,duration
 func (m *Mock) GetAggregateReports(ctx context.Context, periods []*genpoller.Period, region string, duration string) ([]*genpoller.CarbonForecast, error) {
-	if f := m.m.Next("GetLatestDate"); f != nil {
+	if f := m.m.Next("GetAggregateReports"); f != nil {
 		return f.(GetAggregateReportsFunc)(ctx, periods, region, duration)
 	}
-	m.t.Error("unexpected GetLatestDate call")
+	m.t.Error("unexpected GetAggregateReports call")
 	return nil, nil
 }
 

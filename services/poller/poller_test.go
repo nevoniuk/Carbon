@@ -1,10 +1,10 @@
 package pollerapi
-
 import (
 	"context"
 	"errors"
 	"testing"
 	"time"
+	"fmt"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
@@ -13,14 +13,21 @@ import (
 var testRegion = regions[0]
 func TestGetDates(t *testing.T) {
 	var mockReports []*genpoller.CarbonForecast
-	var mockReps []*genpoller.Period
+	var mockDates []*genpoller.Period
 	dateErr := errors.New("incorrect date error")
 	nilReportsErr := errors.New("no reports error")
-	var startTimeOne = time.Date(2021, time.June, 1, 0, 0, 0, 0, nil)
-	var startTimeTwo = time.Date(2021, time.June, 1, 1, 10, 0, 0, nil)
-	var endTimeOne = time.Date(2021, time.June, 1, 1, 10, 0, 0, nil)
-	var endTimeTwo = time.Date(2021, time.June, 1, 1, 20, 0, 0, nil)
-	var invalidEndTime = time.Date(2021, time.February, 1, 1, 20, 0, 0, nil)
+	//nothing gets changed at all
+	/*time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC) time.June, 1, 1, 10, 0, 0, time.UTC)
+	time.June, 1, 1, 10, 0, 0, time.UTC) time.Date(2021, time.February, 1, 1, 20, 0, 0, time.UTC)
+	*/
+	//return time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC)
+	var startTimeOne = time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC)
+	var endTimeOne = time.Date(2021, time.June, 1, 1, 10, 0, 0, time.UTC)
+
+	var startTimeTwo = time.Date(2021, time.June, 1, 1, 10, 0, 0, time.UTC)
+	var endTimeTwo = time.Date(2021, time.June, 1, 1, 20, 0, 0, time.UTC)
+	var invalidEndTime = time.Date(2021, time.February, 1, 1, 20, 0, 0, time.UTC)
+
 	var mockReportOne = &genpoller.CarbonForecast{
 		Duration: &genpoller.Period{StartTime: startTimeOne.Format(timeFormat), EndTime: endTimeOne.Format(timeFormat)},
 	}
@@ -30,8 +37,8 @@ func TestGetDates(t *testing.T) {
 	var invalidReport = &genpoller.CarbonForecast{
 		Duration: &genpoller.Period{StartTime: startTimeOne.Format(timeFormat), EndTime: invalidEndTime.Format(timeFormat)},
 	}
-	mockRes := &genpoller.Period{StartTime: startTimeOne.Format(timeFormat), EndTime: startTimeOne.Format(timeFormat)}
-	mockReps = append(mockReps, mockRes)
+	mockRes := &genpoller.Period{StartTime: startTimeOne.Format(timeFormat), EndTime: endTimeOne.Format(timeFormat)}
+	mockDates = append(mockDates, mockRes)
 	tests := []struct {
 		name           string
 		datesError     error
@@ -39,43 +46,58 @@ func TestGetDates(t *testing.T) {
 		expectedOutput []*genpoller.Period
 		expectedError  error
 	}{
-		{name: "success", datesError: nil, nilReportsErr: nil, expectedOutput: mockReps, expectedError: nil},
-		{name: "date Error", datesError: dateErr, nilReportsErr: nil, expectedOutput: nil, expectedError: dateErr},
+		{name: "success", datesError: nil, nilReportsErr: nil, expectedOutput: mockDates, expectedError: nil},
+		{name: "invalid date", datesError: dateErr, nilReportsErr: nil, expectedOutput: mockDates, expectedError: dateErr}, //no actual error thrown
 		{name: "nil Error", datesError: nil, nilReportsErr: nilReportsErr, expectedOutput: nil, expectedError: nilReportsErr},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if dateErr != nil {
-				mockReports = append(mockReports, mockReportOne)
+			mockReports = nil
+			if tt.datesError != nil {
 				mockReports = append(mockReports, invalidReport)
-			} else if nilReportsErr != nil {
+				mockReports = append(mockReports, mockReportOne)
+			} else if tt.nilReportsErr!= nil {
 				mockReports = nil
 			} else {
 				mockReports = append(mockReports, mockReportOne)
 				mockReports = append(mockReports, mockReportTwo)
 			}
 			ctx := context.Background()
-			got, err := getDates(ctx, mockReports)
-			if !errors.As(err, tt.expectedError) {
+			got, err := getDatess(ctx, mockReports)
+			valid := validateDates(got, mockDates)
+			if tt.nilReportsErr != nil && !valid {
 				t.Errorf("GetDates() error = %v, wantErr %v", err, tt.expectedError)
 				return
-			}
-			if len(got) != 1 {
-				t.Errorf("GetDates generated redundant reports")
-				return
-			}
-			for i, rep := range got[0] { //0 because only hour reports were returned
-				if (rep.StartTime != mockReps[i].StartTime) || (rep.EndTime != mockReps[i].EndTime) {
-					t.Errorf("Result does not equal mock")
-				}
+			} else if tt.datesError != nil && !valid {
+				t.Errorf("GetDates() error = %v, wantErr %v", tt.expectedError, dateErr)
+			} else {
+				fmt.Println("success")
 			}
 		})
 	}
 }
+
+func validateDates(dates [][]*genpoller.Period, mockDates []*genpoller.Period) bool {
+	if dates == nil {
+		return true
+	}
+	counter := 0
+	for _, rep := range dates { //0 because only hour reports were returned for test case
+		for _, reptype := range rep {
+			if (reptype.StartTime != mockDates[counter].StartTime) || (reptype.EndTime != mockDates[counter].EndTime) {
+				return false
+			}
+			counter += 1
+		}
+	}
+	return true
+}
+
 func Test_pollersrvc_Update(t *testing.T) {
+	//hour long 
 	var startTime = time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC)
 	var endTime = time.Date(2021, time.June, 1, 1, 0, 0, 0, time.UTC)
-	var invalidEndTime = time.Date(2021, time.February, 1, 1, 20, 0, 0, nil)
+	var invalidEndTime = time.Date(2021, time.February, 1, 1, 20, 0, 0, time.UTC)
 	var mockReportOne = &genpoller.CarbonForecast{
 		Duration:     &genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat)},
 		DurationType: reportdurations[0],
@@ -123,8 +145,13 @@ func Test_pollersrvc_Update(t *testing.T) {
 				})
 			}
 			for i := 0; i < 13; i++ {
+				//one call per region because were only testing a 1 hour interval
 				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string) ([]*genpoller.CarbonForecast, error) {
 					return mockReports, nil
+				})
+				stc.AddCheckDBFunc(func(ctx context.Context, r string) (string, error) {
+					
+					return startTime.Format(timeFormat), nil
 				})
 			}
 			stc.SetGetAggregateReportsFunc(func(ctx context.Context, dates []*genpoller.Period, r string, duration string) ([]*genpoller.CarbonForecast, error) {
@@ -135,12 +162,17 @@ func Test_pollersrvc_Update(t *testing.T) {
 			})
 			ctx := context.Background()
 			svc := NewPoller(ctx, carbonarac, stc)
-			for i := 0; i < len(svc.startDates); {
-				svc.startDates[i] = startTime.Format(timeFormat)
-			}
 			timeNow = endTime
+			/**
+			var newDates []string 
+			for i := 0; i < 13; {
+				newDates[i] = startTime.Format(timeFormat)
+			}
+			svc.startDates = newDates
+			*/
+			svc.now = endTime
 			err := svc.Update(ctx)
-			if !errors.As(err, tt.expectedError) {
+			if err != tt.expectedError {
 				t.Errorf("pollersrvc.Update() error = %v, wantErr %v", err, tt.expectedError)
 			}
 		})

@@ -10,8 +10,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
 	"github.com/crossnokaye/carbon/model"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
+	"goa.design/clue/log"
 )
 type (
 	Client interface {
@@ -79,6 +81,8 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 }
 // GetEmissions gets 5 min interval reports from the Carbonara API with pagination
 func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string) ([]*genpoller.CarbonForecast, error) {
+	fmt.Println(startime)
+	fmt.Println(endtime)
 	var reports []*genpoller.CarbonForecast
 	var page = 1
 	var last = 100
@@ -105,20 +109,27 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 			}
 			return nil, fmt.Errorf("Error Decoding JSON Response: %w[%d]\n", err, http.StatusBadRequest)
 		}
-		
+		//ERROR reports never return the date of end time
+
 		last = carbonData.Meta.Pagination.Last
 		var start = carbonData.Data[0].StartDate
 		for idx := 1; idx < len(carbonData.Data); idx++ {
 			if carbonData.Data == nil {
-				fmt.Errorf("nil carbon data element at index %d", idx)
+				err := fmt.Errorf("nil carbon data element at index %d", idx)
+				log.Error(ctx, err)
 				continue
 			}
 			data := carbonData.Data[idx]
 			if data.StartDate == start {
 				continue
+				//make check to ensure that start date is not less than the previous one
 			}
+			
 			end := data.StartDate
 			reportperiod := &genpoller.Period{StartTime: start, EndTime: end}
+			println(reportperiod.StartTime)
+			println("ENDTIME")
+			println(reportperiod.EndTime)
 			start = end
 			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.GeneratedRate, MarginalRate: data.Data.MarginalRate,
 					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, DurationType: model.Minute, Region: data.Region}
