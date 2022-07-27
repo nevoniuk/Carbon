@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
 	"github.com/crossnokaye/carbon/model"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	"goa.design/clue/log"
@@ -21,7 +20,7 @@ type (
 		GetEmissions(context.Context, string, string, string) ([]*genpoller.CarbonForecast, error)
 	}
 	client struct {
-		c *http.Client
+		httpc *http.Client
 		key string
 	}
 	Outermoststruct struct {
@@ -57,32 +56,28 @@ func New(c *http.Client, key string) Client {
 }
 
 func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*http.Response, error) {
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.httpc.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		retries := 0
 		for (err != nil || resp.StatusCode != http.StatusOK) && retries < 3 {
 			time.Sleep(time.Duration(retries) * time.Second)
-			resp, err = http.DefaultClient.Do(req)
+			resp, err = c.httpc.Do(req)
 			retries++
 		}
 	}
-	
 	if err != nil {
-		var serverError = ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
-		return resp, serverError.Err
+		return resp, ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
 	}
 	
 	if resp.StatusCode != http.StatusOK {
-		var serverError = ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
-		return resp, serverError.Err
+		return resp, ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
 	}
 
 	return resp, nil
 }
+
 // GetEmissions gets 5 min interval reports from the Carbonara API with pagination
 func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string) ([]*genpoller.CarbonForecast, error) {
-	fmt.Println(startime)
-	fmt.Println(endtime)
 	var reports []*genpoller.CarbonForecast
 	var page = 1
 	var last = 100
@@ -109,8 +104,6 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 			}
 			return nil, fmt.Errorf("Error Decoding JSON Response: %w[%d]\n", err, http.StatusBadRequest)
 		}
-		//ERROR reports never return the date of end time
-
 		last = carbonData.Meta.Pagination.Last
 		var start = carbonData.Data[0].StartDate
 		for idx := 1; idx < len(carbonData.Data); idx++ {
@@ -122,14 +115,10 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 			data := carbonData.Data[idx]
 			if data.StartDate == start {
 				continue
-				//make check to ensure that start date is not less than the previous one
 			}
-			
+
 			end := data.StartDate
 			reportperiod := &genpoller.Period{StartTime: start, EndTime: end}
-			println(reportperiod.StartTime)
-			println("ENDTIME")
-			println(reportperiod.EndTime)
 			start = end
 			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.GeneratedRate, MarginalRate: data.Data.MarginalRate,
 					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, DurationType: model.Minute, Region: data.Region}

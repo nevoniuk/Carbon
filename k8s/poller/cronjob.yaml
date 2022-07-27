@@ -27,6 +27,7 @@ spec:
             image: ${REPOSITORY_BASE_URL}/crossnokaye/carbon/poller:${VERSION}
             args:
               - "-agent-addr=grafana-agent-deployment.monitoring.svc.cluster.local.:4317"
+              - poller.Poller.Update
             env:
               - name: CLICKHOUSE_ADDR
                 value: "${CLICKHOUSE_ADDR}"
