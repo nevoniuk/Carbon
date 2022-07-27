@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: poller
+  labels:
+    app: poller
+  annotations:
+    reloader.stakater.com/auto: 'true'
+spec:
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: poller
+  template:
+    metadata:
+      labels:
+        app: poller
+        name: poller
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsGroup: 100001
+        runAsNonRoot: true
+        runAsUser: 100001
+      serviceAccountName: poller
+      containers:
+        - name: poller
+          image: ${REPOSITORY_BASE_URL}/crossnokaye/carbon/poller:${VERSION}
+          args:
+            - "-agent-addr=grafana-agent-deployment.monitoring.svc.cluster.local.:4317"
+          ports:
+            - containerPort: 12500
+              name: grpc
+            - containerPort: 12501
+              name: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 12501
+          env:
+            - name: CLICKHOUSE_ADDR
+              value: "${CLICKHOUSE_ADDR}"
+            - name: CLICKHOUSE_USER
+              value: "${CLICKHOUSE_USER}"
+            - name: CLICKHOUSE_PASSWORD
+              value: "${CLICKHOUSE_PASSWORD}"
+            - name: CLICKHOUSE_SSL
+              value: "${CLICKHOUSE_SSL}"
+            - name: SINGULARITY_API_KEY
+              value: "${SINGULARITY_API_KEY}"
+          securityContext:
+            readOnlyRootFilesystem: true
+          envFrom:
+            - secretRef:
+                name: poller
+          resources:
+            requests:
+              memory: '500Mi'
+              cpu: '250m'
+            limits:
+              memory: '3000Mi'
+              cpu: '2000m'
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: [poller]
+                topologyKey: kubernetes.io/hostname
