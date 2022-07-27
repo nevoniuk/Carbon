@@ -33,8 +33,8 @@ import (
 
 func main() {
 	var (
-		grpcaddr  = flag.String("grpc-addr", ":12201", "gRPC listen address")
-		httpaddr  = flag.String("http-addr", ":12202", "HTTP listen address")
+		grpcaddr  = flag.String("grpc-addr", ":12500", "gRPC listen address")
+		httpaddr  = flag.String("http-addr", ":12501", "HTTP listen address")
 		agentaddr = flag.String("agent-addr", ":4317", "Grafana agent listen address")
 		chaddr = flag.String("ch-addr", os.Getenv("CLICKHOUSE_ADDR"), "ClickHouse host address")
 		chuser = flag.String("ch-user", os.Getenv("CLICKHOUSE_USER"), "ClickHouse user")
