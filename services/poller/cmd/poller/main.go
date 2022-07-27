@@ -51,8 +51,8 @@ func main() {
 	}
 	ctx := log.With(log.Context(context.Background(), log.WithFormat(format)), log.KV{K: "svc", V: genpoller.ServiceName})
 	log.Info(ctx,
-        log.KV{K: "ch-addr", V: chaddr},
-        log.KV{K: "ch-user", V: chuser})
+        log.KV{K: "ch-addr", V: *chaddr},
+        log.KV{K: "ch-user", V: *chuser})
 
 	if *debug {
 		ctx = log.Context(ctx, log.WithDebug())
