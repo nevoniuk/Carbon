@@ -55,7 +55,7 @@ spec:
             readOnlyRootFilesystem: true
           envFrom:
             - secretRef:
-                name: poller
+                name: carbon-poller
           resources:
             requests:
               memory: '500Mi'
