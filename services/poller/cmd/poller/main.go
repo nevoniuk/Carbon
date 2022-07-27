@@ -43,12 +43,17 @@ func main() {
 		debug = flag.Bool("debug", false, "Enable debug logs")
 		carbonKey = flag.String("singularity-key", os.Getenv("SINGULARITY_API_KEY"), "The API key for Singularity")
 	)
+	
 	flag.Parse()
 	format := log.FormatJSON
 	if log.IsTerminal() {
 		format = log.FormatTerminal
 	}
 	ctx := log.With(log.Context(context.Background(), log.WithFormat(format)), log.KV{K: "svc", V: genpoller.ServiceName})
+	log.Info(ctx,
+        log.KV{K: "ch-addr", V: chaddr},
+        log.KV{K: "ch-user", V: chuser})
+
 	if *debug {
 		ctx = log.Context(ctx, log.WithDebug())
 		log.Debugf(ctx, "debug logs enabled")

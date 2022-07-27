@@ -8,8 +8,8 @@ spec:
   # Every Monday at 12AM
   #doesn't matter
   #schedule: "0 12 * * 1"
-  #schedule: "*/15 * * * *"
-  schedule: "0 */3 * * *"
+  schedule: "*/15 * * * *"
+  #schedule: "0 */3 * * *"
   concurrencyPolicy: Replace
   startingDeadlineSeconds: 1200
   jobTemplate:
