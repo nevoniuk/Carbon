@@ -7,6 +7,8 @@ resources:
   - ./rbac.yaml
   - ./synced-secret.yaml
   - ./cronjob.yaml
+  - ./deployment.yaml
+  - ./service.yaml
 
 commonAnnotations:
   crossnokaye.com/carbon-poller-version: ${VERSION}
