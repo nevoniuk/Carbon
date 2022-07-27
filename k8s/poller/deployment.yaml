@@ -40,17 +40,6 @@ spec:
             httpGet:
               path: /healthz
               port: 12501
-          env:
-            - name: CLICKHOUSE_ADDR
-              value: "${CLICKHOUSE_ADDR}"
-            - name: CLICKHOUSE_USER
-              value: "${CLICKHOUSE_USER}"
-            - name: CLICKHOUSE_PASSWORD
-              value: "${CLICKHOUSE_PASSWORD}"
-            - name: CLICKHOUSE_SSL
-              value: "${CLICKHOUSE_SSL}"
-            - name: SINGULARITY_API_KEY
-              value: "${SINGULARITY_API_KEY}"
           securityContext:
             readOnlyRootFilesystem: true
           envFrom:
