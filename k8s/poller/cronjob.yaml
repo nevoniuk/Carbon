@@ -24,21 +24,14 @@ spec:
             runAsUser: 100001
           containers:
           - name: poller-cron
-            image: ${REPOSITORY_BASE_URL}/crossnokaye/carbon/poller:${VERSION}
+            image: fullstorydev/grpcurl:v1.8.6
+            imagePullPolicy: Always
             args:
-              - "-agent-addr=grafana-agent-deployment.monitoring.svc.cluster.local.:4317"
-              - poller.Poller.Update
-            env:
-              - name: CLICKHOUSE_ADDR
-                value: "${CLICKHOUSE_ADDR}"
-              - name: CLICKHOUSE_USER
-                value: "${CLICKHOUSE_USER}"
-              - name: CLICKHOUSE_PASSWORD
-                value: "${CLICKHOUSE_PASSWORD}"
-              - name: CLICKHOUSE_SSL
-                value: "${CLICKHOUSE_SSL}"
-              - name: SINGULARITY_API_KEY
-                value: "${SINGULARITY_API_KEY}"
+            - -plaintext
+            - -vv
+            - -max-time=30.0
+            - poller.carbon.svc.cluster.local.:12500
+            - poller.Poller.Update
             securityContext:
               readOnlyRootFilesystem: true
             resources:
