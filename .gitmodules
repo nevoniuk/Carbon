@@ -1,0 +1,3 @@
+[submodule ".github/actions/update-branches"]
+	path = .github/actions/update-branches
+	url = git@github.com:crossnokaye/update-branches-action.git
