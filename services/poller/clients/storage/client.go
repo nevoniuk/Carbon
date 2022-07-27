@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"time"
+
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/crossnokaye/carbon/clients/clickhouse"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
+	"goa.design/clue/log"
 )
 
 type (
@@ -53,7 +55,10 @@ func (c *client) Ping(ctx context.Context) error {
 func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 	var start time.Time
 	var err error
-	
+	if region == "" {
+		log.Error(ctx, fmt.Errorf("err: no region provided in CheckDB\n"))
+		return "", nil
+	}
 	if err = c.chcon.QueryRow(ctx, `
 			SELECT
 					MAX(start) as max_start
@@ -85,14 +90,14 @@ func (c *client) Init(ctx context.Context, test bool) error {
 		return err
 	}
 
-	/**
+	
 	err := c.chcon.Exec(ctx, `
 			DROP TABLE carbondb.carbon_reports
 	`)
 	if err != nil {
 		return fmt.Errorf("Error initializing clickhouse[%s]", err)
 	}
-	*/
+	
 	if err := c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS carbondb.carbon_reports (
 					start DateTime,

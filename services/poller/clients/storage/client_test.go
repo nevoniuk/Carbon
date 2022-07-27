@@ -2,17 +2,17 @@ package storage
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 	"errors"
 	"os"
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/crossnokaye/carbon/clients/clickhouse"
+	"github.com/crossnokaye/carbon/model"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 )
 var ctx = context.Background()
-
+var testRegion = model.Caiso
 func setupClickhouse(t *testing.T) *client {
 	retried := false
 try:
@@ -34,9 +34,18 @@ try:
 	return New(clickhouse.New(con)).(*client)
 }
 
+func cleanupClickhouse(t *testing.T, c *client) {
+	if err := c.chcon.Exec(ctx, "DROP DATABASE IF EXISTS carbondb"); err != nil {
+		t.Errorf("could not drop test database: %v", err)
+	}
+	if err := c.chcon.Close(); err != nil {
+		t.Errorf("could not close clickhouse: %v", err)
+	}
+}
+
 func TestInit(t *testing.T) {
 	c := setupClickhouse(t)
-	//defer cleanupClickhouse(t, c)
+	defer cleanupClickhouse(t, c)
 	ctx := context.Background()
 
 	if err := c.Init(ctx, true); err != nil {
@@ -131,6 +140,21 @@ func Test_client_SaveCarbonReports(t *testing.T) {
 	IncorrectReportsError
 	no reports error or null
 	*/
+	var startTime = time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC)
+	var endTime = time.Date(2021, time.June, 1, 1, 0, 0, 0, time.UTC)
+	var invalidEndTime = time.Date(2021, time.February, 1, 1, 20, 0, 0, time.UTC)
+	var mockValid = &genpoller.CarbonForecast{
+		Duration:     &genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat)},
+		DurationType: model.Hourly,
+	}
+	var mockInvalid = &genpoller.CarbonForecast{
+		Duration:     &genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: invalidEndTime.Format(timeFormat)},
+		DurationType: model.Hourly,
+	}
+	var mockReports []*genpoller.CarbonForecast
+	
+	invalidErr := errors.New("invalid reports error")
+	noReportsErr := errors.New("no reports error")
 	type fields struct {
 		chcon clickhouse.Conn
 	}
@@ -140,19 +164,35 @@ func Test_client_SaveCarbonReports(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		invalidReportsErr error
+		noReportsErr error
+		expectedErr error
 	}{
-		// TODO: Add test cases.
+		{name: "success", invalidReportsErr: nil, noReportsErr: nil, expectedErr: nil},
+		{name: "invalid reports", invalidReportsErr: invalidErr, noReportsErr: nil, expectedErr: invalidErr},
+		{name: "no reports", invalidReportsErr: nil, noReportsErr: noReportsErr, expectedErr: noReportsErr},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &client{
-				chcon: tt.fields.chcon,
+			c := setupClickhouse(t)
+			if tt.invalidReportsErr != nil {
+				mockReports = append(mockReports, mockInvalid)
 			}
-			if err := c.SaveCarbonReports(tt.args.ctx, tt.args.reports); (err != nil) != tt.wantErr {
-				t.Errorf("client.SaveCarbonReports() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.noReportsErr != nil {
+				mockReports =nil
+			} else {
+				mockReports = append(mockReports, mockValid)
+			}
+			if err := c.Init(ctx, true); err != nil {
+				t.Errorf("could not initialize clickhouse: %v", err)
+			}
+			ctx := context.Background()
+			err := c.SaveCarbonReports(ctx, mockReports)
+			if mockReports == nil && err == nil {
+				t.Errorf("client.SaveCarbonReports() error = %v, wantErr %v", nil, tt.noReportsErr)
+			}
+			if err != nil {
+				t.Errorf("client.SaveCarbonReports() error = %v, wantErr %v", err, tt.expectedErr)
 			}
 		})
 	}
@@ -168,44 +208,38 @@ func Test_client_GetAggregateReports(t *testing.T) {
 	var invalidStartTime = time.Date(2021, time.June, 1, 1, 10, 0, 0, nil)
 	var endTime = time.Date(2021, time.June, 1, 1, 10, 0, 0, nil)
 	var invalidEndTime = time.Date(2021, time.February, 1, 1, 20, 0, 0, nil)
-	valid := genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat)}
-	invalid := genpoller.Period{StartTime: invalidStartTime.Format(timeFormat), EndTime: invalidEndTime.Format(timeFormat)}
+	valid := &genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat)}
+	invalid := &genpoller.Period{StartTime: invalidStartTime.Format(timeFormat), EndTime: invalidEndTime.Format(timeFormat)}
 	var periods []*genpoller.Period
 	nilReportsErr := errors.New("no reports error")
-	type fields struct {
-		chcon clickhouse.Conn
-	}
-	type args struct {
-		ctx      context.Context
-		periods  []*genpoller.Period
-		region   string
-		duration string
-	}
+	
 	tests := []struct {
 		name    string
 		noReportsErrors  error
 		expectedError error
 	}{
 		{name: "success", noReportsErrors: nil, expectedError: nil},
-		{name: "success", noReportsErrors: nilReportsErr, expectedError: nilReportsErr},
+		{name: "no reports", noReportsErrors: nilReportsErr, expectedError: nilReportsErr},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := New()
-			c := &client{
-				chcon: tt.fields.chcon,
-			}
-			dbc := storage.NewMock(c.chcon)
+			c := setupClickhouse(t)
 			if tt.noReportsErrors != nil {
-				
+				periods = append(periods, invalid)
+			} else {
+				periods = append(periods, valid)
 			}
-			got, err := c.GetAggregateReports(tt.args.ctx, tt.args.periods, tt.args.region, tt.args.duration)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("client.GetAggregateReports() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("client.GetAggregateReports() = %v, want %v", got, tt.want)
+			ctx := context.Background()
+			got, err := c.GetAggregateReports(ctx, periods, testRegion, model.Hourly)
+			if err != nil {
+				if got != nil {
+					t.Errorf("client.GetAggregateReports() error = %v, wantErr %v", nilReportsErr, tt.expectedError)
+					return
+				} else {
+					t.Logf("no reports as expected")
+				}
+			} else {
+				t.Errorf("client.GetAggregateReports() error = %v, wantErr %v", nilReportsErr, tt.expectedError)
 			}
 		})
 	}

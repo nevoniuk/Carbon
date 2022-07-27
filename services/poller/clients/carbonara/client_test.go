@@ -2,24 +2,26 @@ package carbonara
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 	"time"
-	"errors"
 )
 
 //TODO: figure out how to encode API key - may come with client
-
+//TODO: figure out why download carbon report is not called and httprequest is called instead
 func TestGetEmissions(t *testing.T) {
 	type fields struct {
 		c   *http.Client
 		key string
 	}
-	var startTime = time.Date(2021, time.June, 1, 0, 0, 0, 0, nil).Format(timeFormat)
-	var endTime = time.Date(2021, time.June, 1, 0, 10, 0, 0, nil).Format(timeFormat)
-	var invalidEndTime = time.Date(2021, time.February, 1, 0, 10, 0, 0, nil).Format(timeFormat)
+	var startTime = time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC).Format(timeFormat)
+	var endTime = time.Date(2021, time.June, 1, 0, 10, 0, 0, time.UTC).Format(timeFormat)
+	var invalidEndTime = time.Date(2021, time.February, 1, 0, 10, 0, 0, time.UTC).Format(timeFormat)
 
 	var validreq = strings.Join([]string{"https://api.singularity.energy/v1/region_events/search?region=CAISO&event_type=carbon_intensity&start=", startTime,"&end=", endTime, "&' --header 'Content-Type: application/json' --header 'X-Api-Key:"},"")
 	var invalidreq = strings.Join([]string{"https://api.singularity.energy/v1/region_events/search?region=CAISO&event_type=carbon_intensity&start=", startTime,"&end=", invalidEndTime, "&' --header 'Content-Type: application/json' --header 'X-Api-Key:"},"")
@@ -34,27 +36,33 @@ func TestGetEmissions(t *testing.T) {
 	//define end result reports here and error
 	tests := []struct {
 		name    string
-		fields fields
 		roundTripFn func(req *http.Request) *http.Response
 		expectedErr string
+		key string
 	}{ 
 		{
 			name:        "valid",
 			roundTripFn: downloadCarbonReport(t, validreq),
+			expectedErr: "",
+			key: os.Getenv("SINGULARITY_API_KEY"),
 		},
 		{
 			name:        "invalid",
 			roundTripFn: downloadCarbonReport(t, invalidreq),
 			expectedErr: downloadErr.Error(),
+			key: os.Getenv("SINGULARITY_API_KEY"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var key = tt.fields.key
+			var key = tt.key
 			cl := New(&http.Client{Transport: roundTripFunc(tt.roundTripFn)}, key).(*client)
 			ctx := context.Background()
 			testRegion := "CAISO"
+			if tt.expectedErr != "" {
+				endTime = invalidEndTime
+			}
 			got, err := cl.GetEmissions(ctx, testRegion, startTime, endTime)
 			if tt.expectedErr != "" {
 				if err == nil {
@@ -84,18 +92,36 @@ func TestGetEmissions(t *testing.T) {
 
 func downloadCarbonReport(t *testing.T, content string) func(*http.Request) *http.Response {
 	return func(req *http.Request) *http.Response {
+		fmt.Println("hereeeee in downloadreport")
 		if req.URL.Scheme != "http" {
+			fmt.Println("here1")
 			t.Errorf("got scheme %s, want http", req.URL.Scheme)
 		}
 		if req.URL.Host != "https://api.singularity.energy/v1/" {
+			fmt.Println("here2")
 			t.Errorf("got host %s, want https://api.singularity.energy/v1/", req.URL.Host)
 		}
 		if req.URL.Path != "region_events/search?" {
+			fmt.Println("here3")
 			t.Errorf("got path %s, want /oasisapi/SingleZip", req.URL.Path)
 		}
 		if !strings.Contains(req.URL.RawQuery, "application/json") {
+			fmt.Println("here4")
 			t.Errorf("got path %s, want ", req.URL.Path)
 		}
+		/**
+		start, _ := time.Parse(timeFormat, start)
+		end, _ := time.Parse(timeFormat, end)
+		if !start.Before(end) {
+			fmt.Println("here6")
+			t.Errorf("invalid request with start %s and end %s", start, end)
+		}
+		*/
+		if !strings.Contains(req.URL.RawQuery, "application/json") {
+			fmt.Println("here4")
+			t.Errorf("got path %s, want ", req.URL.Path)
+		}
+
 		r := strings.NewReader(content)
 		return &http.Response {
 			StatusCode: http.StatusOK,
