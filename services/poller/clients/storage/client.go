@@ -37,8 +37,6 @@ type (
 )
 // timeFormat is used to parse times in order to store time as ISO8601 format
 const timeFormat = "2006-01-02T15:04:05-07:00"
-
-
 func (c *client) Name() string {
 	var name = "Clickhouse"
 	return name
@@ -51,6 +49,7 @@ func New(chcon clickhouse.Conn) Client {
 func (c *client) Ping(ctx context.Context) error {
 	return c.chcon.Ping(ctx)
 }
+
 // CheckDB returns a time if previous reports are found, otherwise nil
 func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 	var start time.Time
@@ -110,6 +109,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 				) Engine =  MergeTree()
 				ORDER BY (start)
 	`); err != nil {
+		log.Error(ctx, err)
 		return fmt.Errorf("Error initializing clickhouse[%w]", err)
 	}
 	return nil
