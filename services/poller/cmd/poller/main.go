@@ -123,7 +123,7 @@ func main() {
 	//setup the service
 	pollerSvc := pollerapi.NewPoller(ctx, csc, dbc)
 	endpoints := genpoller.NewEndpoints(pollerSvc)
-	
+	pollerSvc.Update(ctx)
 	//initialize context for tracing
 	//create transport
 	server := gengrpc.New(endpoints, nil)
