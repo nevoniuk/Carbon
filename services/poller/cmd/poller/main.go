@@ -40,7 +40,7 @@ func main() {
 		chuser = flag.String("ch-user", os.Getenv("CLICKHOUSE_USER"), "ClickHouse user")
 		chpwd  = flag.String("ch-pwd", os.Getenv("CLICKHOUSE_PASSWORD"), "ClickHouse password")
 		chssl  = flag.Bool("ch-ssl", os.Getenv("CLICKHOUSE_SSL") != "", "ClickHouse connection SSL")
-		monitoringEnabled = flag.Bool("monitoring-enabled", true, "ClickHouse user")
+		monitoringEnabled = flag.Bool("monitoring-enabled", true, "monitoring")
 		debug = flag.Bool("debug", false, "Enable debug logs")
 		carbonKey = flag.String("singularity-key", os.Getenv("SINGULARITY_API_KEY"), "The API key for Singularity")
 	)
@@ -60,10 +60,9 @@ func main() {
 		log.Debugf(ctx, "debug logs enabled")
 	}
 	//monitoring enabled is true - initilize tracing - only in production
-	//monitoring enabled is true - in janeway - dont initialize tracing
+	//monitoring enabled is false - in janeway - dont initialize tracing
 	// Setup tracing
 	if *monitoringEnabled {
-		fmt.Println("here")
 		conn, err := grpc.DialContext(ctx, *agentaddr,
 			grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
@@ -129,7 +128,7 @@ func main() {
 	//create transport
 	server := gengrpc.New(endpoints, nil)
 	var grpcsvr *grpc.Server
-	//if *monitoringEnabled {
+	if *monitoringEnabled {
 		grpcsvr = grpc.NewServer(
 			grpcmiddleware.WithUnaryServerChain(
 				log.UnaryServerInterceptor(ctx),
@@ -146,13 +145,11 @@ func main() {
 				trace.StreamServerInterceptor(ctx),//this
 			),
 		)
-	//} 
-	/**
-	else {
-		grpcsvr := grpc.NewServer(
+	} else {
+		grpcsvr = grpc.NewServer(
 			grpcmiddleware.WithUnaryServerChain(
 				log.UnaryServerInterceptor(ctx),
-				trace.UnaryServerInterceptor(ctx), //this
+				//trace.UnaryServerInterceptor(ctx),
 				
 				goagrpcmiddleware.UnaryRequestID(),
 				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
@@ -162,12 +159,11 @@ func main() {
 				log.StreamServerInterceptor(ctx),
 				goagrpcmiddleware.StreamServerLogContext(log.AsGoaMiddlewareLogger),
 				metrics.StreamServerInterceptor(ctx),
-				trace.StreamServerInterceptor(ctx),//this
+				//trace.StreamServerInterceptor(ctx),
 			),
 		)
 	}
-	*/
-	
+
 	genpb.RegisterPollerServer(grpcsvr, server)
 	reflection.Register(grpcsvr)
 	for svc, info := range grpcsvr.GetServiceInfo() {
