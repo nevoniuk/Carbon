@@ -40,6 +40,7 @@ func main() {
 		chuser = flag.String("ch-user", os.Getenv("CLICKHOUSE_USER"), "ClickHouse user")
 		chpwd  = flag.String("ch-pwd", os.Getenv("CLICKHOUSE_PASSWORD"), "ClickHouse password")
 		chssl  = flag.Bool("ch-ssl", os.Getenv("CLICKHOUSE_SSL") != "", "ClickHouse connection SSL")
+		monitoringEnabled = flag.Bool("monitoring-enabled", true, "ClickHouse user")
 		debug = flag.Bool("debug", false, "Enable debug logs")
 		carbonKey = flag.String("singularity-key", os.Getenv("SINGULARITY_API_KEY"), "The API key for Singularity")
 	)
@@ -60,23 +61,29 @@ func main() {
 	}
 
 	// Setup tracing
-	conn, err := grpc.DialContext(ctx, *agentaddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Errorf(ctx, err, "failed to connect to Grafana agent")
-		os.Exit(1)
+	if *monitoringEnabled {
+		conn, err := grpc.DialContext(ctx, *agentaddr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Errorf(ctx, err, "failed to connect to Grafana agent")
+			os.Exit(1)
+		}
+	
+		if ctx, err = trace.Context(ctx, genpoller.ServiceName, trace.WithGRPCExporter(conn)); err != nil {
+			log.Errorf(ctx, err, "failed to initialize tracing")
+			os.Exit(1)
+		}
 	}
-
-	if ctx, err = trace.Context(ctx, genpoller.ServiceName, trace.WithGRPCExporter(conn)); err != nil {
-		log.Errorf(ctx, err, "failed to initialize tracing")
-		os.Exit(1)
-	}
+	
 
 	//initialize the metrics
 	ctx = metrics.Context(ctx, genpoller.ServiceName)
 
 	//intiialize the clients
-	c := &http.Client{Transport: trace.Client(ctx, http.DefaultTransport)}
+	c := &http.Client{}
+	if *monitoringEnabled {
+		c.Transport = trace.Client(ctx, http.DefaultTransport)
+	}
 	csc := carbonara.New(c, *carbonKey)
 
 	chadd := *chaddr
@@ -115,9 +122,8 @@ func main() {
 	//setup the service
 	pollerSvc := pollerapi.NewPoller(ctx, csc, dbc)
 	endpoints := genpoller.NewEndpoints(pollerSvc)
-	pollerSvc.Update(ctx)
+	
 	//initialize context for tracing
-
 	//create transport
 	server := gengrpc.New(endpoints, nil)
 	grpcsvr := grpc.NewServer(
