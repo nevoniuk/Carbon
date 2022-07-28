@@ -86,7 +86,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 		return err
 	}
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
-		log.Error(ctx, err)
+		log.Errorf(ctx, err, "error initializing database: %w", err)
 		return err
 	}
 /**
@@ -109,7 +109,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 				) Engine =  MergeTree()
 				ORDER BY (start)
 	`); err != nil {
-		log.Error(ctx, err)
+		log.Errorf(ctx, err, "error initializing database: %w", err)
 		return fmt.Errorf("Error initializing clickhouse[%w]", err)
 	}
 	return nil
