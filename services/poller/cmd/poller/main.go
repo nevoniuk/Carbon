@@ -55,6 +55,9 @@ func main() {
         log.KV{K: "ch-addr", V: *chaddr},
         log.KV{K: "ch-user", V: *chuser})
 
+		log.Info(ctx,
+			log.KV{K: "monitoringEnabled", V: *monitoringEnabled})
+
 	if *debug {
 		ctx = log.Context(ctx, log.WithDebug())
 		log.Debugf(ctx, "debug logs enabled")
@@ -123,7 +126,7 @@ func main() {
 	//setup the service
 	pollerSvc := pollerapi.NewPoller(ctx, csc, dbc)
 	endpoints := genpoller.NewEndpoints(pollerSvc)
-	pollerSvc.Update(ctx)
+	//pollerSvc.Update(ctx)
 	//initialize context for tracing
 	//create transport
 	server := gengrpc.New(endpoints, nil)
@@ -137,6 +140,7 @@ func main() {
 				goagrpcmiddleware.UnaryRequestID(),
 				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
 			),
+			/**
 			grpcmiddleware.WithStreamServerChain(
 				goagrpcmiddleware.StreamRequestID(),
 				log.StreamServerInterceptor(ctx),
@@ -144,6 +148,7 @@ func main() {
 				metrics.StreamServerInterceptor(ctx),
 				trace.StreamServerInterceptor(ctx),//this
 			),
+			*/
 		)
 	} else {
 		grpcsvr = grpc.NewServer(
@@ -154,6 +159,7 @@ func main() {
 				goagrpcmiddleware.UnaryRequestID(),
 				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
 			),
+			/**
 			grpcmiddleware.WithStreamServerChain(
 				goagrpcmiddleware.StreamRequestID(),
 				log.StreamServerInterceptor(ctx),
@@ -161,6 +167,7 @@ func main() {
 				metrics.StreamServerInterceptor(ctx),
 				//trace.StreamServerInterceptor(ctx),
 			),
+			*/
 		)
 	}
 

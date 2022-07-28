@@ -20,6 +20,7 @@ var _ = Service("Poller", func() {
 		Description("query Singularity's search endpoint and convert 5 min interval reports into averages")
 		Error("server_error", ErrorResult, "Error with Singularity Server.")
 		GRPC(func() {
+			Response(CodeOK)
 			Response("server_error", CodeNotFound)
 		})
 	})
@@ -30,6 +31,7 @@ var _ = Service("Poller", func() {
 		Error("server_error", ErrorResult, "Error with Singularity Server.")
 		Error("no_data", ErrorResult, "No new data available for any region")
 		GRPC(func() {
+			Response(CodeOK)
 			Response("no_data", CodeNotFound)
 			Response("server_error", CodeNotFound)
 		})

@@ -87,13 +87,17 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			return mapAndLogError(ctx, err)
 		}
 		region := regions[i]
+		
+		log.Info(ctx, log.KV{K: "region", V: regions[i]}, 
+		log.KV{K: "startTime", V: startTime},
+		log.KV{K: "endTime", V: finalEndTime})
+
 		for startTime.Before(finalEndTime) {
 			newEndTime := startTime.AddDate(0, 0, 7)
 			if !newEndTime.Before(finalEndTime) {
 				newEndTime = finalEndTime 
 			}
 			minreports, err := s.csc.GetEmissions(ctx, regions[i], startTime.Format(timeFormat), newEndTime.Format(timeFormat))
-			println(len(minreports))
 			var NoDataError carbonara.NoDataError
 			if err != nil {
 				if !errors.As(err, &NoDataError) {
@@ -103,6 +107,11 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 				startTime = newEndTime
 				continue
 			}
+			
+			log.Info(ctx, log.KV{K: "minReportsLength", V: len(minreports)}, 
+			log.KV{K: "startTime", V: startTime},
+			log.KV{K: "endTime", V: newEndTime})
+
 			dateConfigs, err := getDates(ctx, minreports)
 			if err != nil {
 				log.Error(ctx, err)
