@@ -126,6 +126,9 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 			
 		}
 		if carbonData.Meta.Pagination.This == carbonData.Meta.Pagination.Last {
+			if reports == nil {
+				return reports, NoDataError{Err: fmt.Errorf("no data for Region %s", region)}
+			}
 			return reports, nil
 		}
 		page += 1

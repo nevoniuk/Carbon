@@ -60,7 +60,9 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 func (s *pollersrvc) ensurePastData(ctx context.Context) (startDates []string) {
 	var dates []string
 	for i := 0; i < len(regions); i++ {
+		fmt.Println("in ensure past data")
 		date, err := s.dbc.CheckDB(ctx, string(regions[i]))
+		fmt.Println(date)
 		if err == nil {
 			dates = append(dates, date)
 		} else {
@@ -77,17 +79,27 @@ func (s *pollersrvc) ensurePastData(ctx context.Context) (startDates []string) {
 // Update will fetch the latest reports for all regions and return either a server or no-data error
 func (s *pollersrvc) Update(ctx context.Context) error {
 	times := s.ensurePastData(ctx)
+	fmt.Println(times)
 	finalEndTime, _ := time.Parse(timeFormat, timeNow.Format(timeFormat))
 	for i := 0; i < len(regions); i++ {
 		startTime, _ := time.Parse(timeFormat, times[i])
+		fmt.Println("start time is")
+		fmt.Println(startTime)
+		fmt.Println("end time is")
+		fmt.Println(finalEndTime)
 		region := regions[i]
+
 		for startTime.Before(finalEndTime) {
 			newEndTime := startTime.AddDate(0, 0, 7)
 			if !newEndTime.Before(finalEndTime) {
 				newEndTime = finalEndTime 
 			}
+			fmt.Println("start time is")
+			fmt.Println(startTime)
+			fmt.Println("end time is")
+			fmt.Println(finalEndTime)
 			minreports, err := s.csc.GetEmissions(ctx, region, startTime.Format(timeFormat), newEndTime.Format(timeFormat))
-			
+			fmt.Printf("Error from get emissions %s\n", err)
 			var NoDataError carbonara.NoDataError
 			if err != nil {
 				if !errors.As(err, &NoDataError) {
@@ -105,13 +117,16 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 				continue
 			}
 			err = s.dbc.SaveCarbonReports(ctx, minreports)
+			fmt.Printf("Error from save reports %s\n", err)
 			if err != nil {
 				return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
 			}
 			for j := 0; j < len(dateConfigs); j++ {
 				if dateConfigs[j] != nil {
+					fmt.Println("date configs is not null")
 					res, aggErr := s.aggregateData(ctx, region, dateConfigs[j], reportdurations[j])
 					if aggErr != nil {
+						fmt.Printf("Error from get reports %s\n", err)
 						return mapAndLogErrorf(ctx,  "failed to get Average Carbon Reports:%w\n", aggErr)
 					}
 					if res == nil {
@@ -233,6 +248,8 @@ func getDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 			}
 			
 			hourlyDates = append(hourlyDates, &genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
+			fmt.Println("HOURLY DATE IS")
+			fmt.Println( &genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
 			hourstart = endTime
 		}
 		previous = endTime
