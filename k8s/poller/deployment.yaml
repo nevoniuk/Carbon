@@ -44,7 +44,9 @@ spec:
             readOnlyRootFilesystem: true
           envFrom:
             - secretRef:
-                name: carbon-poller
+                name: poller
+            - secretRef:
+                name: clickhouse
           resources:
             requests:
               memory: '500Mi'
