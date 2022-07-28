@@ -8,8 +8,7 @@ spec:
   # Every Monday at 12AM
   #doesn't matter
   #schedule: "0 12 * * 1"
-  schedule: "*/15 * * * *"
-  #schedule: "0 */3 * * *"
+  schedule: "0 */5 * * *"
   concurrencyPolicy: Replace
   startingDeadlineSeconds: 1200
   jobTemplate:
@@ -30,7 +29,7 @@ spec:
             args:
             - -plaintext
             - -vv
-            - -max-time=30.0
+            - -max-time=600
             - poller.carbon.svc.cluster.local.:12500
             - poller.Poller.Update
             securityContext:
