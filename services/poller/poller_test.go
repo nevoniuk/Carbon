@@ -106,10 +106,10 @@ func Test_pollersrvc_Update(t *testing.T) {
 	}
 	var mockReports []*genpoller.CarbonForecast
 	//mockReports = append(mockReports, mockReportOne)
-	serverError := errors.New("server error")
-	noDataError := errors.New("no data error")
-	saveReportsError := errors.New("error saving reports")
-	getReportsError := errors.New("error getting reports from clickhouse")
+	serverError := carbonara.ServerError{Err: fmt.Errorf("server error 400")}
+	noDataError := carbonara.NoDataError{Err: fmt.Errorf("no data for Region")}
+	saveReportsError := storage.NoReportsError{Err: fmt.Errorf("no reports\n")}
+	getReportsError := storage.NoReportsError{Err: fmt.Errorf("no reports\n")}
 
 	tests := []struct {
 		name             string
@@ -128,70 +128,93 @@ func Test_pollersrvc_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			carbonarac := carbonara.NewMock(t)
-			mockReports = nil
+			stc := storage.NewMock(t)
 			mockReports = append(mockReports, mockReportOne)
+			ctx := context.Background()
+			/*
+			no error:
+			all functions 13 times
+			server error:
+			only function that gets called are check db 13 times and get emissions once
+			no data error:
+			check db 13 times, get emissions 13 times and save reports once
+			save reports error:
+			check db 13 times, get emissions once, and save reports once
+			get reports error:
+			check db 13 times, get emissions once, save reports once and get reports
+			*/
+			for i := 0; i < 13; i++ {
+				//error only one time is returned
+				stc.AddCheckDBFunc(func(ctx context.Context, r string) (string, error) {
+					return startTime.Format(timeFormat), nil
+				})
+				if tt.noDataError != nil {
+					fmt.Println("no data error")
+					carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string) ([]*genpoller.CarbonForecast, error) {
+						return nil, noDataError
+					})
+				} 
+				if tt.expectedError == nil {
+					fmt.Println("no error")
+					carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string) ([]*genpoller.CarbonForecast, error) {
+						return mockReports, nil
+					})
+					
+					stc.AddSaveCarbonReportsFunc(func(ctx context.Context, reps []*genpoller.CarbonForecast) error {
+						reps = mockReports
+						return nil
+					})
+					stc.AddGetAggregateReportsFunc(func(ctx context.Context, dates []*genpoller.Period, r string, duration string) ([]*genpoller.CarbonForecast, error) {
+						return mockReports, nil
+					})
+				}
 
+			}
 			if tt.serverError != nil {
-				mockReports = nil
+				mockReports = nil //ok because function returns after returning a server error
 				fmt.Println("server error")
 				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string) ([]*genpoller.CarbonForecast, error) {
 					e = invalidEndTime.Format(timeFormat)
 					return nil, serverError
 				})
 			}
-			if tt.noDataError != nil {
-				mockReports = nil
-				fmt.Println("no data error")
-				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string) ([]*genpoller.CarbonForecast, error) {
-					return nil, serverError
-				})
-			}
-			stc := storage.NewMock(t)
 			if tt.saveReportsError != nil {
-				mockReports = nil
 				fmt.Println("save reports error")
+				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string) ([]*genpoller.CarbonForecast, error) {
+					return mockReports, nil
+				})
 				stc.AddSaveCarbonReportsFunc(func(ctx context.Context, reps []*genpoller.CarbonForecast) error {
 					reps = nil
 					return saveReportsError
 				})
-			}
+
+			} 
 			if tt.getReportsError != nil {
-				mockReports = nil
 				fmt.Println("get reports error")
+				carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string) ([]*genpoller.CarbonForecast, error) {
+					return mockReports, nil
+				})
+				stc.AddSaveCarbonReportsFunc(func(ctx context.Context, reps []*genpoller.CarbonForecast) error {
+					return nil
+				})
 				stc.AddGetAggregateReportsFunc(func(ctx context.Context, dates []*genpoller.Period, r string, duration string) ([]*genpoller.CarbonForecast, error) {
 					var newdates []*genpoller.Period
+					dates = nil
 					newdates = append(newdates, &genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: invalidEndTime.Format(timeFormat)})
 					dates = newdates
 					return nil, getReportsError
 				})
 			}
-			for i := 0; i < 13; i++ {
-				//one call per region because were only testing a 1 hour interval
-				if tt.serverError == nil && tt.noDataError == nil {
-					carbonarac.AddGetEmissionsFunc(func(ctx context.Context, r string, s string, e string) ([]*genpoller.CarbonForecast, error) {
-						return mockReports, nil //should only be one
-					})
-				}
-				if tt.getReportsError == nil {
-					stc.AddGetAggregateReportsFunc(func(ctx context.Context, dates []*genpoller.Period, r string, duration string) ([]*genpoller.CarbonForecast, error) {
-						return mockReports, nil
-					})
-				}
-				if tt.saveReportsError == nil {
-					stc.AddSaveCarbonReportsFunc(func(ctx context.Context, reps []*genpoller.CarbonForecast) error {
-						return nil
-					})
-				}
-				stc.AddCheckDBFunc(func(ctx context.Context, r string) (string, error) {
-					fmt.Println(startTime.Format(timeFormat))
-					return startTime.Format(timeFormat), nil
-				})
-			}
-			ctx := context.Background()
+			
 			svc := NewPoller(ctx, carbonarac, stc)
 			timeNow = endTime
 			svc.now = endTime
 			err := svc.Update(ctx)
+			fmt.Println("return from update")
+			mockReports = nil
+			if err != nil {
+				fmt.Printf("Error is %s\n", err.Error())
+			}
 			if err != tt.expectedError {
 				t.Errorf("pollersrvc.Update() error = %v, wantErr %v", err, tt.expectedError)
 			} else {

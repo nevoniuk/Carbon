@@ -66,8 +66,8 @@ var validResponse = `{
 		}
 	}
 }`
-//TODO: figure out why download carbon report is not called and httprequest is called instead
-//var response := ""{"data":[{"data":{"consumed_rate":447.52431491638515,"generated_rate":459.27507428132077,"marginal_rate":212.9772083348141},"dedup_key":"CAISO:carbon_intensity:EGRID_u2019:2021-06-01T00:00:00+00:00","event_type":"carbon_intensity","meta":{"consumed_emissions_source":"EGRID_u2019","consumed_rate_calculated_at":"2021-09-03T20:42:09.877028Z","consumed_source":"generated_fuel_mix:EIA.CISO:2021-06-01T00:00:00+00:00","generated_emissions_source":"EGRID_u2019","inserted_at":"2021-06-01T00:39:25.583183Z","marginal_emissions_source":"EGRID_u2019","marginal_fuel_mix_source":"INTV_DIFF","marginal_source":"CAISO:marginal_fuel_mix:2021-06-01T00:00:00+00:00","raw_start_date":"2021-06-01T00:00:00+00:00","source":"generated_fuel_mix:CAISO:2021-06-01T00:00:00+00:00","unit":"lbs/MWh"},"region":"CAISO","start_date":"2021-06-01T00:00:00+00:00"},{"data":{"generated_rate":333.92305541812004,"marginal_rate":149.8037603921239},"dedup_key":"CAISO:carbon_intensity:EGRID_2019_eq:2021-06-01T00:00:00+00:00","event_type":"carbon_intensity","meta":{"generated_emissions_source":"EGRID_2019_eq","inserted_at":"2021-06-01T00:39:25.399669Z","marginal_emissions_source":"EGRID_2019_eq","marginal_fuel_mix_source":"INTV_DIFF","marginal_source":"CAISO:marginal_fuel_mix:2021-06-01T00:00:00+00:00","raw_start_date":"2021-06-01T00:00:00+00:00","source":"generated_fuel_mix:CAISO:2021-06-01T00:00:00+00:00","unit":"lbs/MWh"},"region":"CAISO","start_date":"2021-06-01T00:00:00+00:00"},{"data":{"consumed_rate":382.24666200308013,"generated_rate":332.8066432185912,"marginal_rate":149.1695560903641},"dedup_key":"CAISO:carbon_intensity:EGRID_2019:2021-06-01T00:00:00+00:00","event_type":"carbon_intensity","meta":{"consumed_emissions_source":"EGRID_2019","consumed_rate_calculated_at":"2021-09-03T20:42:09.877017Z","consumed_source":"generated_fuel_mix:EIA.CISO:2021-06-01T00:00:00+00:00","generated_emissions_source":"EGRID_2019","inserted_at":"2021-06-01T00:39:25.905354Z","marginal_emissions_source":"EGRID_2019","marginal_fuel_mix_source":"INTV_DIFF","marginal_source":"CAISO:marginal_fuel_mix:2021-06-01T00:00:00+00:00","raw_start_date":"2021-06-01T00:00:00+00:00","source":"generated_fuel_mix:CAISO:2021-06-01T00:00:00+00:00","unit":"lbs/MWh"},"region":"CAISO","start_date":"2021-06-01T00:00:00+00:00"},{"data":{"generated_rate":341.1563315643191,"marginal_rate":151.7533168090365},"dedup_key":"CAISO:carbon_intensity:EGRID_2018_eq:2021-06-01T00:00:00+00:00","event_type":"carbon_intensity","meta":{"generated_emissions_source":"EGRID_2018_eq","inserted_at":"2021-06-01T00:01:27.553995Z","marginal_emissions_source":"EGRID_2018_eq","marginal_source":"CAISO:marginal_fuel_mix:2021-06-01T00:00:00+00:00","raw_start_date":"2021-06-01T00:00:00+00:00","source":"generated_fuel_mix:CAISO:2021-06-01T00:00:00+00:00","unit":"lbs/MWh"},"region":"CAISO","start_date":"2021-06-01T00:00:00+00:00"},{"data":{"generated_rate":340.04028546727193,"marginal_rate":151.12627797440229},"dedup_key":"CAISO:carbon_intensity:EGRID_2018:2021-06-01T00:00:00+00:00","event_type":"carbon_intensity","meta":{"generated_emissions_source":"EGRID_2018","inserted_at":"2021-06-01T00:01:27.641362Z","marginal_emissions_source":"EGRID_2018","marginal_source":"CAISO:marginal_fuel_mix:2021-06-01T00:00:00+00:00","raw_start_date":"2021-06-01T00:00:00+00:00","source":"generated_fuel_mix:CAISO:2021-06-01T00:00:00+00:00","unit":"lbs/MWh"},"region":"CAISO","start_date":"2021-06-01T00:00:00+00:00"},{"data":{"generated_rate":473.7744069785323,"marginal_rate":217.70461144377828},"dedup_key":"CAISO:carbon_intensity:2021-06-01T00:00:00+00:00","event_type":"carbon_intensity","meta":{"generated_emissions_source":"EGRID_u2018","inserted_at":"2021-06-01T00:01:27.714075Z","marginal_emissions_source":"EGRID_u2018","marginal_source":"CAISO:marginal_fuel_mix:2021-06-01T00:00:00+00:00","raw_start_date":"2021-06-01T00:00:00+00:00","source":"generated_fuel_mix:CAISO:2021-06-01T00:00:00+00:00","unit":"lbs/MWh"},"region":"CAISO","start_date":"2021-06-01T00:00:00+00:00"}],"meta":{"pagination":{"first":1,"last":1,"this":1}}}""
+
+
 func TestGetEmissions(t *testing.T) {
 	type fields struct {
 		c   *http.Client
@@ -76,10 +76,8 @@ func TestGetEmissions(t *testing.T) {
 	var startTime = time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC).Format(timeFormat)
 	var endTime = time.Date(2021, time.June, 1, 0, 10, 0, 0, time.UTC).Format(timeFormat)
 	var invalidEndTime = time.Date(2021, time.February, 1, 0, 10, 0, 0, time.UTC).Format(timeFormat)
-	//var validreq = strings.Join([]string{"https://api.singularity.energy/v1/region_events/search?region=CAISO&event_type=carbon_intensity&start=", startTime,"&end=", endTime, "&per_page=1000&page="},"")
-	//var invalidreq = strings.Join([]string{"https://api.singularity.energy/v1/region_events/search?region=CAISO&event_type=carbon_intensity&start=", startTime,"&end=", invalidEndTime, "&per_page=1000&page="},"")
-	downloadErr := errors.New("server error 400")
 	
+	downloadErr := errors.New("server error 400")
 	type args struct {
 		ctx      context.Context
 		region   string
@@ -118,15 +116,13 @@ func TestGetEmissions(t *testing.T) {
 				endTime = invalidEndTime
 			}
 			got, err := cl.GetEmissions(ctx, testRegion, startTime, endTime)
-			fmt.Println("returning from get emissions")
-			println(got)
 			if err != nil {
-				if  err == tt.expectedErr {
+				if  err != tt.expectedErr {
 					t.Errorf("client.GetEmissions() error = %s, wantErr %s", err, tt.expectedErr)
 					return
 				}
 			} 
-			if err != nil && got != nil {
+			if got != nil {
 				if len(got) != 1 {
 					t.Errorf("len(carbonreports) == %v, want %v", len(got), 2)
 				}
@@ -170,7 +166,6 @@ func downloadCarbonReport(t *testing.T, content string, start string, end string
 		var badRequest = "badrequest"
 		invalidr := strings.NewReader(badRequest)
 		if err != nil {
-			fmt.Println("returning bad req")
 			return &http.Response {
 				StatusCode: http.StatusBadRequest,
 				Body:       io.NopCloser(invalidr),
