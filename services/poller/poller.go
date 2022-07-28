@@ -21,7 +21,7 @@ type pollersrvc struct {
 // timeFormat is used to parse times in order to store time as ISO8601 format
 var timeFormat = "2006-01-02T15:04:05-07:00"
 //timeNow is used as the end time for all search queries
-var timeNow = time.Now().UTC()
+var timeNow = time.Now
 // regions maintains all the valid regions that Singularity will calculate carbon intensity
 var regions [13]string = [13]string{model.Caiso, model.Aeso, model.Bpa, model.Erco, model.Ieso,
 model.Isone, model.Miso,
@@ -45,13 +45,13 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 		cancel: 			cancel,
 		now:				time.Time{},
 	}
-	timeNow = time.Now().UTC()
+	current := timeNow()
 	s = &pollersrvc{
 		csc:				csc,
 		dbc:				dbc,
 		ctx:                ctx,
 		cancel: 			cancel,
-		now:				timeNow,
+		now:				current,
 	}
 	return s
 }
@@ -60,9 +60,7 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 func (s *pollersrvc) ensurePastData(ctx context.Context) (startDates []string) {
 	var dates []string
 	for i := 0; i < len(regions); i++ {
-		fmt.Println("in ensure past data")
 		date, err := s.dbc.CheckDB(ctx, string(regions[i]))
-		fmt.Println(date)
 		if err == nil {
 			dates = append(dates, date)
 		} else {
@@ -79,27 +77,22 @@ func (s *pollersrvc) ensurePastData(ctx context.Context) (startDates []string) {
 // Update will fetch the latest reports for all regions and return either a server or no-data error
 func (s *pollersrvc) Update(ctx context.Context) error {
 	times := s.ensurePastData(ctx)
-	fmt.Println(times)
-	finalEndTime, _ := time.Parse(timeFormat, timeNow.Format(timeFormat))
+	finalEndTime, err := time.Parse(timeFormat, s.now.Format(timeFormat))
+	if err != nil {
+		return mapAndLogError(ctx, err)
+	}
 	for i := 0; i < len(regions); i++ {
-		startTime, _ := time.Parse(timeFormat, times[i])
-		fmt.Println("start time is")
-		fmt.Println(startTime)
-		fmt.Println("end time is")
-		fmt.Println(finalEndTime)
+		startTime, err := time.Parse(timeFormat, times[i])
+		if err != nil {
+			return mapAndLogError(ctx, err)
+		}
 		region := regions[i]
-
 		for startTime.Before(finalEndTime) {
 			newEndTime := startTime.AddDate(0, 0, 7)
 			if !newEndTime.Before(finalEndTime) {
 				newEndTime = finalEndTime 
 			}
-			fmt.Println("start time is")
-			fmt.Println(startTime)
-			fmt.Println("end time is")
-			fmt.Println(finalEndTime)
-			minreports, err := s.csc.GetEmissions(ctx, region, startTime.Format(timeFormat), newEndTime.Format(timeFormat))
-			fmt.Printf("Error from get emissions %s\n", err)
+			minreports, err := s.csc.GetEmissions(ctx, regions[i], startTime.Format(timeFormat), newEndTime.Format(timeFormat))
 			var NoDataError carbonara.NoDataError
 			if err != nil {
 				if !errors.As(err, &NoDataError) {
@@ -117,16 +110,13 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 				continue
 			}
 			err = s.dbc.SaveCarbonReports(ctx, minreports)
-			fmt.Printf("Error from save reports %s\n", err)
 			if err != nil {
 				return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
 			}
 			for j := 0; j < len(dateConfigs); j++ {
 				if dateConfigs[j] != nil {
-					fmt.Println("date configs is not null")
 					res, aggErr := s.aggregateData(ctx, region, dateConfigs[j], reportdurations[j])
 					if aggErr != nil {
-						fmt.Printf("Error from get reports %s\n", err)
 						return mapAndLogErrorf(ctx,  "failed to get Average Carbon Reports:%w\n", aggErr)
 					}
 					if res == nil {

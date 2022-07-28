@@ -155,13 +155,7 @@ func Test_client_SaveCarbonReports(t *testing.T) {
 	
 	invalidErr := errors.New("invalid reports error")
 	noReportsErr := errors.New("no reports error")
-	type fields struct {
-		chcon clickhouse.Conn
-	}
-	type args struct {
-		ctx     context.Context
-		reports []*genpoller.CarbonForecast
-	}
+	
 	tests := []struct {
 		name    string
 		invalidReportsErr error
