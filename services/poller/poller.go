@@ -144,7 +144,7 @@ func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoll
 	return reports, err
 }
 
-// AggregateData gets aggregate reports for all report dates returned by GetDates and store them in clickhouse
+// aggregateData gets aggregate reports for all report dates returned by GetDates and store them in clickhouse
 func (ser *pollersrvc) aggregateData(ctx context.Context, region string, dates []*genpoller.Period, duration string) ([]*genpoller.CarbonForecast, error) {
 	aggregateres, getErr := ser.dbc.GetAggregateReports(ctx, dates, region, duration)
 	if getErr != nil {
@@ -158,7 +158,6 @@ func (ser *pollersrvc) aggregateData(ctx context.Context, region string, dates [
 }
 
 // getDates gets all the report dates that are used as input to clickhouse queries and obtain aggregate CO2 intensity data
-//TODO check end times for invalid reports
 func getDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
 	if minutereports == nil {
 		return nil, fmt.Errorf("no reports for get dates")
@@ -238,8 +237,6 @@ func getDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 			}
 			
 			hourlyDates = append(hourlyDates, &genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
-			fmt.Println("HOURLY DATE IS")
-			fmt.Println( &genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
 			hourstart = endTime
 		}
 		previous = endTime
