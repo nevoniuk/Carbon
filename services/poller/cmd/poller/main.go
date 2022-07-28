@@ -59,9 +59,11 @@ func main() {
 		ctx = log.Context(ctx, log.WithDebug())
 		log.Debugf(ctx, "debug logs enabled")
 	}
-
+	//monitoring enabled is true - initilize tracing - only in production
+	//monitoring enabled is true - in janeway - dont initialize tracing
 	// Setup tracing
 	if *monitoringEnabled {
+		fmt.Println("here")
 		conn, err := grpc.DialContext(ctx, *agentaddr,
 			grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
@@ -126,21 +128,46 @@ func main() {
 	//initialize context for tracing
 	//create transport
 	server := gengrpc.New(endpoints, nil)
-	grpcsvr := grpc.NewServer(
-		grpcmiddleware.WithUnaryServerChain(
-			log.UnaryServerInterceptor(ctx),
-			trace.UnaryServerInterceptor(ctx),
-			goagrpcmiddleware.UnaryRequestID(),
-			goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
-		),
-		grpcmiddleware.WithStreamServerChain(
-			goagrpcmiddleware.StreamRequestID(),
-			log.StreamServerInterceptor(ctx),
-			goagrpcmiddleware.StreamServerLogContext(log.AsGoaMiddlewareLogger),
-			metrics.StreamServerInterceptor(ctx),
-			trace.StreamServerInterceptor(ctx),
-		),
-	)
+	var grpcsvr *grpc.Server
+	//if *monitoringEnabled {
+		grpcsvr = grpc.NewServer(
+			grpcmiddleware.WithUnaryServerChain(
+				log.UnaryServerInterceptor(ctx),
+				trace.UnaryServerInterceptor(ctx), //this
+				
+				goagrpcmiddleware.UnaryRequestID(),
+				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
+			),
+			grpcmiddleware.WithStreamServerChain(
+				goagrpcmiddleware.StreamRequestID(),
+				log.StreamServerInterceptor(ctx),
+				goagrpcmiddleware.StreamServerLogContext(log.AsGoaMiddlewareLogger),
+				metrics.StreamServerInterceptor(ctx),
+				trace.StreamServerInterceptor(ctx),//this
+			),
+		)
+	//} 
+	/**
+	else {
+		grpcsvr := grpc.NewServer(
+			grpcmiddleware.WithUnaryServerChain(
+				log.UnaryServerInterceptor(ctx),
+				trace.UnaryServerInterceptor(ctx), //this
+				
+				goagrpcmiddleware.UnaryRequestID(),
+				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
+			),
+			grpcmiddleware.WithStreamServerChain(
+				goagrpcmiddleware.StreamRequestID(),
+				log.StreamServerInterceptor(ctx),
+				goagrpcmiddleware.StreamServerLogContext(log.AsGoaMiddlewareLogger),
+				metrics.StreamServerInterceptor(ctx),
+				trace.StreamServerInterceptor(ctx),//this
+			),
+		)
+	}
+	*/
+	
 	genpb.RegisterPollerServer(grpcsvr, server)
 	reflection.Register(grpcsvr)
 	for svc, info := range grpcsvr.GetServiceInfo() {
