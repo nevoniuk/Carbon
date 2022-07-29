@@ -42,6 +42,8 @@ Deploying the Poller service in an Environment:
 
 3. Secrets either stored as carbon/poller for the poller service Singularity API or carbon/clickhouse for clickhouse
 
+3. Connect to a environment cluster using ckutil cloud kube-connect janeway
+
 4. For each env use `.deploy carbon <branch_name> to <env_name>` in the corresponding slack channel
 
 5. Since there is a large amount of carbon intensity reports to initially backfill when the service is deployed for the first time in an environment, the process below can be run to ensure that the the data is backfilled so that a cronjob won't expire before all reports are retrieved and written to clickhouse.
