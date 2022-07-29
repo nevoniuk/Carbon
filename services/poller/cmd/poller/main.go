@@ -66,7 +66,7 @@ func main() {
 		ctx = log.Context(ctx, log.WithDebug())
 		log.Debugf(ctx, "debug logs enabled")
 	}
-	//monitoring enabled is true - initialize tracing - only in production
+	//monitoring enabled is true - initialize tracing - only in production, office and sandbox
 	//monitoring enabled is false - in janeway - dont initialize tracing. set in .env
 	// Setup tracing
 	if *monitoringEnabled {

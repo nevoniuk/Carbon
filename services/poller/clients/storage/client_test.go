@@ -135,11 +135,6 @@ func TestInit(t *testing.T) {
 }
 
 func Test_client_SaveCarbonReports(t *testing.T) {
-	/*
-	errors:
-	IncorrectReportsError
-	no reports error or null
-	*/
 	var startTime = time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC)
 	var endTime = time.Date(2021, time.June, 1, 1, 0, 0, 0, time.UTC)
 	var invalidEndTime = time.Date(2021, time.February, 1, 1, 20, 0, 0, time.UTC)
@@ -193,11 +188,6 @@ func Test_client_SaveCarbonReports(t *testing.T) {
 }
 
 func Test_client_GetAggregateReports(t *testing.T) {
-	/* 
-		errors:
-		no reports error
-	
-	*/
 	var startTime = time.Date(2021, time.June, 1, 0, 0, 0, 0, nil)
 	var invalidStartTime = time.Date(2021, time.June, 1, 1, 10, 0, 0, nil)
 	var endTime = time.Date(2021, time.June, 1, 1, 10, 0, 0, nil)
@@ -206,7 +196,6 @@ func Test_client_GetAggregateReports(t *testing.T) {
 	invalid := &genpoller.Period{StartTime: invalidStartTime.Format(timeFormat), EndTime: invalidEndTime.Format(timeFormat)}
 	var periods []*genpoller.Period
 	nilReportsErr := errors.New("no reports error")
-	
 	tests := []struct {
 		name    string
 		noReportsErrors  error
