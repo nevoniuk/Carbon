@@ -39,47 +39,49 @@ Deploying the Poller service in an Environment:
 
 2. Make sure that the secrets are stored in AWS secrets manager
 
-3. Secrets either stored in carbon/poller for the poller service Singularity API or carbon/clickhouse for clickhouse
+3. Secrets either stored as carbon/poller for the poller service Singularity API or carbon/clickhouse for clickhouse
 
-4. For each env use `.deploy carbon <branch_name> to <env_name>` in the corresponding slack channels
+4. For each env use `.deploy carbon <branch_name> to <env_name>` in the corresponding slack channel
 
-5. Since there is a large amount of carbon intensity reports to initially backfill when the service is deployed, the process below can be run to ensure that the the data is backfilled so that a cronjob won't expire before all reports are retrieved and written to clickhouse.
+5. Since there is a large amount of carbon intensity reports to initially backfill when the service is deployed for the first time in an environment, the process below can be run to ensure that the the data is backfilled so that a cronjob won't expire before all reports are retrieved and written to clickhouse.
 
-2. keep backfilling using: back fill if the service is running for the first time ever in each env
+1. Get the pod that is currently running:
+		kubectl get pods -n carbon:
 
-```
-$ kubectl get pods -n carbon
-NAME                      READY   STATUS    RESTARTS   AGE
-poller-5ff4565c7d-nzhjv   1/1     Running   0          2m50s
+		example response:
 
-
-kubectl -n carbon port-forward {pod_id_from_above} 12500 &
-get logs using:
-kubectl -n carbon logs -f {pod_id_from_above}
-
-```
-make api request to the pod in a new tab: grpcurl -plaintext -max-time=1200 localhost:12500 poller.Poller.Update
-```
+		NAME                      READY   STATUS    RESTARTS   AGE
+		poller-5ff4565c7d-nzhjv   1/1     Running   0          2m50s
 
 
+2. Run port-forward and get the logs:
+		kubectl -n carbon port-forward {pod_id_from_above} 12500 &
+		kubectl -n carbon logs -f {pod_id_from_above}
 
 
+3. Make an api request to the pod in a new tab:
+	 	grpcurl -plaintext -max-time=1200 localhost:12500 poller.Poller.Update
 
 
+Testing the Poller service Locally:
 
-``` running stuff locally
-build server
-scripts/setup
-run server: scripts/server
+1. Build server:
+		scripts/setup
 
-run client: go build -o bin/poller-cli github.com/crossnokaye/carbon/services/poller/cmd/poller-cli
+2. Run server:
+		scripts/server
+3. Run client:
+		go build -o bin/poller-cli github.com/crossnokaye/carbon/services/poller/cmd/poller-cli
 
-call update using client: ./bin/poller-cli --url="grpc://localhost:12500" poller update
-call uopdate using grpcurl:
-brew install grpcurl
-grpcurl -plaintext localhost:12500 poller.Poller.Update
+4. Call the method Update using client: 
+		./bin/poller-cli --url="grpc://localhost:12500" poller update
 
-Connect to clickhouse locally:
+5. Call update using grpcurl:
+		1. brew install grpcurl
+		2. grpcurl -plaintext localhost:12500 poller.Poller.Update
+
+Connect to clickhouse locally to ensure that carbon intensity reports were written:
+
 exec into docker container:
 ```bash
 $ docker ps
