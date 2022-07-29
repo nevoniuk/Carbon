@@ -243,8 +243,6 @@ func getDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 				daystart = endTime
 				if weekcounter == 7 {
 					weeklyDates = append(weeklyDates, &genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
-					fmt.Println("WEEKLY REPORT DATE")
-					fmt.Println(&genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
 					weekstart = endTime
 					weekcounter = 0
 				}
