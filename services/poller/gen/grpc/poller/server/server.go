@@ -58,7 +58,11 @@ func (s *Server) Update(ctx context.Context, message *pollerpb.UpdateRequest) (*
 		var en ErrorNamer
 		if errors.As(err, &en) {
 			switch en.ErrorName() {
+			case "clickhouse_error":
+				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
 			case "server_error":
+				return nil, goagrpc.NewStatusError(codes.Internal, err, goagrpc.NewErrorResponse(err))
+			case "no_data_error":
 				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
 			}
 		}
@@ -89,7 +93,7 @@ func (s *Server) GetEmissionsForRegion(ctx context.Context, message *pollerpb.Ge
 			case "no_data":
 				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
 			case "server_error":
-				return nil, goagrpc.NewStatusError(codes.NotFound, err, goagrpc.NewErrorResponse(err))
+				return nil, goagrpc.NewStatusError(codes.Internal, err, goagrpc.NewErrorResponse(err))
 			}
 		}
 		return nil, goagrpc.EncodeError(err)

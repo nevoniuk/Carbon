@@ -16,31 +16,23 @@ import (
 // (i.e. is unexpected).
 func mapAndLogError(ctx context.Context, err error) error {
 	var gerr *goa.ServiceError
-	if errors.As(err, &gerr) {
-		if gerr.Name == "server_error" {
-			return genpoller.MakeServerError(gerr)
-		}
-		if gerr.Name == "no_data" {
-			return genpoller.MakeServerError(gerr)
-		}
-	}
 	var serverError carbonara.ServerError
 	var noDataError carbonara.NoDataError
+	var noReports storage.NoReportsError
+	var badReports storage.IncorrectReportsError
 	if errors.As(err, &serverError) {
-		return genpoller.MakeServerError(serverError)
+		gerr = genpoller.MakeServerError(serverError)
 	}
 	if errors.As(err, &noDataError) {
-		return genpoller.MakeNoData(noDataError)
+		gerr = genpoller.MakeNoData(noDataError)
 	}
-	var noReports storage.NoReportsError
 	if errors.As(err, &noReports) {
-		return genpoller.MakeNoData(noReports)
+		gerr = genpoller.MakeClickhouseError(noReports)
 	}
-	var badReports storage.IncorrectReportsError
 	if errors.As(err, &badReports) {
-		return genpoller.MakeNoData(badReports)
+		gerr = genpoller.MakeClickhouseError(badReports)
 	}
-	log.Error(ctx, err)
+	log.Error(ctx, gerr)
 	return err
 }
 

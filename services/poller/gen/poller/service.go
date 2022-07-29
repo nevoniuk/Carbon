@@ -76,6 +76,24 @@ func MakeServerError(err error) *goa.ServiceError {
 	}
 }
 
+// MakeClickhouseError builds a goa.ServiceError from an error.
+func MakeClickhouseError(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "clickhouse_error",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
+	}
+}
+
+// MakeNoDataError builds a goa.ServiceError from an error.
+func MakeNoDataError(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "no_data_error",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
+	}
+}
+
 // MakeNoData builds a goa.ServiceError from an error.
 func MakeNoData(err error) *goa.ServiceError {
 	return &goa.ServiceError{

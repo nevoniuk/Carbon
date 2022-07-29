@@ -1,4 +1,5 @@
-# Poller Service
+Poller Service
+
 The Poller Service is meant to download carbon intensity reports from Singularity's Carbonara API and write them to clickhouse. It has two service methods to accomplish this: Update and GetEmissionsForRegion. Both will use Singularity's "Search endpoint" which will return carbon intensity data in series of 5 minute reports
 
 Update Endpoint:
@@ -82,20 +83,23 @@ Testing the Poller service Locally:
 
 Connect to clickhouse locally to ensure that carbon intensity reports were written:
 
-exec into docker container:
-```bash
-$ docker ps
+1. Exec into docker container:
+
+	run docker ps
+
 CONTAINER ID   IMAGE                                 COMMAND                  CREATED       STATUS      PORTS                                                      NAMES
 2698324fc48b   yandex/clickhouse-server:21.11.10.1   "/entrypoint.sh"         4 weeks ago   Up 6 days   0.0.0.0:8123->8123/tcp, 9009/tcp, 0.0.0.0:8088->9000/tcp   carbon_clickhouse
 ec6f88377f32   redis:alpine                          "docker-entrypoint.s…"   6 weeks ago   Up 6 days   0.0.0.0:6379->6379/tcp                                     iam-redis
 
+then
 
 docker exec -it 2698324fc48b /bin/sh
 
-```
-connnect to clickhouse
-```
+3. connnect to clickhouse
+
 # clickhouse-client --password atlas -u atlas
 
+4. query for carbon intensity reports
+
 2698324fc48b :) select * from carbondb.carbon_reports
-```
+

@@ -31,6 +31,8 @@ func NewClient(update, getEmissionsForRegion goa.Endpoint) *Client {
 // Update calls the "update" endpoint of the "Poller" service.
 // Update may return the following errors:
 //	- "server_error" (type *goa.ServiceError): Error with Singularity Server.
+//	- "clickhouse_error" (type *goa.ServiceError): Error saving or retrieving reports from clickhouse
+//	- "no_data_error" (type *goa.ServiceError): No data available from Server
 //	- error: internal error
 func (c *Client) Update(ctx context.Context) (err error) {
 	_, err = c.UpdateEndpoint(ctx, nil)
