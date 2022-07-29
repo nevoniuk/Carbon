@@ -141,7 +141,7 @@ func (c *client) GetAggregateReports(ctx context.Context,
 		newend, _ := time.Parse(timeFormat, period.EndTime)
 		rows := c.chcon.QueryRow(ctx,`
 		SELECT
-			AVG(generatedrate) AS generatedate,
+			AVG(generatedrate) AS generatedrate,
 			AVG(marginalrate) AS marginalrate,
 			AVG(consumedrate) AS consumedrate
 		FROM 
