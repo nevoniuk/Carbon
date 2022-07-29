@@ -50,11 +50,13 @@ func main() {
 	if log.IsTerminal() {
 		format = log.FormatTerminal
 	}
+	//log context
 	ctx := log.With(log.Context(context.Background(), log.WithFormat(format)), log.KV{K: "svc", V: genpoller.ServiceName})
+	
+	//log clickhouse credentials and monitoring status
 	log.Info(ctx,
         log.KV{K: "ch-addr", V: *chaddr},
         log.KV{K: "ch-user", V: *chuser})
-
 		log.Info(ctx,
 			log.KV{K: "monitoringEnabled", V: *monitoringEnabled})
 
@@ -62,8 +64,8 @@ func main() {
 		ctx = log.Context(ctx, log.WithDebug())
 		log.Debugf(ctx, "debug logs enabled")
 	}
-	//monitoring enabled is true - initilize tracing - only in production
-	//monitoring enabled is false - in janeway - dont initialize tracing
+	//monitoring enabled is true - initialize tracing - only in production
+	//monitoring enabled is false - in janeway - dont initialize tracing. set in .env
 	// Setup tracing
 	if *monitoringEnabled {
 		conn, err := grpc.DialContext(ctx, *agentaddr,
@@ -72,7 +74,6 @@ func main() {
 			log.Errorf(ctx, err, "failed to connect to Grafana agent")
 			os.Exit(1)
 		}
-	
 		if ctx, err = trace.Context(ctx, genpoller.ServiceName, trace.WithGRPCExporter(conn)); err != nil {
 			log.Errorf(ctx, err, "failed to initialize tracing")
 			os.Exit(1)
@@ -83,13 +84,12 @@ func main() {
 	//initialize the metrics
 	ctx = metrics.Context(ctx, genpoller.ServiceName)
 
-	//intiialize the clients
+	//initialize the clients
 	c := &http.Client{}
 	if *monitoringEnabled {
 		c.Transport = trace.Client(ctx, http.DefaultTransport)
 	}
 	csc := carbonara.New(c, *carbonKey)
-
 	chadd := *chaddr
 	if chadd == "" {
 		chadd = "localhost:8088" //dev default
@@ -126,8 +126,6 @@ func main() {
 	//setup the service
 	pollerSvc := pollerapi.NewPoller(ctx, csc, dbc)
 	endpoints := genpoller.NewEndpoints(pollerSvc)
-	//pollerSvc.Update(ctx)
-	//initialize context for tracing
 	//create transport
 	server := gengrpc.New(endpoints, nil)
 	var grpcsvr *grpc.Server
@@ -135,8 +133,7 @@ func main() {
 		grpcsvr = grpc.NewServer(
 			grpcmiddleware.WithUnaryServerChain(
 				log.UnaryServerInterceptor(ctx),
-				trace.UnaryServerInterceptor(ctx), //this
-				
+				trace.UnaryServerInterceptor(ctx),
 				goagrpcmiddleware.UnaryRequestID(),
 				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
 			),
@@ -154,8 +151,6 @@ func main() {
 		grpcsvr = grpc.NewServer(
 			grpcmiddleware.WithUnaryServerChain(
 				log.UnaryServerInterceptor(ctx),
-				//trace.UnaryServerInterceptor(ctx),
-				
 				goagrpcmiddleware.UnaryRequestID(),
 				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
 			),

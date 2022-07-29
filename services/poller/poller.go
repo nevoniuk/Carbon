@@ -34,7 +34,6 @@ var reportdurations [5]string = [5]string{model.Minute, model.Hourly, model.Hour
 const regionstartdate = "2020-01-01T00:00:00+00:00"
 // The AESO region start date is earlier than other region start dates
 const AesoStartDate = "2020-05-15T16:00:00+00:00"
-
 // NewPoller returns the Poller service implementation.
 func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *pollersrvc {
 	ctx, cancel := context.WithCancel(ctx)
@@ -106,12 +105,11 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 				newEndTime = newEndTime.AddDate(0, 0, 1)
 				startTime = newEndTime
 				continue
-			}
-			
-			log.Info(ctx, log.KV{K: "minReportsLength", V: len(minreports)}, 
+			}	
+			log.Info(ctx, log.KV{K: "reports length", V: len(minreports)}, 
 			log.KV{K: "startTime", V: startTime},
-			log.KV{K: "endTime", V: newEndTime})
-
+			log.KV{K: "endTime", V: newEndTime},
+			log.KV{K: "report type", V: model.Minute})
 			dateConfigs, err := getDates(ctx, minreports)
 			if err != nil {
 				log.Error(ctx, err)
@@ -126,6 +124,10 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			for j := 1; j < len(dateConfigs); j++ {
 				if dateConfigs[j] != nil {
 					res, aggErr := s.aggregateData(ctx, region, dateConfigs[j], reportdurations[j])
+					log.Info(ctx, log.KV{K: "reports length", V: len(res)}, 
+					log.KV{K: "startTime", V: startTime},
+					log.KV{K: "endTime", V: newEndTime},
+					log.KV{K: "report type", V: reportdurations[j]})
 					if aggErr != nil {
 						return mapAndLogErrorf(ctx,  "failed to get Average Carbon Reports:%w\n", aggErr)
 					}
