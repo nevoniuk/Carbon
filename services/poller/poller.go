@@ -29,7 +29,7 @@ model.Isone, model.Miso,
   model.Nyiso_nyli, model.Nyiso_nyup,
    model.Pjm, model.Spp} 
 // reportdurations maintains the interval length of each report using constants from the model directory
-var reportdurations [5]string = [5]string{model.Minute, model.Hourly, model.Hourly, model.Weekly, model.Monthly}
+var reportdurations [5]string = [5]string{model.Minute, model.Hourly, model.Daily, model.Weekly, model.Monthly}
 // common start date for regions
 const regionstartdate = "2020-01-01T00:00:00+00:00"
 // The AESO region start date is earlier than other region start dates
@@ -121,18 +121,18 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			if err != nil {
 				return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
 			}
-			for j := 1; j < len(dateConfigs); j++ {
+			for j := 0; j < len(dateConfigs); j++ {
 				if dateConfigs[j] != nil {
-					res, aggErr := s.aggregateData(ctx, region, dateConfigs[j], reportdurations[j])
+					res, aggErr := s.aggregateData(ctx, region, dateConfigs[j], reportdurations[(j+1)])
 					log.Info(ctx, log.KV{K: "reports length", V: len(res)}, 
 					log.KV{K: "startTime", V: startTime},
 					log.KV{K: "endTime", V: newEndTime},
-					log.KV{K: "report type", V: reportdurations[j]})
+					log.KV{K: "report type", V: reportdurations[(j + 1)]})
 					if aggErr != nil {
 						return mapAndLogErrorf(ctx,  "failed to get Average Carbon Reports:%w\n", aggErr)
 					}
 					if res == nil {
-						log.Error(ctx, fmt.Errorf("No aggregate reports returned for region %s and interval type %s\n", regions[i], reportdurations[j]))
+						log.Error(ctx, fmt.Errorf("No aggregate reports returned for region %s and interval type %s\n", regions[i], reportdurations[(j + 1)]))
 					}
 				}
 			}
@@ -243,6 +243,8 @@ func getDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 				daystart = endTime
 				if weekcounter == 7 {
 					weeklyDates = append(weeklyDates, &genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
+					fmt.Println("WEEKLY REPORT DATE")
+					fmt.Println(&genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
 					weekstart = endTime
 					weekcounter = 0
 				}

@@ -55,8 +55,10 @@ func main() {
 	
 	//log clickhouse credentials and monitoring status
 	log.Info(ctx,
+		log.KV{K: "singularity-key", V: *carbonKey},
         log.KV{K: "ch-addr", V: *chaddr},
         log.KV{K: "ch-user", V: *chuser})
+		
 		log.Info(ctx,
 			log.KV{K: "monitoringEnabled", V: *monitoringEnabled})
 
@@ -137,15 +139,6 @@ func main() {
 				goagrpcmiddleware.UnaryRequestID(),
 				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
 			),
-			/**
-			grpcmiddleware.WithStreamServerChain(
-				goagrpcmiddleware.StreamRequestID(),
-				log.StreamServerInterceptor(ctx),
-				goagrpcmiddleware.StreamServerLogContext(log.AsGoaMiddlewareLogger),
-				metrics.StreamServerInterceptor(ctx),
-				trace.StreamServerInterceptor(ctx),//this
-			),
-			*/
 		)
 	} else {
 		grpcsvr = grpc.NewServer(
@@ -154,15 +147,6 @@ func main() {
 				goagrpcmiddleware.UnaryRequestID(),
 				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
 			),
-			/**
-			grpcmiddleware.WithStreamServerChain(
-				goagrpcmiddleware.StreamRequestID(),
-				log.StreamServerInterceptor(ctx),
-				goagrpcmiddleware.StreamServerLogContext(log.AsGoaMiddlewareLogger),
-				metrics.StreamServerInterceptor(ctx),
-				//trace.StreamServerInterceptor(ctx),
-			),
-			*/
 		)
 	}
 

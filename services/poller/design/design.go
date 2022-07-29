@@ -16,12 +16,17 @@ var _ = API("Poller", func() {
 
 var _ = Service("Poller", func() {
 	Description("Service that provides forecasts to clickhouse from Carbonara API")
+	
 	Method("update", func() {
 		Description("query Singularity's search endpoint and convert 5 min interval reports into averages")
 		Error("server_error", ErrorResult, "Error with Singularity Server.")
+		Error("clickhouse_error", ErrorResult, "Error saving or retrieving reports from clickhouse")
+		Error("no_data_error", ErrorResult, "No data available from Server")
 		GRPC(func() {
 			Response(CodeOK)
-			Response("server_error", CodeNotFound)
+			Response("clickhouse_error", CodeNotFound)
+			Response("server_error", CodeInternal)
+			Response("no_data_error", CodeNotFound)
 		})
 	})
 	Method("get_emissions_for_region", func() {
@@ -33,7 +38,7 @@ var _ = Service("Poller", func() {
 		GRPC(func() {
 			Response(CodeOK)
 			Response("no_data", CodeNotFound)
-			Response("server_error", CodeNotFound)
+			Response("server_error", CodeInternal)
 		})
 	})
 	
