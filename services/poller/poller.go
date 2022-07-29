@@ -29,7 +29,7 @@ model.Isone, model.Miso,
   model.Nyiso_nyli, model.Nyiso_nyup,
    model.Pjm, model.Spp} 
 // reportdurations maintains the interval length of each report using constants from the model directory
-var reportdurations [5]string = [5]string{ model.Minute, model.Hourly, model.Hourly, model.Weekly, model.Monthly}
+var reportdurations [5]string = [5]string{model.Minute, model.Hourly, model.Hourly, model.Weekly, model.Monthly}
 // common start date for regions
 const regionstartdate = "2020-01-01T00:00:00+00:00"
 // The AESO region start date is earlier than other region start dates
@@ -123,7 +123,7 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			if err != nil {
 				return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
 			}
-			for j := 0; j < len(dateConfigs); j++ {
+			for j := 1; j < len(dateConfigs); j++ {
 				if dateConfigs[j] != nil {
 					res, aggErr := s.aggregateData(ctx, region, dateConfigs[j], reportdurations[j])
 					if aggErr != nil {
