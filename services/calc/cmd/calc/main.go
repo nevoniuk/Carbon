@@ -35,7 +35,6 @@ import (
     
 )
 func main() {
-
 	var (
 		grpcaddr  = flag.String("grpc-addr", "0.0.0.0:12200", "gRPC listen address")
 		httpaddr  = flag.String("http-addr", "0.0.0.0:12201", "HTTP listen address")
@@ -48,6 +47,7 @@ func main() {
 		debug = flag.Bool("debug", false, "debug mode")
         //past val service host address
         pastValaddr = flag.String("pastval-add", ":10140", "Past-Value host address")
+		//mockpastValadd = flag.String("pastval-add", ":10140", "Past-Value host address")
         env = flag.String("dev", os.Getenv("ENV"), "facility environment") //what is this?
 	)
 	flag.Parse()

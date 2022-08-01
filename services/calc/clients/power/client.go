@@ -156,6 +156,7 @@ func (c *client) getControlPointID(ctx context.Context, orgID string, agentName 
     payload := genvalues.PointNameQuery{OrgID: genvalues.UUID(orgID), ClientName: agentName, PointName: pointName}
     fmt.Println(payload)
     res, err := c.findControlPointConfigsByName(ctx, &payload)
+    fmt.Println("HERE")
     fmt.Println(err)
     if err != nil {
         return nil, err
