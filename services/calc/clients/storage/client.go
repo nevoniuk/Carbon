@@ -1,5 +1,4 @@
 package storage
-
 import (
 	"context"
 	"fmt"
@@ -19,7 +18,7 @@ type (
 		// Ping will ensure the DB connection is valid
 		Ping(context.Context) error
 		// GetCarbonReports will return carbon intensity reports from clickhouse. These reports were obtained from the poller service
-		GetCarbonReports(context.Context, []*gencalc.Period, string, string) ([]*gencalc.CarbonReport, error)
+		GetCarbonReports(context.Context, []*gencalc.Period, string, string) (*gencalc.CarbonReport, error)
 	}
 	client struct {
 		chcon clickhouse.Conn
@@ -32,7 +31,7 @@ type (
 const timeFormat = "2006-01-02T15:04:05-07:00"
 
 // reportdurations maintains the interval length of each report using constants from the model directory
-var reportdurations [5]string = [5]string{ model.Minute, model.Hourly, model.Daily, model.Weekly, }
+var reportdurations [5]string = [5]string{model.Minute, model.Hourly, model.Daily, model.Weekly, model.Monthly}
 func (c *client) Name() string {
 	var name = "Clickhouse"
 	return name
@@ -53,10 +52,10 @@ func (c *client) Init(ctx context.Context, test bool) error {
 		}
 		return err
 	}
+	/**
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
 		return err
 	}
-
 	var err error 
 	err = c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS carbondb.power_reports (
@@ -69,22 +68,20 @@ func (c *client) Init(ctx context.Context, test bool) error {
 	if err != nil {
 		return fmt.Errorf("failed to create power reports table")
 	}
-	return err	
+	*/
+	return nil
 }
 
 // GetCarbonReports will return carbon intensity reports from clickhouse for the given duration, region and intervaltype
-func (c *client) GetCarbonReports(ctx context.Context, duration []*gencalc.Period, intervalType string, region string) ([]*gencalc.CarbonReport, error) {
-	var reports []*gencalc.CarbonReport
-	var report *gencalc.CarbonReport
+func (c *client) GetCarbonReports(ctx context.Context, duration []*gencalc.Period, intervalType string, region string) (*gencalc.CarbonReport, error) {
+	var intensityPoints []*gencalc.DataPoint
 	var averagegen float64
 	for _, period := range duration {
 		var newstart, _ = time.Parse(timeFormat, period.StartTime)
 		var newend, _ = time.Parse(timeFormat, period.EndTime)
 		rows := c.chcon.QueryRow(ctx,`
 		SELECT
-			AVG(generatedrate) AS generatedate,
-			AVG(marginalrate) AS marginalrate,
-			AVG(consumedrate) AS consumedrate
+			AVG(generatedrate) AS generatedate
 		FROM 
 			carbondb.carbon_reports
 		WHERE
@@ -95,11 +92,14 @@ func (c *client) GetCarbonReports(ctx context.Context, duration []*gencalc.Perio
 		if err != nil {
 			return nil, ErrNotFound{Err: fmt.Errorf("could not get carbon intensity report for start %s and end %s", period.StartTime, period.EndTime)}
 		}
-		var duration = &gencalc.Period{StartTime: period.StartTime, EndTime: period.EndTime}
-		report = &gencalc.CarbonReport{GeneratedRate: averagegen, Duration: duration, Interval: intervalType, Region: region}
-		reports = append(reports, report)	
+		intensityPoint := &gencalc.DataPoint{Time: period.StartTime, Value: averagegen}
+		intensityPoints = append(intensityPoints, intensityPoint)	
 	}
-	return reports, nil
+	var startTime = duration[0].StartTime
+	var endTime = duration[(len(duration) - 1)].EndTime
+	var per = &gencalc.Period{StartTime: startTime, EndTime: endTime}
+	report := &gencalc.CarbonReport{IntensityPoints: intensityPoints, Duration: per, Interval: intervalType, Region: region}
+	return report, nil
 }
 
 func (err ErrNotFound) Error() string { return err.Err.Error() }

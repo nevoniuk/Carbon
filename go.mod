@@ -58,6 +58,7 @@ require (
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.0.15
 	github.com/crossnokaye/past-values v0.0.5
+	github.com/crossnokaye/utility v0.0.3
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	goa.design/clue v0.7.0
 	gopkg.in/yaml.v3 v3.0.1

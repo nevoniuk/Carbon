@@ -19,4 +19,7 @@ const (
 	Nyiso_nyli = "NYISO.NYLI"
 	Pjm = "PJM"
 	Spp = "SPP"
+	Kwh = "Kwh"
+	Kwh_Min = "Kwh/min"
+	Pulse_count = "Pulse count"
 )

@@ -12,20 +12,16 @@ import (
     "time"
     "net"
 	"net/http"
-
-
     ch "github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/crossnokaye/carbon/model"
     gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
     calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
     calcsvr "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/server"
-
     calcapi "github.com/crossnokaye/carbon/services/calc"
     pastvalsvc "github.com/crossnokaye/carbon/services/calc/clients/power"
-
     "github.com/crossnokaye/carbon/clients/clickhouse"
     "github.com/crossnokaye/carbon/services/calc/clients/storage"
 	"github.com/crossnokaye/carbon/services/calc/clients/facilityconfig"
-
     goagrpcmiddleware "goa.design/goa/v3/grpc/middleware"
     grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
     "google.golang.org/grpc/credentials/insecure"
@@ -42,26 +38,20 @@ import (
 
 
 func main() {
-	// Define command line flags, add any other flag required to configure the
-	// service.
 
 	var (
-		
 		grpcaddr  = flag.String("grpc-addr", "0.0.0.0:12200", "gRPC listen address")
 		httpaddr  = flag.String("http-addr", "0.0.0.0:12201", "HTTP listen address")
 		agentaddr = flag.String("agent-addr", ":4317", "Grafana agent listen address")
-
 		chaddr = flag.String("ch-addr", os.Getenv("CLICKHOUSE_ADDR"), "ClickHouse host address")
 		chuser = flag.String("ch-user", os.Getenv("CLICKHOUSE_USER"), "ClickHouse user")
 		chpwd  = flag.String("ch-pwd", os.Getenv("CLICKHOUSE_PASSWORD"), "ClickHouse password")
 		chssl  = flag.Bool("ch-ssl", os.Getenv("CLICKHOUSE_SSL") != "", "ClickHouse connection SSL")
-
+		monitoringEnabled = flag.Bool("monitoring-enabled", true, "monitoring")
 		debug = flag.Bool("debug", false, "debug mode")
         //past val service host address
-        pastValaddr = flag.String("pastval-add", "localhost:10110", "Past-Value hos address")
-        env = flag.String("dev", os.Getenv("ENV"), "facility environment")
-		
-       
+        pastValaddr = flag.String("pastval-add", "localhost:10110", "Past-Value host address")
+        env = flag.String("dev", os.Getenv("ENV"), "facility environment") //what is this?
 	)
 	flag.Parse()
 
@@ -71,25 +61,33 @@ func main() {
 		format = log.FormatTerminal
 	}
 	ctx := log.With(log.Context(context.Background(), log.WithFormat(format)), log.KV{K: "svc", V: gencalc.ServiceName})
+	//log clickhouse credentials and monitoring status
+	log.Info(ctx,
+		log.KV{K: "pastval-add", V: *pastValaddr},
+        log.KV{K: "ch-addr", V: *chaddr},
+        log.KV{K: "ch-user", V: *chuser})
+		log.Info(ctx,
+			log.KV{K: "monitoringEnabled", V: *monitoringEnabled})
+	
 	if *debug {
 		ctx = log.Context(ctx, log.WithDebug())
 		log.Debugf(ctx, "debug logs enabled")
 	}
-
-	// Setup tracing
-	grafanaconn, err := grpc.DialContext(ctx, *agentaddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Errorf(ctx, err, "failed to connect to Grafana agent")
-		os.Exit(1)
+	if *monitoringEnabled {
+		conn, err := grpc.DialContext(ctx, *agentaddr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Errorf(ctx, err, "failed to connect to Grafana agent")
+			os.Exit(1)
+		}
+		log.Debugf(ctx, "connected to Grafana agent %s", agentaddr)
+		if ctx, err = trace.Context(ctx, gencalc.ServiceName, trace.WithGRPCExporter(conn)); err != nil {
+			log.Errorf(ctx, err, "failed to initialize tracing")
+			os.Exit(1)
+		}
 	}
-    log.Debugf(ctx, "connected to Grafana agent %s", agentaddr)
-	ctx, err = trace.Context(ctx, gencalc.ServiceName, trace.WithGRPCExporter(grafanaconn))
-	if err != nil {
-		log.Errorf(ctx, err, "failed to initialize tracing")
-		os.Exit(1)
-	}
-
+	//initialize the metrics
+	ctx = metrics.Context(ctx, gencalc.ServiceName)
 
     //1.initialize clickhouse client
     chadd := *chaddr
@@ -132,6 +130,7 @@ func main() {
 
     //3.initialize power_server repo with the env loader
     facilityRepo := facilityconfig.New(*env)
+
 	//4.initialize power client with past val grpc connection
     pastValConn, err := grpc.Dial(*pastValaddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -141,30 +140,44 @@ func main() {
     pwc := pastvalsvc.New(pastValConn)
 	// Initialize the services and endpoints
 	log.Print(ctx, log.KV{K: "creating", V: "service endpoints"})
-
 	var calcSvc gencalc.Service
 	calcSvc = calcapi.NewCalc(ctx, pwc, dbc, facilityRepo)
     endpoints := gencalc.NewEndpoints(calcSvc)
-	
+	//remove later
+
+	orgID := "52858b15-16ce-4998-b317-a1ce68c348c3"
+	facID := "a5746ffa-2073-455e-b811-322ad3c3c4b7"
+	locID := "cf153258-c08f-4ff0-9b01-d51d452e40e5"
+	Interval := model.Hourly
+	timeFormat := "2006-01-02T15:04:05-07:00"
+	var startTime = time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC)
+	var endTime = time.Date(2021, time.June, 1, 1, 10, 0, 0, time.UTC)
+	duration := &gencalc.Period{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat)}
+	payload := &gencalc.RequestPayload{OrgID: gencalc.UUID(orgID),
+		 Duration: duration, FacilityID: gencalc.UUID(facID), Interval: Interval, LocationID: gencalc.UUID(locID)}
+	calcSvc.HistoricalCarbonEmissions(ctx, payload)
 
     //intialize transport
 	grpcserver := calcsvr.New(endpoints, nil)
-	grpcsvr := grpc.NewServer(
-		grpcmiddleware.WithUnaryServerChain(
-			goagrpcmiddleware.UnaryRequestID(),
-			log.UnaryServerInterceptor(ctx),
-			goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
-			metrics.UnaryServerInterceptor(ctx),
-			trace.UnaryServerInterceptor(ctx),
-		),
-		grpcmiddleware.WithStreamServerChain(
-			goagrpcmiddleware.StreamRequestID(),
-			log.StreamServerInterceptor(ctx),
-			goagrpcmiddleware.StreamServerLogContext(log.AsGoaMiddlewareLogger),
-			metrics.StreamServerInterceptor(ctx),
-			trace.StreamServerInterceptor(ctx),
-		),
-	)
+	var grpcsvr *grpc.Server
+	if *monitoringEnabled {
+		grpcsvr = grpc.NewServer(
+			grpcmiddleware.WithUnaryServerChain(
+				log.UnaryServerInterceptor(ctx),
+				trace.UnaryServerInterceptor(ctx),
+				goagrpcmiddleware.UnaryRequestID(),
+				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
+			),
+		)
+	} else {
+		grpcsvr = grpc.NewServer(
+			grpcmiddleware.WithUnaryServerChain(
+				log.UnaryServerInterceptor(ctx),
+				goagrpcmiddleware.UnaryRequestID(),
+				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
+			),
+		)
+	}
 	calcpb.RegisterCalcServer(grpcsvr, grpcserver)
 	reflection.Register(grpcsvr)
 	for svc, info := range grpcsvr.GetServiceInfo() {

@@ -33,6 +33,7 @@ func mapAndLogError(ctx context.Context, err error) error {
 		gerr = genpoller.MakeClickhouseError(badReports)
 	}
 	log.Error(ctx, gerr)
+	//TODO: what if none of the above errors are returned
 	return err
 }
 
