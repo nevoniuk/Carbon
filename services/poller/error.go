@@ -34,6 +34,9 @@ func mapAndLogError(ctx context.Context, err error) error {
 	} else {
 		gerr = genpoller.MakeNoData(noDataError)
 	}
+	if gerr == nil {
+		gerr = genpoller.MakeNoData(err)
+	}
 	log.Error(ctx, gerr)
 	return err
 }
