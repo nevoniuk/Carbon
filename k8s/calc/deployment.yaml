@@ -37,6 +37,9 @@ spec:
               name: grpc
             - containerPort: 12501
               name: http-metrics
+          env:
+            -name: PAST_VALUES_ADDR
+            value: "past-values.past-values.svc.cluster.local.:10140"
           readinessProbe:
             httpGet:
               path: /healthz
