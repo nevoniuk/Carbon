@@ -130,7 +130,7 @@ func main() {
 
 	//4.initialize power client with past val grpc connection
 	log.Print(ctx, log.KV{K: "connecting", V: "past values"}, log.KV{K: "addr", V: pastValaddr})
-    pastValConn, err := grpc.Dial(*pastValaddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+    pastValConn, err := grpc.DialContext(ctx, *pastValaddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Errorf("could not connect to Past Values service: %v", err)
         return
