@@ -51,18 +51,24 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 		log.Errorf(ctx, err, "error parsing time in getDates:%w\n", err)
 		return nil, err
 	}
+	//remove after testing
+	/**
 	var res *facilityconfig.Carbon
 	res, err = s.getLocationData(ctx, string(req.OrgID), string(req.FacilityID), string(req.LocationID))
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetLocationData, err)
 	}
 	singularityRegion, controlPointName, formula, agentName := res.Region, res.ControlPointName, res.Formula, res.AgentName
-
+*/
+	cpaliasname := "energy_meter_4_pulse_val"
+	formula := "0.6"
+	agentName := "Lineage Oxnard Building 4"
+	singularityRegion, controlPointName, formula, agentName := model.Caiso, cpaliasname, formula, agentName
 	carbonReports, err := s.getCarbonIntensityData(ctx, dates, req.Interval, singularityRegion)
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetCarbonReports, err)
 	}
-		
+	//this may need to be carbon reports start and end time instead because getDates may have truncatedthe time
 	endTime, _ := time.Parse(timeFormat, req.Duration.EndTime)
 	startTime, _ := time.Parse(timeFormat, req.Duration.StartTime)
 	difference := endTime.Sub(startTime)
@@ -125,6 +131,7 @@ func (s *calcSvc) getCarbonIntensityData(ctx context.Context, dates []*gencalc.P
 
 // getDates returns an array of dates for the storage client in order to correctly query for carbon reports
 func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *gencalc.Period) ([]*gencalc.Period, error) {
+	fmt.Println("IN GET DATES")
 	var newDates []*gencalc.Period
 	initialstart, _ := time.Parse(timeFormat, duration.StartTime)
 	fmt.Println(initialstart)
@@ -193,15 +200,16 @@ func mapAndLogError(ctx context.Context, err error) error {
 	if errors.As(err, &fNotFound) {
 		gerr = gencalc.MakeFacilityNotFound(fNotFound)
 	}
-	
 	if errors.As(err, &lNotFound) {
 		gerr = gencalc.MakeFacilityNotFound(lNotFound)
 	}
 	
 	if errors.As(err, &powerreportsNotFound) {
 		gerr = gencalc.MakeReportsNotFound(powerreportsNotFound)
+	} else {
+		log.Errorf(ctx, err, "Error not found: %w", err)
+		gerr = gencalc.MakeReportsNotFound(err)
 	}
-	//error: gerr is null
 	log.Error(ctx, gerr)
 	return err
 }

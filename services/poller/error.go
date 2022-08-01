@@ -31,9 +31,10 @@ func mapAndLogError(ctx context.Context, err error) error {
 	}
 	if errors.As(err, &badReports) {
 		gerr = genpoller.MakeClickhouseError(badReports)
+	} else {
+		gerr = genpoller.MakeNoData(noDataError)
 	}
 	log.Error(ctx, gerr)
-	//TODO: what if none of the above errors are returned
 	return err
 }
 

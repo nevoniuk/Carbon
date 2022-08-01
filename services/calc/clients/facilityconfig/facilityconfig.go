@@ -86,7 +86,7 @@ func (c *client) GetCarbonConfig(ctx context.Context, orgID string, facilityID s
 	err = validate(carbon)
 	fmt.Println("IN CARBON CONFIG")
 	if err != nil {
-		return nil, ErrConfigNotFound{fmt.Errorf("could not get carbon config with err: %w\n", err)}
+		return nil, ErrConfigNotFound{fmt.Errorf("could not validate carbon config with err: %w\n", err)}
 	}
 	return carbon, nil
 }
@@ -106,7 +106,7 @@ func findOrg(ctx context.Context, env, orgID string) (string, error) {
 			return filepath.Dir(path), nil
 		}
 	}
-	return "", ErrFacilityNotFound{Err: fmt.Errorf("org %s not found", orgID)}
+	return "", err
 }
 
 // findFacility returns the path to the facility config for the given org and facility IDs.
@@ -117,7 +117,7 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 	}
 	facilities, err := ioutil.ReadDir(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to list facilities in path %s: %w", path, err)
+		return "", err
 	}
 	var facilityPath string
 	for _, f := range facilities {
@@ -135,7 +135,7 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 		}
 	}
 	if facilityPath == "" {
-		return "", &ErrFacilityNotFound{fmt.Errorf("facility config not found for org path %s facility %s", path, facilityID)}
+		return "", err
 	}
 	return facilityPath, nil
 }
@@ -144,12 +144,12 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 	fmt.Println("FIND LOCATION")
 	path, err := findFacility(ctx, env, orgID, facilityID)
 	if err != nil {
-		return "", err
+		return "", &ErrFacilityNotFound{fmt.Errorf("facility not found for org %s facility %s: %w", orgID, facilityID, err)}
 	}
 	fmt.Println("FIND LOCATION")
 	buildings, err := ioutil.ReadDir(filepath.Dir(path))
 	if err != nil {
-		return "", fmt.Errorf("failed to list buildings in path %s: %w", path, err)
+		return "", &ErrLocationNotFound{fmt.Errorf("failed to list buildings in path %s: %w", path, err)}
 	}
 	var locationPath string
 	for _, b := range buildings {
@@ -201,12 +201,12 @@ func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID 
 	fmt.Println("IN LOCATION CONFIG")
 	cfg, err := ioutil.ReadFile(buildingPath)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to read building config file %s: %w", buildingPath, err)
+		return "", nil, &ErrLocationNotFound{fmt.Errorf("failed to read building config file %s: %w", buildingPath, err)}
 	}
 	fmt.Println("IN LOCATION CONFIG")
 	var config locationConfig
 	if err := yaml.Unmarshal(cfg, &config); err != nil {
-		return "", nil, fmt.Errorf("failed to parse building config file %s: %w", buildingPath, err)
+		return "", nil, &ErrLocationNotFound{fmt.Errorf("failed to unmarshal into location config %s: %w", buildingPath, err)}
 	}
 	return buildingPath, &config, nil
 }
