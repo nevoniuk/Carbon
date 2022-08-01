@@ -1,6 +1,6 @@
 // Code generated with goa v3.7.6, DO NOT EDIT.
 //
-// calc protocol buffer definition
+// Calc protocol buffer definition
 //
 // Command:
 // $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
@@ -11,7 +11,8 @@ package calc;
 
 option go_package = "/calcpb";
 
-// Service to interpret CO2 emissions through power and carbon intensity data
+// Service to interpret CO2 emissions through KW and carbon intensity data.
+// Offers the endpoint Historical Carbon Emissions
 service Calc {
 	// This endpoint is used by a front end service to return carbon emission
 // reports
@@ -38,48 +39,12 @@ message Period {
 }
 
 message HistoricalCarbonEmissionsResponse {
-	// CarbonIntensityReports
-	repeated CarbonReport carbon_intensity_reports = 1;
-	// PowerReports
-	repeated ElectricalReport power_reports = 2;
 	// TotalEmissionReport
-	EmissionsReport total_emission_report = 3;
-}
-// Carbon Report from clickhouse
-message CarbonReport {
-	// This is in units of (lbs of CO2/MWh)
-	double generated_rate = 1;
-	// Duration
-	Period duration = 2;
-	string interval = 3;
-	string region = 4;
-}
-// Energy Generation Report from the Past values function GetValues
-message ElectricalReport {
-	// Duration
-	Period duration = 1;
-	// Power meter data in KWh
-	double power = 2;
-	string interval = 3;
-	// Payload
-	PastValPayload payload = 4;
-}
-// Payload wraps the payload for past-values GetValues() and carbon poller
-// service
-message PastValPayload {
-	// OrgID
-	string org_id = 1;
-	// Duration
-	Period duration = 2;
-	// PastValInterval
-	sint64 past_val_interval = 3;
-	string interval = 4;
-	// ControlPoint
-	string control_point = 5;
-	// Formula
-	string formula = 6;
-	// AgentName
-	string agent_name = 7;
+	EmissionsReport total_emission_report = 1;
+	// CarbonIntensityReports
+	CarbonReport carbon_intensity_reports = 2;
+	// PowerReports
+	ElectricalReport power_reports = 3;
 }
 // Carbon/Energy Generation Report
 message EmissionsReport {
@@ -101,6 +66,24 @@ message EmissionsReport {
 message DataPoint {
 	// Time
 	string time = 1;
-	// carbon footprint is the lbs of CO2 emissions
-	double carbon_footprint = 2;
+	// either a carbon footprint(lbs of Co2) in a CarbonEmissions struct or power
+// stamp(KW) in an Electrical Report
+	double value = 2;
+}
+// Carbon Report from clickhouse
+message CarbonReport {
+	// Values are in units of (lbs of CO2/MWh)
+	repeated DataPoint intensity_points = 1;
+	// Duration
+	Period duration = 2;
+	string interval = 3;
+	string region = 4;
+}
+// Energy Generation Report from the Past values function GetValues
+message ElectricalReport {
+	// Duration
+	Period duration = 1;
+	// Power meter data in KWh
+	repeated DataPoint power_stamps = 2;
+	string interval = 3;
 }

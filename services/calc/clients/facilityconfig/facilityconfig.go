@@ -70,17 +70,21 @@ func New(env string) Client {
 
 // GetCarbonConfig will load the data from a location.yaml file into a Carbon struct
 func (c *client) GetCarbonConfig(ctx context.Context, orgID string, facilityID string, locationID string) (*Carbon, error) {
+	fmt.Println("IN CARBON CONFIG")
 	path, config, err := loadLocationConfig(ctx, c.env, orgID, facilityID, locationID)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("IN CARBON CONFIG")
 	name, err := findAgentNameFromLocation(ctx, c.env, orgID, facilityID, path)
 	if err != nil || name == "" {
 		return nil, ErrConfigNotFound{fmt.Errorf("could not find the agent name for location %s with err: %w\n", path, err)}
 	}
+	fmt.Println("IN CARBON CONFIG")
 	carbon := &Carbon{OrgID: orgID, FacilityID: facilityID, BuildingID: locationID, ControlPointName: config.Carbon.ControlPointName, Formula: config.Carbon.Formula, 
 	Region: config.Carbon.SingularityRegion, AgentName: name}
 	err = validate(carbon)
+	fmt.Println("IN CARBON CONFIG")
 	if err != nil {
 		return nil, ErrConfigNotFound{fmt.Errorf("could not get carbon config with err: %w\n", err)}
 	}
@@ -137,10 +141,12 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 }
 // findLocation will find the location path from location/building ID instead of the agentID
 func findLocation(ctx context.Context, env string, orgID string, facilityID string, locationID string) (string, error) {
+	fmt.Println("FIND LOCATION")
 	path, err := findFacility(ctx, env, orgID, facilityID)
 	if err != nil {
 		return "", err
 	}
+	fmt.Println("FIND LOCATION")
 	buildings, err := ioutil.ReadDir(filepath.Dir(path))
 	if err != nil {
 		return "", fmt.Errorf("failed to list buildings in path %s: %w", path, err)
@@ -192,10 +198,12 @@ func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID 
 	if err != nil {
 		return "", nil, err
 	}
+	fmt.Println("IN LOCATION CONFIG")
 	cfg, err := ioutil.ReadFile(buildingPath)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to read building config file %s: %w", buildingPath, err)
 	}
+	fmt.Println("IN LOCATION CONFIG")
 	var config locationConfig
 	if err := yaml.Unmarshal(cfg, &config); err != nil {
 		return "", nil, fmt.Errorf("failed to parse building config file %s: %w", buildingPath, err)

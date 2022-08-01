@@ -7,13 +7,14 @@ pushd ${GIT_ROOT}
 
 echo "Generating Goa code..."
 
-for svc in poller calc; do
+#for svc in poller calc; do
+for svc in calc; do
   goa gen github.com/crossnokaye/carbon/services/${svc}/design -o services/${svc}
 done
 
 
-for cli in calc:power calc:storage; calc:facilityconfig; do
-  rm -rf services/${cli%:*}/clients/${cli#*:}/mocks
-  mockery --all --case underscore --dir services/${cli%:*}/clients/${cli#*:} --exported=false --output services/${cli%:*}/clients/${cli#*:}/mocks
-done
+#for cli in calc:power calc:storage; calc:facilityconfig; do
+  #rm -rf services/${cli%:*}/clients/${cli#*:}/mocks
+  #mockery --all --case underscore --dir services/${cli%:*}/clients/${cli#*:} --exported=false --output services/${cli%:*}/clients/${cli#*:}/mocks
+#done
 popd
