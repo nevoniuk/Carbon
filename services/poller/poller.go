@@ -54,7 +54,7 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 	}
 	return s
 }
-
+//TODO will ensure that only minute reports are picked up
 // EnsurePastData will query clickhouse for the most recent report date
 func (s *pollersrvc) ensurePastData(ctx context.Context) (startDates []string) {
 	var dates []string
@@ -111,12 +111,17 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			log.KV{K: "endTime", V: newEndTime},
 			log.KV{K: "report type", V: model.Minute})
 			dateConfigs, err := getDates(ctx, minreports)
+			
 			if err != nil {
 				log.Error(ctx, err)
 				newEndTime = newEndTime.AddDate(0, 0, 1)
 				startTime = newEndTime
 				continue
 			}
+			log.Info(ctx, log.KV{K: "length of hourly dates", V: len(dateConfigs[0])}, 
+					log.KV{K: "length of daily dates", V: len(dateConfigs[1])},
+					log.KV{K: "length of weekly dates", V: len(dateConfigs[2])},
+					log.KV{K: "length of monthly dates", V: len(dateConfigs[3])})
 			err = s.dbc.SaveCarbonReports(ctx, minreports)
 			if err != nil {
 				return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
