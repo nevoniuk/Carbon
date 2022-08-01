@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: calc
+  labels:
+    app: calc
+spec:
+  type: ClusterIP
+  ports:
+   - name: grpc
+     targetPort: 12500
+     port: 12500
+   - name: http-metrics
+     targetPort: 12501
+     port: 12501
+  selector:
+    app: calc
