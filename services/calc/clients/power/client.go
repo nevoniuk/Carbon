@@ -23,8 +23,8 @@ type (
         GetPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval string, formula *string, agentname string) (*gencalc.ElectricalReport, error)
     }
     client struct {
-        getPower goa.Endpoint
-        getControlPointByName goa.Endpoint
+        getValues goa.Endpoint
+        findControlPointConfigsByName goa.Endpoint
     }
     // ErrNotFound is returned when a facility config is not found.
     ErrPowerReportsNotFound struct{ Err error }
@@ -33,8 +33,8 @@ type (
 func New(conn *grpc.ClientConn) Client {
     c := genvaluesc.NewClient(conn, grpc.WaitForReady(true))
     return &client{
-        getPower: c.GetValues(),
-        getControlPointByName: c.FindControlPointConfigsByName(),
+        getValues: c.GetValues(),
+        findControlPointConfigsByName: c.FindControlPointConfigsByName(),
     }
 }
 
@@ -75,7 +75,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
         End: dateRange.EndTime,
         Interval: pastValInterval,
     }
-    res, err := c.getPower(ctx, &p)
+    res, err := c.getValues(ctx, &p)
     if err != nil {
         return nil, &ErrPowerReportsNotFound{Err: fmt.Errorf("err in getvalues: %w\n", err)}
     }
@@ -155,7 +155,7 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
 func (c *client) getControlPointID(ctx context.Context, orgID string, agentName string, pointName string) ([]*genvalues.ControlPointConfig, error) {
     payload := genvalues.PointNameQuery{OrgID: genvalues.UUID(orgID), ClientName: agentName, PointName: pointName}
     fmt.Println(payload)
-    res, err := c.getControlPointByName(ctx, &payload)
+    res, err := c.findControlPointConfigsByName(ctx, &payload)
     fmt.Println(err)
     if err != nil {
         return nil, err
