@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"time"
+
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/crossnokaye/carbon/clients/clickhouse"
+	"github.com/crossnokaye/carbon/model"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	"goa.design/clue/log"
 )
@@ -50,6 +52,7 @@ func (c *client) Ping(ctx context.Context) error {
 }
 
 // CheckDB returns a time if previous reports are found, otherwise nil
+//should maybe check for the end instead and check that all reports were written(success)
 func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 	var start time.Time
 	var err error
@@ -59,12 +62,12 @@ func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 	}
 	if err = c.chcon.QueryRow(ctx, `
 			SELECT
-					MAX(start) as max_start
+					MAX(end) as max_end
 			FROM 
 					carbondb.carbon_reports
 			WHERE
-					region = $1
-			`, region).Scan(&start); err != nil {
+					region = $1 AND duration = $2
+			`, region, model.Weekly).Scan(&start); err != nil {
 
 				return "", NoReportsError{Err: fmt.Errorf("error in checkDB [%w]\n", err)}
 			}
