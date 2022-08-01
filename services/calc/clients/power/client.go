@@ -54,6 +54,12 @@ func newPoint(unit string, value float64) (*PowerPoint) {
 
 // GetPower will call the Past Value functions "FindControlPointConfigsByName" and "GetValues" to get control point ID's and power data
 func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval string, formula *string, agentname string) (*gencalc.ElectricalReport, error) {
+    fmt.Println("IN GET POWER")
+    fmt.Println("AGENT NAME IS")
+    fmt.Println(agentname)
+    fmt.Println("ALIAS NAME IS")
+    fmt.Println(cpaliasname)
+    
     var cpIDs []genvalues.UUID
     pointIDs, err := c.getControlPointID(ctx, orgID, agentname, cpaliasname)
     if err != nil {
@@ -148,7 +154,9 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
 // getControlPointID will use the past values function getControlPointConfigByName to get the point ID
 func (c *client) getControlPointID(ctx context.Context, orgID string, agentName string, pointName string) ([]*genvalues.ControlPointConfig, error) {
     payload := genvalues.PointNameQuery{OrgID: genvalues.UUID(orgID), ClientName: agentName, PointName: pointName}
+    fmt.Println(payload)
     res, err := c.getControlPointByName(ctx, &payload)
+    fmt.Println(err)
     if err != nil {
         return nil, err
     }
@@ -156,13 +164,14 @@ func (c *client) getControlPointID(ctx context.Context, orgID string, agentName 
     if err != nil {
         return nil, err
     }
+    fmt.Println("control point ID")
+    fmt.Println(newres)
     return newres, nil
 }
 
 // toControlPointID will cast the response from getControlPointConfigByName to a point ID
 func toControlPointID(r interface{}) ([]*genvalues.ControlPointConfig, error) {
     res := r.([]*genvalues.ControlPointConfig)
-    
     return res, nil
 }
 func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }

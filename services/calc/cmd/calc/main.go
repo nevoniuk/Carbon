@@ -50,7 +50,7 @@ func main() {
 		monitoringEnabled = flag.Bool("monitoring-enabled", true, "monitoring")
 		debug = flag.Bool("debug", false, "debug mode")
         //past val service host address
-        pastValaddr = flag.String("pastval-add", "localhost:10110", "Past-Value host address")
+        pastValaddr = flag.String("pastval-add", ":10140", "Past-Value host address")
         env = flag.String("dev", os.Getenv("ENV"), "facility environment") //what is this?
 	)
 	flag.Parse()
@@ -132,6 +132,7 @@ func main() {
     facilityRepo := facilityconfig.New(*env)
 
 	//4.initialize power client with past val grpc connection
+	log.Print(ctx, log.KV{K: "connecting", V: "past values"}, log.KV{K: "addr", V: pastValaddr})
     pastValConn, err := grpc.Dial(*pastValaddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		fmt.Errorf("could not connect to Past Values service: %v", err)
@@ -150,8 +151,8 @@ func main() {
 	locID := "cf153258-c08f-4ff0-9b01-d51d452e40e5"
 	Interval := model.Hourly
 	timeFormat := "2006-01-02T15:04:05-07:00"
-	var startTime = time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC)
-	var endTime = time.Date(2021, time.June, 1, 1, 10, 0, 0, time.UTC)
+	var startTime = time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
+	var endTime = time.Date(2020, time.January, 1, 1, 10, 0, 0, time.UTC)
 	duration := &gencalc.Period{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat)}
 	payload := &gencalc.RequestPayload{OrgID: gencalc.UUID(orgID),
 		 Duration: duration, FacilityID: gencalc.UUID(facID), Interval: Interval, LocationID: gencalc.UUID(locID)}

@@ -48,9 +48,9 @@ func (c *client) Ping(ctx context.Context) error {
 func (c *client) Init(ctx context.Context, test bool) error {
 	if err := c.chcon.Ping(ctx); err != nil {
 		if exception, ok := err.(*ch.Exception); ok {
-			return fmt.Errorf("[%d] %s", exception.Code, exception.Message)
+			return ErrNotFound{fmt.Errorf("[%d] %s", exception.Code, exception.Message)}
 		}
-		return err
+		return ErrNotFound{fmt.Errorf("database could not be found: %w", err)}
 	}
 	/**
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
@@ -81,7 +81,7 @@ func (c *client) GetCarbonReports(ctx context.Context, duration []*gencalc.Perio
 		var newend, _ = time.Parse(timeFormat, period.EndTime)
 		rows := c.chcon.QueryRow(ctx,`
 		SELECT
-			AVG(generatedrate) AS generatedate
+			AVG(generatedrate) AS generatedrate
 		FROM 
 			carbondb.carbon_reports
 		WHERE
@@ -90,9 +90,11 @@ func (c *client) GetCarbonReports(ctx context.Context, duration []*gencalc.Perio
 				`, region, newstart.UTC(), newend.UTC(), intervalType)
 		err := rows.Scan(&averagegen)
 		if err != nil {
-			return nil, ErrNotFound{Err: fmt.Errorf("could not get carbon intensity report for start %s and end %s", period.StartTime, period.EndTime)}
+			return nil, ErrNotFound{Err: fmt.Errorf("could not get carbon intensity report for start %s and end %s: %w", period.StartTime, period.EndTime, err)}
 		}
 		intensityPoint := &gencalc.DataPoint{Time: period.StartTime, Value: averagegen}
+		fmt.Println("INTENSITY POINT")
+		fmt.Println(intensityPoint)
 		intensityPoints = append(intensityPoints, intensityPoint)	
 	}
 	var startTime = duration[0].StartTime
