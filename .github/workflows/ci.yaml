@@ -34,7 +34,7 @@ jobs:
   build:
     strategy:
       matrix:
-        service: [poller]
+        service: [poller, calc]
     runs-on: ubuntu-20.04
     steps:
       - name: checkout
