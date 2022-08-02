@@ -20,13 +20,13 @@ RUN go build \
   -ldflags "-extldflags \"-static\" -X goa.design/clue/health.GitCommit=$GITHUB_SHA" \
   -v \
   -o build/output/calc \
-  ./services/poller/cmd/calc/
+  ./services/calc/cmd/calc/
 
 FROM alpine:3.13.3
 RUN apk update && apk add --no-cache ca-certificates tzdata
 WORKDIR /app/
 
-COPY --from=builder /src/build/output/poller .
+COPY --from=builder /src/build/output/calc .
 
 ENV GITHUB_SHA ${GITHUB_SHA}
 ENTRYPOINT ["/app/calc"]
