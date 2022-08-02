@@ -8,11 +8,13 @@ import (
 var _ = API("Calc", func() {
     Title("Calc")
 	Description("Service to interpret CO2 emissions through KW and carbon intensity data")
+    /**
     Server("calc", func() {
         Host("localhost", func() {
             URI("http://localhost:8080")
         })
     })
+    */
 })
 
 var _ = Service("Calc", func() {
