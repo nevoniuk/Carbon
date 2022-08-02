@@ -31,7 +31,7 @@ spec:
           image: ${REPOSITORY_BASE_URL}/crossnokaye/carbon/calc:${VERSION}
           args:
             - "-agent-addr=grafana-agent-deployment.monitoring.svc.cluster.local.:4317"
-            - "past-values.past-values.svc.cluster.local.:10140"
+            - "-pastval-add=past-values.past-values.svc.cluster.local.:10140"
             - "-monitoring-enabled=${MONITORING_ENABLED}"
           ports:
             - containerPort: 12500
