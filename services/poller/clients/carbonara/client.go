@@ -65,7 +65,7 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 			retries++
 		}
 	}
-	if err != nil { //null error
+	if err != nil {
 		return resp, ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
 	}
 	
