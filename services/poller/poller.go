@@ -54,7 +54,7 @@ func NewPoller(ctx context.Context, csc carbonara.Client, dbc storage.Client) *p
 	}
 	return s
 }
-//TODO will ensure that only minute reports are picked up
+
 // EnsurePastData will query clickhouse for the most recent report date
 func (s *pollersrvc) ensurePastData(ctx context.Context) (startDates []string) {
 	var dates []string
@@ -110,8 +110,7 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			log.KV{K: "startTime", V: startTime},
 			log.KV{K: "endTime", V: newEndTime},
 			log.KV{K: "report type", V: model.Minute})
-			dateConfigs, err := getDates(ctx, minreports)
-			
+			dateConfigs, err := s.getDatesHelper(ctx, minreports)
 			if err != nil {
 				log.Error(ctx, err)
 				newEndTime = newEndTime.AddDate(0, 0, 1)
@@ -147,6 +146,17 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 	return nil
 }
 
+func (ser *pollersrvc) getDatesHelper(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
+	var dates [][]*genpoller.Period
+	for i := 1; i < len(reportdurations); i++ {
+		dateArray, err := newGetDates(ctx, minutereports, reportdurations[i])
+		if err != nil {
+			return nil, err
+		}
+		dates = append(dates, dateArray)
+	}
+	return dates, nil
+}
 
 // R&D can use this function to obtain CO2 intensity reports for a specific region
 func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoller.CarbonPayload) ([]*genpoller.CarbonForecast, error) {
@@ -174,36 +184,32 @@ func (ser *pollersrvc) aggregateData(ctx context.Context, region string, dates [
 	return aggregateres, nil
 }
 
-// getDates gets all the report dates that are used as input to clickhouse queries and obtain aggregate CO2 intensity data
-func getDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
-	if minutereports == nil {
+
+func newGetDates(ctx context.Context, reports []*genpoller.CarbonForecast, intervalType string) ([]*genpoller.Period, error) {
+	if reports == nil {
 		return nil, fmt.Errorf("no reports for get dates")
 	}
-	var initialstart, _ = time.Parse(timeFormat, minutereports[0].Duration.StartTime)
-
-	var finalDates [][]*genpoller.Period
-	var hourlyDates []*genpoller.Period = nil
-	var dailyDates []*genpoller.Period = nil
-	var weeklyDates []*genpoller.Period = nil
-	var monthlyDates []*genpoller.Period = nil
-	var hourstart = initialstart
-	var daystart = initialstart
-	var weekstart = initialstart
-
-	year, month, day := initialstart.Date()
-	var monthstart time.Time
-	if day != 1 {
-		monthstart = time.Date(year, month, 1 ,0,0,0,0, initialstart.Location())
-	} else {
-		monthstart = initialstart
+	var initialstart, _ = time.Parse(timeFormat, reports[0].Duration.StartTime)
+	var finalDates []*genpoller.Period
+	var durationType int
+	var month = false
+	var previous = initialstart //keeps track of previous date
+	var previousStart = initialstart //maintain the start of each period
+	switch intervalType {
+		case model.Hourly:
+			durationType = int(time.Hour)
+		case model.Daily: 
+			durationType = int(time.Hour) * 24
+		case model.Weekly:
+			durationType = int(time.Hour) * 24 * 7
+		case model.Monthly: 
+			month = true
+			previousStart = time.Date(initialstart.Year(), initialstart.Month(), 1, 0, 0, 0, 0 , time.UTC)
 	}
-
-	var previous = initialstart
-	var weekcounter = 0
-	var addedMonthlyReport = false
-	for i := 0; i < len(minutereports); i++ {
-		var startTime, _ = time.Parse(timeFormat, minutereports[i].Duration.StartTime)
-		var endTime, _ = time.Parse(timeFormat, minutereports[i].Duration.EndTime) //make this the new previous/end time
+	
+	for i := 0; i < len(reports); i++ {
+		var startTime, _ = time.Parse(timeFormat, reports[i].Duration.StartTime)
+		var endTime, _ = time.Parse(timeFormat, reports[i].Duration.EndTime)
 		if endTime.Before(startTime) {
 			log.Error(ctx, fmt.Errorf("invalid date"))
 			continue
@@ -212,60 +218,24 @@ func getDates(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([
 			log.Error(ctx, fmt.Errorf("invalid date"))
 			continue
 		}
-		var month = endTime.Month()
-		var day = endTime.Day()
-		var hour = endTime.Hour()
-		var year = endTime.Year()
 
-		if int(month) < int(previous.Month()) && year == previous.Year() {
-			log.Error(ctx, fmt.Errorf("invalid date"))
-			continue
-		}
-		if day < previous.Day() && int(month) == int(previous.Month())  {
-			log.Error(ctx, fmt.Errorf("invalid date"))
-			continue
-		}
-		if hour < previous.Hour() && day == previous.Day() {
-			log.Error(ctx, fmt.Errorf("invalid date"))
-			continue
-		}
-
-		if hour != previous.Hour() {
-			if previous.Equal(initialstart) {
-				previous = endTime
+		//add duration type, if its greater, than add it as a date
+		//durationCheck := start + durationType
+		if month {
+			if endTime.Month() != previousStart.Month() { //not correct
+				newDate := &genpoller.Period{StartTime: previousStart.Format(timeFormat), EndTime: reports[i].Duration.EndTime}
+				finalDates = append(finalDates, newDate)
+				previousStart = endTime
 			}
-			if startTime.AddDate(0, 0, 1).Month() != startTime.Month() && !addedMonthlyReport {
-				addedMonthlyReport = true
-				monthlyDates = append(monthlyDates, &genpoller.Period{monthstart.Format(timeFormat), previous.Format(timeFormat)})
-				monthstart = startTime
-			} 
-			if day == 1 && (startTime.AddDate(0, 0, 1).Month() == month) {
-				addedMonthlyReport = false
+		} else {
+			dateCheck := previousStart.Add(time.Duration(durationType))
+			if !endTime.Before(dateCheck) {
+				newDate := &genpoller.Period{StartTime: previousStart.Format(timeFormat), EndTime: reports[i].Duration.EndTime}
+				finalDates = append(finalDates, newDate)
+				previousStart = endTime
 			}
-			if day != previous.Day() {
-				weekcounter += int(endTime.Sub(daystart).Hours() / 24)
-				dailyDates = append(dailyDates, &genpoller.Period{daystart.Format(timeFormat), previous.Format(timeFormat)})
-				daystart = endTime
-				if weekcounter == 7 {
-					weeklyDates = append(weeklyDates, &genpoller.Period{weekstart.Format(timeFormat), previous.Format(timeFormat)})
-					weekstart = endTime
-					weekcounter = 0
-				}
-			}
-			
-			hourlyDates = append(hourlyDates, &genpoller.Period{hourstart.Format(timeFormat), previous.Format(timeFormat)})
-			hourstart = endTime
 		}
 		previous = endTime
 	}
-	finalDates = append(finalDates, hourlyDates)
-	finalDates = append(finalDates, dailyDates)
-	finalDates = append(finalDates, weeklyDates)
-	finalDates = append(finalDates, monthlyDates)
-	return finalDates, nil
+return finalDates, nil
 }
-
-
-
-
-
