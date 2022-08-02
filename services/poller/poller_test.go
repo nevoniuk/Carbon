@@ -1,11 +1,14 @@
 package pollerapi
+
 import (
 	"context"
 	"errors"
-	"testing"
-	"time"
 	"fmt"
 	"strings"
+	"testing"
+	"time"
+
+	"github.com/crossnokaye/carbon/model"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
@@ -19,7 +22,6 @@ func TestGetDates(t *testing.T) {
 	nilReportsErr := errors.New("no reports error")
 	var startTimeOne = time.Date(2021, time.June, 1, 0, 0, 0, 0, time.UTC)
 	var endTimeOne = time.Date(2021, time.June, 1, 1, 10, 0, 0, time.UTC)
-
 	var startTimeTwo = time.Date(2021, time.June, 1, 1, 10, 0, 0, time.UTC)
 	var endTimeTwo = time.Date(2021, time.June, 1, 1, 20, 0, 0, time.UTC)
 	var invalidEndTime = time.Date(2021, time.February, 1, 1, 20, 0, 0, time.UTC)
@@ -59,7 +61,7 @@ func TestGetDates(t *testing.T) {
 				mockReports = append(mockReports, mockReportTwo)
 			}
 			ctx := context.Background()
-			got, err := getDates(ctx, mockReports)
+			got, err := getDates(ctx, mockReports, model.Hourly)
 			valid := validateDates(got, mockDates)
 			if tt.nilReportsErr != nil && !valid {
 				t.Errorf("GetDates() error = %v, wantErr %v", err, tt.expectedError)
@@ -73,18 +75,16 @@ func TestGetDates(t *testing.T) {
 	}
 }
 
-func validateDates(dates [][]*genpoller.Period, mockDates []*genpoller.Period) bool {
+func validateDates(dates []*genpoller.Period, mockDates []*genpoller.Period) bool {
 	if dates == nil {
 		return true
 	}
 	counter := 0
-	for _, rep := range dates { //0 because only hour reports were returned for test case
-		for _, reptype := range rep {
-			if (reptype.StartTime != mockDates[counter].StartTime) || (reptype.EndTime != mockDates[counter].EndTime) {
-				return false
-			}
-			counter += 1
+	for _, rep := range dates {
+		if (rep.StartTime != mockDates[counter].StartTime) || (rep.EndTime != mockDates[counter].EndTime) {
+			return false
 		}
+		counter += 1
 	}
 	return true
 }
@@ -123,18 +123,6 @@ func Test_pollersrvc_Update(t *testing.T) {
 			stc := storage.NewMock(t)
 			mockReports = append(mockReports, mockReportOne)
 			ctx := context.Background()
-			/*
-			no error:
-			all functions 13 times
-			server error:
-			only function that gets called are check db 13 times and get emissions once
-			no data error:
-			check db 13 times, get emissions 13 times and save reports once
-			save reports error:
-			check db 13 times, get emissions once, and save reports once
-			get reports error:
-			check db 13 times, get emissions once, save reports once and get reports
-			*/
 			stc.SetCheckDBFunc(func(ctx context.Context, r string) (string, error) {
 				return startTime.Format(timeFormat), nil
 			})
@@ -153,7 +141,7 @@ func Test_pollersrvc_Update(t *testing.T) {
 			}
 
 			if tt.serverError != nil {
-				mockReports = nil //ok because function returns after returning a server error
+				mockReports = nil
 				carbonarac.SetGetEmissionsFunc(func(ctx context.Context, r string, s string, e string) ([]*genpoller.CarbonForecast, error) {
 					e = invalidEndTime.Format(timeFormat)
 					return nil, serverError

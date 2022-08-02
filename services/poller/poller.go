@@ -149,7 +149,7 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 func (ser *pollersrvc) getDatesHelper(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
 	var dates [][]*genpoller.Period
 	for i := 1; i < len(reportdurations); i++ {
-		dateArray, err := newGetDates(ctx, minutereports, reportdurations[i])
+		dateArray, err := getDates(ctx, minutereports, reportdurations[i])
 		if err != nil {
 			return nil, err
 		}
@@ -184,8 +184,8 @@ func (ser *pollersrvc) aggregateData(ctx context.Context, region string, dates [
 	return aggregateres, nil
 }
 
-
-func newGetDates(ctx context.Context, reports []*genpoller.CarbonForecast, intervalType string) ([]*genpoller.Period, error) {
+// getDates will take an intervalType(for example hour, day, week) and configure dates based on that interval
+func getDates(ctx context.Context, reports []*genpoller.CarbonForecast, intervalType string) ([]*genpoller.Period, error) {
 	if reports == nil {
 		return nil, fmt.Errorf("no reports for get dates")
 	}
@@ -193,8 +193,8 @@ func newGetDates(ctx context.Context, reports []*genpoller.CarbonForecast, inter
 	var finalDates []*genpoller.Period
 	var durationType int
 	var month = false
-	var previous = initialstart //keeps track of previous date
-	var previousStart = initialstart //maintain the start of each period
+	var previous = initialstart
+	var previousStart = initialstart
 	switch intervalType {
 		case model.Hourly:
 			durationType = int(time.Hour)
@@ -206,7 +206,6 @@ func newGetDates(ctx context.Context, reports []*genpoller.CarbonForecast, inter
 			month = true
 			previousStart = time.Date(initialstart.Year(), initialstart.Month(), 1, 0, 0, 0, 0 , time.UTC)
 	}
-	
 	for i := 0; i < len(reports); i++ {
 		var startTime, _ = time.Parse(timeFormat, reports[i].Duration.StartTime)
 		var endTime, _ = time.Parse(timeFormat, reports[i].Duration.EndTime)
@@ -218,11 +217,8 @@ func newGetDates(ctx context.Context, reports []*genpoller.CarbonForecast, inter
 			log.Error(ctx, fmt.Errorf("invalid date"))
 			continue
 		}
-
-		//add duration type, if its greater, than add it as a date
-		//durationCheck := start + durationType
 		if month {
-			if endTime.Month() != previousStart.Month() { //not correct
+			if endTime.Month() != previousStart.Month() {
 				newDate := &genpoller.Period{StartTime: previousStart.Format(timeFormat), EndTime: reports[i].Duration.EndTime}
 				finalDates = append(finalDates, newDate)
 				previousStart = endTime

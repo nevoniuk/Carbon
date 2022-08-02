@@ -87,12 +87,10 @@ func (c *client) Init(ctx context.Context, test bool) error {
 		}
 		return err
 	}
-	fmt.Println("intitialized clickhouse")
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
 		log.Errorf(ctx, err, "error initializing database: %w", err)
 		return err
 	}
-	fmt.Println("intitialized clickhouse")
 	if err := c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS carbondb.carbon_reports (
 					start DateTime,
@@ -106,9 +104,8 @@ func (c *client) Init(ctx context.Context, test bool) error {
 				ORDER BY (start)
 	`); err != nil {
 		log.Errorf(ctx, err, "error initializing database: %w", err)
-		return fmt.Errorf("Error initializing clickhouse[%w]", err)
+		return fmt.Errorf("error initializing clickhouse[%w]", err)
 	}
-	fmt.Println("intitialized clickhouse")
 	return nil
 }
 
