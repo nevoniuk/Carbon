@@ -65,6 +65,10 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 			retries++
 		}
 	}
+	// null check because of context timeout in the middle of http request call
+	if resp == nil {
+		return nil, ServerError{Err: fmt.Errorf("server error null response")}
+	}
 	if err != nil {
 		return resp, ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
 	}
