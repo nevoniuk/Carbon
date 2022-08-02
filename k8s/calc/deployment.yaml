@@ -31,15 +31,13 @@ spec:
           image: ${REPOSITORY_BASE_URL}/crossnokaye/carbon/calc:${VERSION}
           args:
             - "-agent-addr=grafana-agent-deployment.monitoring.svc.cluster.local.:4317"
+            - "past-values.past-values.svc.cluster.local.:10140"
             - "-monitoring-enabled=${MONITORING_ENABLED}"
           ports:
             - containerPort: 12500
               name: grpc
             - containerPort: 12501
               name: http-metrics
-          env:
-            -name: PAST_VALUES_ADDR
-            value: "past-values.past-values.svc.cluster.local.:10140"
           readinessProbe:
             httpGet:
               path: /healthz
@@ -47,8 +45,6 @@ spec:
           securityContext:
             readOnlyRootFilesystem: true
           envFrom:
-            - secretRef:
-                name: calc
             - secretRef:
                 name: clickhouse
           resources:

@@ -9,4 +9,5 @@ resources:
   - ./namespace.yaml
   - ./synced-secret.yaml
   - ./poller/
+  - ./calc/
 
