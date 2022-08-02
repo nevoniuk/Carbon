@@ -13,7 +13,6 @@ import (
     "net"
 	"net/http"
     ch "github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/crossnokaye/carbon/model"
     gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
     calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
     calcsvr "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/server"
@@ -141,20 +140,6 @@ func main() {
 	var calcSvc gencalc.Service
 	calcSvc = calcapi.NewCalc(ctx, pwc, dbc, facilityRepo)
     endpoints := gencalc.NewEndpoints(calcSvc)
-	//remove later
-
-	orgID := "52858b15-16ce-4998-b317-a1ce68c348c3"
-	facID := "a5746ffa-2073-455e-b811-322ad3c3c4b7"
-	locID := "cf153258-c08f-4ff0-9b01-d51d452e40e5"
-	Interval := model.Hourly
-	timeFormat := "2006-01-02T15:04:05-07:00"
-	var startTime = time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
-	var endTime = time.Date(2020, time.January, 1, 1, 10, 0, 0, time.UTC)
-	duration := &gencalc.Period{StartTime: startTime.Format(timeFormat), EndTime: endTime.Format(timeFormat)}
-	payload := &gencalc.RequestPayload{OrgID: gencalc.UUID(orgID),
-		 Duration: duration, FacilityID: gencalc.UUID(facID), Interval: Interval, LocationID: gencalc.UUID(locID)}
-	calcSvc.HistoricalCarbonEmissions(ctx, payload)
-
     //intialize transport
 	grpcserver := calcsvr.New(endpoints, nil)
 	var grpcsvr *grpc.Server
