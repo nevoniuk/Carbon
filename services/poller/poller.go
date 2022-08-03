@@ -3,7 +3,6 @@ package pollerapi
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 	"goa.design/clue/log"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
