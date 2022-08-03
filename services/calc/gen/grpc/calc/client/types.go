@@ -3,11 +3,13 @@
 // calc gRPC client types
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 package client
 
 import (
+	"unicode/utf8"
+
 	calc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 	calcpb "github.com/crossnokaye/carbon/services/calc/gen/grpc/calc/pb"
 	goa "goa.design/goa/v3/pkg"
@@ -57,6 +59,9 @@ func NewHistoricalCarbonEmissionsResult(message *calcpb.HistoricalCarbonEmission
 			if val.Duration != nil {
 				result.PowerReports[i].Duration = protobufCalcpbPeriodToCalcPeriod(val.Duration)
 			}
+			if val.Payload != nil {
+				result.PowerReports[i].Payload = protobufCalcpbPastValPayloadToCalcPastValPayload(val.Payload)
+			}
 		}
 	}
 	if message.TotalEmissionReport != nil {
@@ -74,9 +79,9 @@ func ValidateUUID(message string) (err error) {
 
 // ValidatePeriod runs the validations defined on Period.
 func ValidatePeriod(message *calcpb.Period) (err error) {
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.StartTime", message.StartTime, goa.FormatDateTime))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.start_time", message.StartTime, goa.FormatDateTime))
 
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.EndTime", message.EndTime, goa.FormatDateTime))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.end_time", message.EndTime, goa.FormatDateTime))
 
 	return
 }
@@ -85,13 +90,16 @@ func ValidatePeriod(message *calcpb.Period) (err error) {
 // HistoricalCarbonEmissionsResponse.
 func ValidateHistoricalCarbonEmissionsResponse(message *calcpb.HistoricalCarbonEmissionsResponse) (err error) {
 	if message.CarbonIntensityReports == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("CarbonIntensityReports", "message"))
+		err = goa.MergeErrors(err, goa.MissingFieldError("carbon_intensity_reports", "message"))
 	}
 	if message.PowerReports == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("PowerReports", "message"))
+		err = goa.MergeErrors(err, goa.MissingFieldError("power_reports", "message"))
 	}
 	if message.TotalEmissionReport == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("TotalEmissionReport", "message"))
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_emission_report", "message"))
+	}
+	if len(message.CarbonIntensityReports) < 1 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("message.carbon_intensity_reports", message.CarbonIntensityReports, len(message.CarbonIntensityReports), 1, true))
 	}
 	for _, e := range message.CarbonIntensityReports {
 		if e != nil {
@@ -99,6 +107,9 @@ func ValidateHistoricalCarbonEmissionsResponse(message *calcpb.HistoricalCarbonE
 				err = goa.MergeErrors(err, err2)
 			}
 		}
+	}
+	if len(message.PowerReports) < 1 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("message.power_reports", message.PowerReports, len(message.PowerReports), 1, true))
 	}
 	for _, e := range message.PowerReports {
 		if e != nil {
@@ -118,7 +129,7 @@ func ValidateHistoricalCarbonEmissionsResponse(message *calcpb.HistoricalCarbonE
 // ValidateCarbonReport runs the validations defined on CarbonReport.
 func ValidateCarbonReport(message *calcpb.CarbonReport) (err error) {
 	if message.Duration == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("Duration", "message"))
+		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "message"))
 	}
 	if message.Duration != nil {
 		if err2 := ValidatePeriod(message.Duration); err2 != nil {
@@ -126,10 +137,10 @@ func ValidateCarbonReport(message *calcpb.CarbonReport) (err error) {
 		}
 	}
 	if !(message.Interval == "minute" || message.Interval == "hourly" || message.Interval == "daily" || message.Interval == "weekly" || message.Interval == "monthly") {
-		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.Interval", message.Interval, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.interval", message.Interval, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
 	}
 	if !(message.Region == "CAISO" || message.Region == "AESO" || message.Region == "BPA" || message.Region == "ERCO" || message.Region == "IESO" || message.Region == "ISONE" || message.Region == "MISO" || message.Region == "NYISO" || message.Region == "NYISO.NYCW" || message.Region == "NYISO.NYLI" || message.Region == "NYISO.NYUP" || message.Region == "PJM" || message.Region == "SPP") {
-		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.Region", message.Region, []interface{}{"CAISO", "AESO", "BPA", "ERCO", "IESO", "ISONE", "MISO", "NYISO", "NYISO.NYCW", "NYISO.NYLI", "NYISO.NYUP", "PJM", "SPP"}))
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.region", message.Region, []interface{}{"CAISO", "AESO", "BPA", "ERCO", "IESO", "ISONE", "MISO", "NYISO", "NYISO.NYCW", "NYISO.NYLI", "NYISO.NYUP", "PJM", "SPP"}))
 	}
 	return
 }
@@ -137,7 +148,10 @@ func ValidateCarbonReport(message *calcpb.CarbonReport) (err error) {
 // ValidateElectricalReport runs the validations defined on ElectricalReport.
 func ValidateElectricalReport(message *calcpb.ElectricalReport) (err error) {
 	if message.Duration == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("Duration", "message"))
+		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "message"))
+	}
+	if message.Payload == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("payload", "message"))
 	}
 	if message.Duration != nil {
 		if err2 := ValidatePeriod(message.Duration); err2 != nil {
@@ -145,7 +159,39 @@ func ValidateElectricalReport(message *calcpb.ElectricalReport) (err error) {
 		}
 	}
 	if !(message.Interval == "minute" || message.Interval == "hourly" || message.Interval == "daily" || message.Interval == "weekly" || message.Interval == "monthly") {
-		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.Interval", message.Interval, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.interval", message.Interval, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
+	}
+	if message.Payload != nil {
+		if err2 := ValidatePastValPayload(message.Payload); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidatePastValPayload runs the validations defined on PastValPayload.
+func ValidatePastValPayload(message *calcpb.PastValPayload) (err error) {
+	if message.Duration == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "message"))
+	}
+	if message.Duration != nil {
+		if err2 := ValidatePeriod(message.Duration); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if !(message.Interval == "minute" || message.Interval == "hourly" || message.Interval == "daily" || message.Interval == "weekly" || message.Interval == "monthly") {
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.interval", message.Interval, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
+	}
+	if utf8.RuneCountInString(message.ControlPoint) < 1 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("message.control_point", message.ControlPoint, utf8.RuneCountInString(message.ControlPoint), 1, true))
+	}
+	if message.Formula != "" {
+		if utf8.RuneCountInString(message.Formula) < 1 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("message.formula", message.Formula, utf8.RuneCountInString(message.Formula), 1, true))
+		}
+	}
+	if utf8.RuneCountInString(message.AgentName) < 1 {
+		err = goa.MergeErrors(err, goa.InvalidLengthError("message.agent_name", message.AgentName, utf8.RuneCountInString(message.AgentName), 1, true))
 	}
 	return
 }
@@ -153,10 +199,10 @@ func ValidateElectricalReport(message *calcpb.ElectricalReport) (err error) {
 // ValidateEmissionsReport runs the validations defined on EmissionsReport.
 func ValidateEmissionsReport(message *calcpb.EmissionsReport) (err error) {
 	if message.Duration == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("Duration", "message"))
+		err = goa.MergeErrors(err, goa.MissingFieldError("duration", "message"))
 	}
 	if message.Points == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("Points", "message"))
+		err = goa.MergeErrors(err, goa.MissingFieldError("points", "message"))
 	}
 	if message.Duration != nil {
 		if err2 := ValidatePeriod(message.Duration); err2 != nil {
@@ -164,7 +210,7 @@ func ValidateEmissionsReport(message *calcpb.EmissionsReport) (err error) {
 		}
 	}
 	if !(message.Interval == "minute" || message.Interval == "hourly" || message.Interval == "daily" || message.Interval == "weekly" || message.Interval == "monthly") {
-		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.Interval", message.Interval, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.interval", message.Interval, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
 	}
 	for _, e := range message.Points {
 		if e != nil {
@@ -180,14 +226,14 @@ func ValidateEmissionsReport(message *calcpb.EmissionsReport) (err error) {
 	err = goa.MergeErrors(err, goa.ValidateFormat("message", string(message.LocationId), goa.FormatUUID))
 
 	if !(message.Region == "CAISO" || message.Region == "AESO" || message.Region == "BPA" || message.Region == "ERCO" || message.Region == "IESO" || message.Region == "ISONE" || message.Region == "MISO" || message.Region == "NYISO" || message.Region == "NYISO.NYCW" || message.Region == "NYISO.NYLI" || message.Region == "NYISO.NYUP" || message.Region == "PJM" || message.Region == "SPP") {
-		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.Region", message.Region, []interface{}{"CAISO", "AESO", "BPA", "ERCO", "IESO", "ISONE", "MISO", "NYISO", "NYISO.NYCW", "NYISO.NYLI", "NYISO.NYUP", "PJM", "SPP"}))
+		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.region", message.Region, []interface{}{"CAISO", "AESO", "BPA", "ERCO", "IESO", "ISONE", "MISO", "NYISO", "NYISO.NYCW", "NYISO.NYLI", "NYISO.NYUP", "PJM", "SPP"}))
 	}
 	return
 }
 
 // ValidateDataPoint runs the validations defined on DataPoint.
 func ValidateDataPoint(message *calcpb.DataPoint) (err error) {
-	err = goa.MergeErrors(err, goa.ValidateFormat("message.Time", message.Time, goa.FormatDateTime))
+	err = goa.MergeErrors(err, goa.ValidateFormat("message.time", message.Time, goa.FormatDateTime))
 
 	return
 }
@@ -214,6 +260,26 @@ func svcCalcPeriodToCalcpbPeriod(v *calc.Period) *calcpb.Period {
 	return res
 }
 
+// svcCalcPastValPayloadToCalcpbPastValPayload builds a value of type
+// *calcpb.PastValPayload from a value of type *calc.PastValPayload.
+func svcCalcPastValPayloadToCalcpbPastValPayload(v *calc.PastValPayload) *calcpb.PastValPayload {
+	res := &calcpb.PastValPayload{
+		OrgId:           v.OrgID,
+		PastValInterval: v.PastValInterval,
+		Interval:        v.Interval,
+		ControlPoint:    v.ControlPoint,
+		AgentName:       v.AgentName,
+	}
+	if v.Formula != nil {
+		res.Formula = *v.Formula
+	}
+	if v.Duration != nil {
+		res.Duration = svcCalcPeriodToCalcpbPeriod(v.Duration)
+	}
+
+	return res
+}
+
 // svcCalcEmissionsReportToCalcpbEmissionsReport builds a value of type
 // *calcpb.EmissionsReport from a value of type *calc.EmissionsReport.
 func svcCalcEmissionsReportToCalcpbEmissionsReport(v *calc.EmissionsReport) *calcpb.EmissionsReport {
@@ -235,6 +301,26 @@ func svcCalcEmissionsReportToCalcpbEmissionsReport(v *calc.EmissionsReport) *cal
 				CarbonFootprint: val.CarbonFootprint,
 			}
 		}
+	}
+
+	return res
+}
+
+// protobufCalcpbPastValPayloadToCalcPastValPayload builds a value of type
+// *calc.PastValPayload from a value of type *calcpb.PastValPayload.
+func protobufCalcpbPastValPayloadToCalcPastValPayload(v *calcpb.PastValPayload) *calc.PastValPayload {
+	res := &calc.PastValPayload{
+		OrgID:           v.OrgId,
+		PastValInterval: v.PastValInterval,
+		Interval:        v.Interval,
+		ControlPoint:    v.ControlPoint,
+		AgentName:       v.AgentName,
+	}
+	if v.Formula != "" {
+		res.Formula = &v.Formula
+	}
+	if v.Duration != nil {
+		res.Duration = protobufCalcpbPeriodToCalcPeriod(v.Duration)
 	}
 
 	return res

@@ -2,41 +2,35 @@ package carbonara
 
 import (
 	"context"
-	"strconv"
 	"encoding/json"
-	"net/http"
+	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
-	"errors"
-	"io"
-
+	"github.com/crossnokaye/carbon/model"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	"goa.design/clue/log"
 )
-
-//reportdurations maintains the interval length of each report
-var reportdurations [6]string = [6]string{ "minute", "hourly", "daily", "weekly", "monthly", "yearly"}
-
 type (
 	Client interface {
-		GetEmissions(context.Context, string, string, string, []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error)
+		// GetEmissions talks to the Singularity 'Search' endpoint and returns carbon intensity reports in 5 minute intervals
+		GetEmissions(context.Context, string, string, string) ([]*genpoller.CarbonForecast, error)
 	}
 	client struct {
-		c *http.Client
+		httpc *http.Client
 		key string
 	}
 	Outermoststruct struct {
 		Data []struct {
 			Data struct {
-				Generated_rate float64 `json:"generated_rate"`
-				Marginal_rate  float64 `json:"marginal_rate"`
-				Consumed_rate  float64 `json:"consumed_rate"`
+				GeneratedRate float64 `json:"generated_rate"`
+				MarginalRate  float64 `json:"marginal_rate"`
+				ConsumedRate  float64 `json:"consumed_rate"`
 			}`json:"data"`
-			Meta struct {
-				Generated_emissions_source  string `json:"generated_emissions_source"`
-			}`json:"meta"`
-			Start_date string `json:"start_date"`
+			StartDate string `json:"start_date"`
 			Region     string `json:"region"`
 		}`json:"data"`
 		Meta struct {
@@ -46,10 +40,12 @@ type (
 			}`json:pagination`
 		}`json:"meta"`
 	}
+	ServerError struct{ Err error }
+	NoDataError struct{ Err error }
 )
 
 const (
-	//timeFormat is used to parse times in order to store time as ISO8601 format
+	// timeFormat is used to parse times in order to store time as ISO8601 format
 	timeFormat = "2006-01-02T15:04:05-07:00"
 	cs_url     = "https://api.singularity.energy/v1/"
 )
@@ -60,97 +56,84 @@ func New(c *http.Client, key string) Client {
 }
 
 func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*http.Response, error) {
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.httpc.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		retries := 0
 		for (err != nil || resp.StatusCode != http.StatusOK) && retries < 3 {
 			time.Sleep(time.Duration(retries) * time.Second)
-			resp, err = http.DefaultClient.Do(req)
+			resp, err = c.httpc.Do(req)
 			retries++
 		}
 	}
-	
+	// null check because of context timeout in the middle of http request call
+	if resp == nil {
+		return nil, ServerError{Err: fmt.Errorf("server error null response")}
+	}
 	if err != nil {
-		log.Errorf(ctx, err, "carbon client API Get error")
-		return resp, err
+		return resp, ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
 	}
 	
 	if resp.StatusCode != http.StatusOK {
-		log.Errorf(ctx, err, "%d", resp.StatusCode)
-		return resp, err
+		return resp, ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
 	}
 
 	return resp, nil
 }
 
-//GetEmissions gets 5 min interval reports from the Carbonara API with pagination
-func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string, reports []*genpoller.CarbonForecast) ([]*genpoller.CarbonForecast, error) {
+// GetEmissions gets 5 min interval reports from the Carbonara API with pagination
+func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string) ([]*genpoller.CarbonForecast, error) {
+	var reports []*genpoller.CarbonForecast
 	var page = 1
-	var last = 100 //dummy value
+	var last = 100
 	for page <= last {
-
 		carbonUrl := strings.Join([]string{cs_url, "region_events/search?", "region=", region, "&event_type=carbon_intensity&start=",
 		startime, "&end=", endtime, "&per_page=1000", "&page=", strconv.Itoa(page)}, "")
-	
-		fmt.Println(carbonUrl)
-		
 		req, err := http.NewRequest("GET", carbonUrl, nil)
 		if err != nil {
-			fmt.Println(err)
-			return nil, err
+			return nil, fmt.Errorf("Error Making Request: %w\n", err)
 		}
-		
 		req.Close = true
 		req.Header.Add("Content-Type", "application/json")
 		req.Header.Add("X-Api-Key", c.key)
-
 		carbonresp, err := c.HttpGetRequestCall(ctx, req)
 		if err != nil {
-			fmt.Errorf("Error from get request: %s", err)
 			return nil, err
 		}
-		//TODO:will delete this line
-		if carbonresp.ContentLength < 100 {
-			return nil, fmt.Errorf("No data available for region %s\n", region)
-		}
-
 		defer carbonresp.Body.Close()
-
 		var carbonData Outermoststruct
-		
 		err = json.NewDecoder(carbonresp.Body).Decode(&carbonData)
-		
 		if err != nil {
-
 			if errors.Is(err, io.EOF) {
-				msg := "Request body is empty"
-				fmt.Errorf("Error Decoding JSON Response: %s[%d]\n",msg, http.StatusBadRequest)
-			} else {
-				fmt.Errorf("Error Decoding JSON Response: %s[%d]\n", err, http.StatusBadRequest)
+				return nil, NoDataError{Err: fmt.Errorf("no data for Region %s", region)}
 			}
-			return nil, err
+			return nil, fmt.Errorf("Error Decoding JSON Response: %w[%d]\n", err, http.StatusBadRequest)
 		}
-		
 		last = carbonData.Meta.Pagination.Last
-		var start = carbonData.Data[0].Start_date
-		
+		var start = carbonData.Data[0].StartDate
 		for idx := 1; idx < len(carbonData.Data); idx++ {
-
 			if carbonData.Data == nil {
-				log.Infof(ctx, "nil carbon data element at index %d", idx)
+				err := fmt.Errorf("nil carbon data element at index %d", idx)
+				log.Error(ctx, err)
+				continue
+			}
+			data := carbonData.Data[idx]
+			if data.StartDate == start {
 				continue
 			}
 
-			data := carbonData.Data[idx]
-			end := data.Start_date
+			end := data.StartDate
 			reportperiod := &genpoller.Period{StartTime: start, EndTime: end}
+			log.Info(ctx, log.KV{K: "start", V: start}, log.KV{K: "end", V: end})
 			start = end
-			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.Generated_rate, MarginalRate: data.Data.Marginal_rate,
-					ConsumedRate: data.Data.Consumed_rate, Duration: reportperiod, DurationType: reportdurations[0], Region: data.Region}
+			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.GeneratedRate, MarginalRate: data.Data.MarginalRate,
+					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, DurationType: model.Minute, Region: data.Region}
 			reports = append(reports, report)
-	
+			
 		}
 		if carbonData.Meta.Pagination.This == carbonData.Meta.Pagination.Last {
+			if reports == nil {
+				return reports, NoDataError{Err: fmt.Errorf("no data for Region %s", region)}
+			}
 			return reports, nil
 		}
 		page += 1
@@ -158,3 +141,5 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 	return reports, nil
 }
 
+func (err ServerError) Error() string { return err.Err.Error() }
+func (err NoDataError) Error() string { return err.Err.Error() }

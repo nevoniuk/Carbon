@@ -4,11 +4,11 @@ kind: Kustomization
 namespace: carbon
 
 resources:
-  - ./deployment.yaml
   - ./rbac.yaml
-  - ./service.yaml
   - ./synced-secret.yaml
   - ./cronjob.yaml
+  - ./deployment.yaml
+  - ./service.yaml
 
 commonAnnotations:
   crossnokaye.com/carbon-poller-version: ${VERSION}

@@ -42,8 +42,7 @@ type CarbonForecast struct {
 	// consumed_rate
 	ConsumedRate float64
 	// Duration
-	Duration *Period
-	// duration_type
+	Duration     *Period
 	DurationType string
 	// region
 	Region string
@@ -53,11 +52,11 @@ type CarbonForecast struct {
 // get_emissions_for_region method.
 type CarbonPayload struct {
 	// region
-	Region *string
+	Region string
 	// start
-	Start *string
+	Start string
 	// end
-	End *string
+	End string
 }
 
 // Period of time from start to end of Forecast
@@ -77,19 +76,28 @@ func MakeServerError(err error) *goa.ServiceError {
 	}
 }
 
-// MakeNoData builds a goa.ServiceError from an error.
-func MakeNoData(err error) *goa.ServiceError {
+// MakeClickhouseError builds a goa.ServiceError from an error.
+func MakeClickhouseError(err error) *goa.ServiceError {
 	return &goa.ServiceError{
-		Name:    "no_data",
+		Name:    "clickhouse_error",
 		ID:      goa.NewErrorID(),
 		Message: err.Error(),
 	}
 }
 
-// MakeRegionNotFound builds a goa.ServiceError from an error.
-func MakeRegionNotFound(err error) *goa.ServiceError {
+// MakeNoDataError builds a goa.ServiceError from an error.
+func MakeNoDataError(err error) *goa.ServiceError {
 	return &goa.ServiceError{
-		Name:    "region_not_found",
+		Name:    "no_data_error",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
+	}
+}
+
+// MakeNoData builds a goa.ServiceError from an error.
+func MakeNoData(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "no_data",
 		ID:      goa.NewErrorID(),
 		Message: err.Error(),
 	}

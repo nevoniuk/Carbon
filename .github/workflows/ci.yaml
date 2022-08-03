@@ -10,6 +10,7 @@ on:
 env:
   GOPRIVATE: "github.com/crossnokaye/*"
 jobs:
+
   tests:
     runs-on: ubuntu-latest
     steps:
@@ -29,3 +30,53 @@ jobs:
             ${{ runner.os }}-go-v1-
       - name: tests
         run: "true"
+
+  build:
+    strategy:
+      matrix:
+        service: [poller]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Configure git for private modules
+        env:
+          TOKEN: ${{ secrets.ROBOT_TOKEN }}
+        run: git config --global url."https://crossnokaye-robot:${TOKEN}@github.com".insteadOf "https://github.com"
+      - uses: whoan/docker-build-with-cache-action@v5
+        with:
+          username: '${{ secrets.IMAGE_UPLOADER_ACCESS_KEY_ID }}'
+          password: '${{ secrets.IMAGE_UPLOADER_SECRET_ACCESS_KEY }}'
+          registry: 475844994616.dkr.ecr.us-west-2.amazonaws.com
+          image_name: "crossnokaye/carbon/${{ matrix.service }}"
+          image_tag: '${{ github.sha }},latest,${{github.event.pull_request.head.sha}}'
+          context: ./
+          dockerfile: './services/${{ matrix.service }}/cmd/${{ matrix.service }}/Dockerfile'
+          build_extra_args: "--build-arg=GITHUB_SHA=${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }} --build-arg=GITHUB_USER=crossnokaye-robot --build-arg=GITHUB_TOKEN=${{ secrets.ROBOT_TOKEN }}"
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.3.0
+        with:
+          image-ref: '475844994616.dkr.ecr.us-west-2.amazonaws.com/crossnokaye/carbon/${{ matrix.service }}:${{ github.sha }}'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+  update_branches:
+    needs: [tests, build]
+    runs-on: ubuntu-20.04
+    outputs:
+      sha: ${{ steps.update_branches.outputs.sha }}
+    steps:
+      - run: |
+          git config --global core.autocrlf false
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          token: ${{ secrets.ROBOT_TOKEN }}
+      - name: update_branches
+        id: update_branches
+        uses: ./.github/actions/update-branches
+        with:
+          github_token: ${{secrets.ROBOT_TOKEN }}

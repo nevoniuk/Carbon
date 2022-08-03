@@ -12,7 +12,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	grpcmiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"goa.design/clue/health"
@@ -23,7 +22,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-
 	"github.com/crossnokaye/carbon/clients/clickhouse"
 	pollerapi "github.com/crossnokaye/carbon/services/poller"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
@@ -35,51 +33,59 @@ import (
 
 func main() {
 	var (
-		grpcaddr  = flag.String("grpc-addr", "0.0.0.0:12201", "gRPC listen address")
-		httpaddr  = flag.String("http-addr", "0.0.0.0:12202", "HTTP listen address")
+		grpcaddr  = flag.String("grpc-addr", ":12500", "gRPC listen address")
+		httpaddr  = flag.String("http-addr", ":12501", "HTTP listen address")
 		agentaddr = flag.String("agent-addr", ":4317", "Grafana agent listen address")
-
-
 		chaddr = flag.String("ch-addr", os.Getenv("CLICKHOUSE_ADDR"), "ClickHouse host address")
 		chuser = flag.String("ch-user", os.Getenv("CLICKHOUSE_USER"), "ClickHouse user")
 		chpwd  = flag.String("ch-pwd", os.Getenv("CLICKHOUSE_PASSWORD"), "ClickHouse password")
 		chssl  = flag.Bool("ch-ssl", os.Getenv("CLICKHOUSE_SSL") != "", "ClickHouse connection SSL")
-
+		monitoringEnabled = flag.Bool("monitoring-enabled", true, "monitoring")
 		debug = flag.Bool("debug", false, "Enable debug logs")
-		//test  = flag.Bool("test", os.Getenv("TEST_ENV") != "", "Enable test mode")
 		carbonKey = flag.String("singularity-key", os.Getenv("SINGULARITY_API_KEY"), "The API key for Singularity")
 	)
+	
 	flag.Parse()
 	format := log.FormatJSON
 	if log.IsTerminal() {
 		format = log.FormatTerminal
 	}
+	//log context
 	ctx := log.With(log.Context(context.Background(), log.WithFormat(format)), log.KV{K: "svc", V: genpoller.ServiceName})
+	
+	//log monitoring status
+	log.Info(ctx, log.KV{K: "monitoringEnabled", V: *monitoringEnabled})
+
 	if *debug {
 		ctx = log.Context(ctx, log.WithDebug())
 		log.Debugf(ctx, "debug logs enabled")
 	}
-
+	//monitoring enabled is true - initialize tracing - only in production, office and sandbox
+	//monitoring enabled is false - in janeway - dont initialize tracing. set in .env
 	// Setup tracing
-	conn, err := grpc.DialContext(ctx, *agentaddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Errorf(ctx, err, "failed to connect to Grafana agent")
-		os.Exit(1)
+	if *monitoringEnabled {
+		conn, err := grpc.DialContext(ctx, *agentaddr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Errorf(ctx, err, "failed to connect to Grafana agent")
+			os.Exit(1)
+		}
+		if ctx, err = trace.Context(ctx, genpoller.ServiceName, trace.WithGRPCExporter(conn)); err != nil {
+			log.Errorf(ctx, err, "failed to initialize tracing")
+			os.Exit(1)
+		}
 	}
-
-	if ctx, err = trace.Context(ctx, genpoller.ServiceName, trace.WithGRPCExporter(conn)); err != nil {
-		log.Errorf(ctx, err, "failed to initialize tracing")
-		os.Exit(1)
-	}
+	
 
 	//initialize the metrics
 	ctx = metrics.Context(ctx, genpoller.ServiceName)
 
-	//intiialize the clients
-	c := &http.Client{Transport: trace.Client(ctx, http.DefaultTransport)}
+	//initialize the clients
+	c := &http.Client{}
+	if *monitoringEnabled {
+		c.Transport = trace.Client(ctx, http.DefaultTransport)
+	}
 	csc := carbonara.New(c, *carbonKey)
-
 	chadd := *chaddr
 	if chadd == "" {
 		chadd = "localhost:8088" //dev default
@@ -116,28 +122,28 @@ func main() {
 	//setup the service
 	pollerSvc := pollerapi.NewPoller(ctx, csc, dbc)
 	endpoints := genpoller.NewEndpoints(pollerSvc)
-	//for testing only
-	pollerSvc.Update(ctx)
-
-	//initialize context for tracing
-
 	//create transport
 	server := gengrpc.New(endpoints, nil)
-	grpcsvr := grpc.NewServer(
-		grpcmiddleware.WithUnaryServerChain(
-			log.UnaryServerInterceptor(ctx),
-			trace.UnaryServerInterceptor(ctx),
-			goagrpcmiddleware.UnaryRequestID(),
-			goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
-		),
-		grpcmiddleware.WithStreamServerChain(
-			goagrpcmiddleware.StreamRequestID(),
-			log.StreamServerInterceptor(ctx),
-			goagrpcmiddleware.StreamServerLogContext(log.AsGoaMiddlewareLogger),
-			metrics.StreamServerInterceptor(ctx),
-			trace.StreamServerInterceptor(ctx),
-		),
-	)
+	var grpcsvr *grpc.Server
+	if *monitoringEnabled {
+		grpcsvr = grpc.NewServer(
+			grpcmiddleware.WithUnaryServerChain(
+				log.UnaryServerInterceptor(ctx),
+				trace.UnaryServerInterceptor(ctx),
+				goagrpcmiddleware.UnaryRequestID(),
+				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
+			),
+		)
+	} else {
+		grpcsvr = grpc.NewServer(
+			grpcmiddleware.WithUnaryServerChain(
+				log.UnaryServerInterceptor(ctx),
+				goagrpcmiddleware.UnaryRequestID(),
+				goagrpcmiddleware.UnaryServerLogContext(log.AsGoaMiddlewareLogger),
+			),
+		)
+	}
+
 	genpb.RegisterPollerServer(grpcsvr, server)
 	reflection.Register(grpcsvr)
 	for svc, info := range grpcsvr.GetServiceInfo() {

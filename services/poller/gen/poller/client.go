@@ -31,6 +31,8 @@ func NewClient(update, getEmissionsForRegion goa.Endpoint) *Client {
 // Update calls the "update" endpoint of the "Poller" service.
 // Update may return the following errors:
 //	- "server_error" (type *goa.ServiceError): Error with Singularity Server.
+//	- "clickhouse_error" (type *goa.ServiceError): Error saving or retrieving reports from clickhouse
+//	- "no_data_error" (type *goa.ServiceError): No data available from Server
 //	- error: internal error
 func (c *Client) Update(ctx context.Context) (err error) {
 	_, err = c.UpdateEndpoint(ctx, nil)
@@ -42,7 +44,6 @@ func (c *Client) Update(ctx context.Context) (err error) {
 // GetEmissionsForRegion may return the following errors:
 //	- "server_error" (type *goa.ServiceError): Error with Singularity Server.
 //	- "no_data" (type *goa.ServiceError): No new data available for any region
-//	- "region_not_found" (type *goa.ServiceError): The given region is not represented by Singularity
 //	- error: internal error
 func (c *Client) GetEmissionsForRegion(ctx context.Context, p *CarbonPayload) (res []*CarbonForecast, err error) {
 	var ires interface{}

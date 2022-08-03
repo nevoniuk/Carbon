@@ -3,7 +3,7 @@
 // calc service
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 package calc
 
@@ -67,6 +67,8 @@ type ElectricalReport struct {
 	// Power meter data in KWh
 	Power    float64
 	Interval string
+	// Payload
+	Payload *PastValPayload
 }
 
 // Carbon/Energy Generation Report
@@ -83,6 +85,24 @@ type EmissionsReport struct {
 	// LocationID
 	LocationID UUID
 	Region     string
+}
+
+// Payload wraps the payload for past-values GetValues() and carbon poller
+// service
+type PastValPayload struct {
+	// OrgID
+	OrgID string
+	// Duration
+	Duration *Period
+	// PastValInterval
+	PastValInterval int64
+	Interval        string
+	// ControlPoint
+	ControlPoint string
+	// Formula
+	Formula *string
+	// AgentName
+	AgentName string
 }
 
 // Period of time from start to end for any report type

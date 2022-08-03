@@ -3,7 +3,7 @@
 // calc protocol buffer definition
 //
 // Command:
-// $ goa gen github.com/crossnokaye/carbon/services/calc/design
+// $ goa gen github.com/crossnokaye/carbon/services/calc/design -o services/calc
 
 syntax = "proto3";
 
@@ -61,6 +61,25 @@ message ElectricalReport {
 	// Power meter data in KWh
 	double power = 2;
 	string interval = 3;
+	// Payload
+	PastValPayload payload = 4;
+}
+// Payload wraps the payload for past-values GetValues() and carbon poller
+// service
+message PastValPayload {
+	// OrgID
+	string org_id = 1;
+	// Duration
+	Period duration = 2;
+	// PastValInterval
+	sint64 past_val_interval = 3;
+	string interval = 4;
+	// ControlPoint
+	string control_point = 5;
+	// Formula
+	string formula = 6;
+	// AgentName
+	string agent_name = 7;
 }
 // Carbon/Energy Generation Report
 message EmissionsReport {
