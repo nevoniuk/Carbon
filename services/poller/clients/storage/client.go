@@ -114,7 +114,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 
 // SaveCarbonReports saves CO2 intensity reports in clickhouse
 func (c *client) SaveCarbonReports(ctx context.Context, reports []*genpoller.CarbonForecast) (error) {
-	res, err := c.chcon.PrepareBatch(ctx, `Insert INTO carbondb.carbon_reports (start,
+	res, err := c.chcon.PrepareBatch(ctx, `Insert INTO carbondb.carbon_intensity_reports (start,
 		 end, generatedrate, marginalrate, consumedrate, region, duration) VALUES ($1, $2, $3, $4, $5, $6, $7)`)
 	if err != nil {
 		return IncorrectReportsError{Err: fmt.Errorf("error in save carbon reports [%w]\n", err)}
@@ -151,7 +151,7 @@ func (c *client) GetAggregateReports(ctx context.Context,
 			AVG(marginalrate) AS marginalrate,
 			AVG(consumedrate) AS consumedrate
 		FROM 
-			carbondb.carbon_reports
+			carbondb.carbon_intensity_reports
 		WHERE
 			region = $1 AND start >= $2 AND end <= $3
 		GROUP BY region
