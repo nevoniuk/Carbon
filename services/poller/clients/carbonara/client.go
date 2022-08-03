@@ -123,6 +123,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 
 			end := data.StartDate
 			reportperiod := &genpoller.Period{StartTime: start, EndTime: end}
+			log.Info(ctx, log.KV{K: "start", V: start}, log.KV{K: "end", V: end})
 			start = end
 			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.GeneratedRate, MarginalRate: data.Data.MarginalRate,
 					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, DurationType: model.Minute, Region: data.Region}
