@@ -6,7 +6,6 @@ namespace: carbon
 resources:
   - ./rbac.yaml
   - ./synced-secret.yaml
-  - ./cronjob.yaml
   - ./deployment.yaml
   - ./service.yaml
 

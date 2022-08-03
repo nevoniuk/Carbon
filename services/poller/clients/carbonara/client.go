@@ -65,6 +65,10 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 			retries++
 		}
 	}
+	// null check because of context timeout in the middle of http request call
+	if resp == nil {
+		return nil, ServerError{Err: fmt.Errorf("server error null response")}
+	}
 	if err != nil {
 		return resp, ServerError{Err: fmt.Errorf("server error %d", resp.StatusCode)}
 	}
@@ -119,6 +123,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 
 			end := data.StartDate
 			reportperiod := &genpoller.Period{StartTime: start, EndTime: end}
+			log.Info(ctx, log.KV{K: "start", V: start}, log.KV{K: "end", V: end})
 			start = end
 			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.GeneratedRate, MarginalRate: data.Data.MarginalRate,
 					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, DurationType: model.Minute, Region: data.Region}
