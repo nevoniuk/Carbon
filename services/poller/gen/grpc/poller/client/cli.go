@@ -25,7 +25,7 @@ func BuildGetEmissionsForRegionPayload(pollerGetEmissionsForRegionMessage string
 		if pollerGetEmissionsForRegionMessage != "" {
 			err = json.Unmarshal([]byte(pollerGetEmissionsForRegionMessage), &message)
 			if err != nil {
-				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"end\": \"2020-01-01T00:00:00Z\",\n      \"region\": \"ERCO\",\n      \"start\": \"2020-01-01T00:00:00Z\"\n   }'")
+				return nil, fmt.Errorf("invalid JSON for message, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"end\": \"2020-01-01T00:00:00Z\",\n      \"region\": \"PJM\",\n      \"start\": \"2020-01-01T00:00:00Z\"\n   }'")
 			}
 		}
 	}

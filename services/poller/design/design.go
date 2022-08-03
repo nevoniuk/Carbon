@@ -46,12 +46,20 @@ var _ = Service("Poller", func() {
 
 var CarbonForecast = Type("CarbonForecast", func() {
 	Description("Emissions Forecast")
-	Field(1, "generated_rate", Float64, "generated_rate")
-	Field(2, "marginal_rate", Float64, "marginal_rate")
-	Field(3, "consumed_rate", Float64, "consumed_rate")
+	Field(1, "generated_rate", Float64, "generated_rate", func() {
+		Example(37.8267)
+	})
+
+	Field(2, "marginal_rate", Float64, "marginal_rate", func() {
+		Example(37.8267)
+	})
+
+	Field(3, "consumed_rate", Float64, "consumed_rate", func() {
+		Example(37.8267)
+	})
 	Field(4, "duration", Period, "Duration")
 	Field(5, "duration_type", String, IntervalFunc)
-	Field(6, "region", String, "region", RegionFunc)
+	Field(6, "region", String, "region")
 	Required("generated_rate", "marginal_rate", "consumed_rate", "region", "duration", "duration_type")
 })
 
