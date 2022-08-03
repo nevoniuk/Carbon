@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/crossnokaye/carbon/model"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	"goa.design/clue/log"
 )
@@ -126,7 +125,7 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 			log.Info(ctx, log.KV{K: "start", V: start}, log.KV{K: "end", V: end})
 			start = end
 			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.GeneratedRate, MarginalRate: data.Data.MarginalRate,
-					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, DurationType: model.Minute, Region: data.Region}
+					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, Region: data.Region}
 			reports = append(reports, report)
 			
 		}

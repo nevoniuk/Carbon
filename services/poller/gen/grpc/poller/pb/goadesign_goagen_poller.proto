@@ -49,9 +49,8 @@ message CarbonForecast {
 	double consumed_rate = 3;
 	// Duration
 	Period duration = 4;
-	string duration_type = 5;
 	// region
-	string region = 6;
+	string region = 5;
 }
 // Period of time from start to end of Forecast
 message Period {

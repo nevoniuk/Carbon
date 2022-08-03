@@ -42,7 +42,6 @@ func NewGetEmissionsForRegionResult(message *pollerpb.GetEmissionsForRegionRespo
 			GeneratedRate: val.GeneratedRate,
 			MarginalRate:  val.MarginalRate,
 			ConsumedRate:  val.ConsumedRate,
-			DurationType:  val.DurationType,
 			Region:        val.Region,
 		}
 		if val.Duration != nil {
@@ -74,9 +73,6 @@ func ValidateCarbonForecast(message *pollerpb.CarbonForecast) (err error) {
 		if err2 := ValidatePeriod(message.Duration); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
-	}
-	if !(message.DurationType == "minute" || message.DurationType == "hourly" || message.DurationType == "daily" || message.DurationType == "weekly" || message.DurationType == "monthly") {
-		err = goa.MergeErrors(err, goa.InvalidEnumValueError("message.duration_type", message.DurationType, []interface{}{"minute", "hourly", "daily", "weekly", "monthly"}))
 	}
 	return
 }
