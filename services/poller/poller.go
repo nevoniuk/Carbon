@@ -84,7 +84,6 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			return mapAndLogError(ctx, err)
 		}
 		region := regions[i]
-		
 		log.Info(ctx, log.KV{K: "region", V: region}, 
 		log.KV{K: "startTime", V: startTime},
 		log.KV{K: "endTime", V: finalEndTime})
