@@ -42,7 +42,7 @@ Deploying the Poller service in an Environment:
 
 3. Secrets either stored as carbon/poller for the poller service Singularity API or carbon/clickhouse for clickhouse
 
-3. Connect to a environment cluster using ckutil cloud kube-connect janeway
+3. Connect to a environment cluster using ckutil cloud kube-connect <env name>
 
 4. For each env use `.deploy carbon <branch_name> to <env_name>` in the corresponding slack channel
 

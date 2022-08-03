@@ -53,14 +53,8 @@ func main() {
 	//log context
 	ctx := log.With(log.Context(context.Background(), log.WithFormat(format)), log.KV{K: "svc", V: genpoller.ServiceName})
 	
-	//log clickhouse credentials and monitoring status
-	log.Info(ctx,
-		log.KV{K: "singularity-key", V: *carbonKey},
-        log.KV{K: "ch-addr", V: *chaddr},
-        log.KV{K: "ch-user", V: *chuser})
-		
-		log.Info(ctx,
-			log.KV{K: "monitoringEnabled", V: *monitoringEnabled})
+	//log monitoring status
+	log.Info(ctx, log.KV{K: "monitoringEnabled", V: *monitoringEnabled})
 
 	if *debug {
 		ctx = log.Context(ctx, log.WithDebug())
