@@ -46,6 +46,14 @@ func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, fc facil
 //note: need to keep UUID's as such in design because this maintains their format
 // HistoricalCarbonEmissions will output the CO2 intensity, Power Meter, and resulting CO2 emission reports
 func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.RequestPayload) (*gencalc.AllReports, error) {
+	fmt.Println(req.Duration.StartTime)
+	fmt.Println(req.Duration.EndTime)
+	/* 
+	read in minute reports
+	get the dates based on the below interval and duration
+	for any reports not available in clickhouse, keep reading the next report
+	make sure to implement all null checks
+	*/
 	dates, err := s.getDates(ctx, req.Interval, req.Duration)
 	if err != nil {
 		log.Errorf(ctx, err, "error parsing time in getDates:%w\n", err)

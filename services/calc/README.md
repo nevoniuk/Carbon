@@ -27,11 +27,11 @@ Make a client call to calc service to test in the given env:
 
 
 2. Run port-forward and get the logs:
-		kubectl -n carbon port-forward {pod_id_from_above} 12500 &
+		kubectl -n carbon port-forward {pod_id_from_above} 12200 &
 		kubectl -n carbon logs -f {pod_id_from_above}
 
 
 3. Make an api request to the pod in a new tab:
-	 	grpcurl -plaintext -d '{"org_id": "52858b15-16ce-4998-b317-a1ce68c348c3", "facility_id": "a5746ffa-2073-455e-b811-322ad3c3c4b7", "location_id": "cf153258-c08f-4ff0-9b01-d51d452e40e5", "duration": [{"start_time": "2020-01-01T00:00:00Z", "end_time": "2020-01-02T00:00:00Z"}], "interval": "hourly"}' localhost:12500 calc.Calc.HistoricalCarbonEmissions
+	 	grpcurl -plaintext -d '{"org_id": "52858b15-16ce-4998-b317-a1ce68c348c3", "facility_id": "a5746ffa-2073-455e-b811-322ad3c3c4b7", "location_id": "cf153258-c08f-4ff0-9b01-d51d452e40e5", "duration": [{"start_time": "2020-01-01T00:00:00Z", "end_time": "2020-01-02T00:00:00Z"}], "interval": "hourly"}' localhost:12200 calc.Calc.HistoricalCarbonEmissions
 
 -max-time=1200 
