@@ -103,5 +103,5 @@ docker exec -it 2698324fc48b /bin/sh
 
 4. query for carbon intensity reports
 
-2698324fc48b :) select * from carbondb.carbon_reports
+2698324fc48b :) select * from carbondb.carbon_intensity_reports
 

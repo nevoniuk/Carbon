@@ -84,10 +84,6 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 		if err != nil {
 			return mapAndLogError(ctx, err)
 		}
-		region := regions[i]
-		log.Info(ctx, log.KV{K: "region", V: region}, 
-		log.KV{K: "startTime", V: startTime},
-		log.KV{K: "endTime", V: finalEndTime})
 		for startTime.Before(finalEndTime) {
 			newEndTime := startTime.AddDate(0, 0, 7)
 			if !newEndTime.Before(finalEndTime) {
@@ -103,10 +99,6 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 				startTime = newEndTime
 				continue
 			}	
-			log.Info(ctx, log.KV{K: "reports length", V: len(minreports)}, 
-			log.KV{K: "startTime", V: startTime},
-			log.KV{K: "endTime", V: newEndTime},
-			log.KV{K: "report type", V: model.Minute})
 			err = s.dbc.SaveCarbonReports(ctx, minreports)
 			if err != nil {
 				return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)

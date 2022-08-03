@@ -53,7 +53,7 @@ func New(c *http.Client, key string) Client {
 	c.Timeout = 10 * time.Second
 	return &client{c, key}
 }
-
+// HttpGetRequestCall will return the response from the Singularity API server
 func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*http.Response, error) {
 	resp, err := c.httpc.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
@@ -122,7 +122,6 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 
 			end := data.StartDate
 			reportperiod := &genpoller.Period{StartTime: start, EndTime: end}
-			log.Info(ctx, log.KV{K: "start", V: start}, log.KV{K: "end", V: end})
 			start = end
 			report := &genpoller.CarbonForecast{GeneratedRate: data.Data.GeneratedRate, MarginalRate: data.Data.MarginalRate,
 					ConsumedRate: data.Data.ConsumedRate, Duration: reportperiod, Region: data.Region}
