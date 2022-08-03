@@ -57,6 +57,7 @@ require (
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.0.15
+	github.com/Knetic/govaluate v3.0.0+incompatible
 	github.com/crossnokaye/past-values v0.0.5
 	github.com/crossnokaye/utility v0.0.3
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0

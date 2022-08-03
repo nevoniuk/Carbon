@@ -7,6 +7,7 @@ import (
 
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/crossnokaye/carbon/clients/clickhouse"
+	"github.com/crossnokaye/carbon/model"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	"goa.design/clue/log"
 )
@@ -65,8 +66,8 @@ func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 			FROM 
 					carbondb.carbon_reports
 			WHERE
-					region = $1
-			`, region).Scan(&start); err != nil {
+					region = $1 AND duration = $2
+			`, region, model.Weekly).Scan(&start); err != nil {
 
 				return "", NoReportsError{Err: fmt.Errorf("error in checkDB [%w]\n", err)}
 			}

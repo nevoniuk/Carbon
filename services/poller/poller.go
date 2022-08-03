@@ -28,7 +28,6 @@ model.Isone, model.Miso,
   model.Nyiso_nyli, model.Nyiso_nyup,
    model.Pjm, model.Spp} 
 // reportdurations maintains the interval length of each report using constants from the model directory
-//var reportdurations [5]string = [5]string{model.Minute, model.Hourly, model.Daily, model.Weekly, model.Monthly}
 // common start date for regions
 const regionstartdate = "2020-01-01T00:00:00+00:00"
 // The AESO region start date is earlier than other region start dates
@@ -84,7 +83,9 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 		if err != nil {
 			return mapAndLogError(ctx, err)
 		}
-		log.Info(ctx, log.KV{K: "region", V: regions[i]}, 
+		region := regions[i]
+		
+		log.Info(ctx, log.KV{K: "region", V: region}, 
 		log.KV{K: "startTime", V: startTime},
 		log.KV{K: "endTime", V: finalEndTime})
 		for startTime.Before(finalEndTime) {
@@ -118,6 +119,7 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 					log.KV{K: "length of daily dates", V: len(dateConfigs[1])},
 					log.KV{K: "length of weekly dates", V: len(dateConfigs[2])},
 					log.KV{K: "length of monthly dates", V: len(dateConfigs[3])})
+
 					*/
 			err = s.dbc.SaveCarbonReports(ctx, minreports)
 			if err != nil {
@@ -156,7 +158,6 @@ func (ser *pollersrvc) getDatesHelper(ctx context.Context, minutereports []*genp
 		dates = append(dates, dateArray)
 	}
 	return dates, nil
-}
 */
 // R&D can use this function to obtain CO2 intensity reports for a specific region
 func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoller.CarbonPayload) ([]*genpoller.CarbonForecast, error) {
@@ -184,7 +185,7 @@ func (ser *pollersrvc) aggregateData(ctx context.Context, region string, dates [
 	}
 	return aggregateres, nil
 }
-*/
+
 // getDates will take an intervalType(for example hour, day, week) and configure dates based on that interval
 /**
 func getDates(ctx context.Context, reports []*genpoller.CarbonForecast, intervalType string) ([]*genpoller.Period, error) {
