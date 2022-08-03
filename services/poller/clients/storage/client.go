@@ -7,7 +7,6 @@ import (
 
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/crossnokaye/carbon/clients/clickhouse"
-	"github.com/crossnokaye/carbon/model"
 	genpoller "github.com/crossnokaye/carbon/services/poller/gen/poller"
 	"goa.design/clue/log"
 )
@@ -66,8 +65,8 @@ func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 			FROM 
 					carbondb.carbon_reports
 			WHERE
-					region = $1 AND duration = $2
-			`, region, model.Weekly).Scan(&start); err != nil {
+					region = $1
+			`, region).Scan(&start); err != nil {
 
 				return "", NoReportsError{Err: fmt.Errorf("error in checkDB [%w]\n", err)}
 			}
@@ -87,21 +86,26 @@ func (c *client) Init(ctx context.Context, test bool) error {
 		}
 		return err
 	}
+	
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
 		log.Errorf(ctx, err, "error initializing database: %w", err)
 		return err
 	}
+
 	if err := c.chcon.Exec(ctx, `
-			CREATE TABLE IF NOT EXISTS carbondb.carbon_reports (
-					start DateTime,
-					end DateTime,
-					generatedrate Float64,
-					marginalrate Float64,
-					consumedrate Float64,
-					region String,
-					duration String
-				) Engine =  MergeTree()
-				ORDER BY (start)
+	CREATE TABLE carbondb.carbon_reports ON CLUSTER 'office2'
+	(
+		start DateTime,
+		end DateTime,
+		generatedrate Float64,
+		marginalrate Float64,
+		consumedrate Float64,
+		region LowCardinality(String)
+	)
+	ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/{database}/{table}', '{replica}') 
+	PARTITION BY (toYYYYMM(start), ignore(end))
+	ORDER BY (region, start)
+	SETTINGS index_granularity = 8192
 	`); err != nil {
 		log.Errorf(ctx, err, "error initializing database: %w", err)
 		return fmt.Errorf("error initializing clickhouse[%w]", err)

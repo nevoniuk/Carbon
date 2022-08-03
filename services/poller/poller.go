@@ -3,7 +3,6 @@ package pollerapi
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 	"goa.design/clue/log"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
@@ -29,7 +28,7 @@ model.Isone, model.Miso,
   model.Nyiso_nyli, model.Nyiso_nyup,
    model.Pjm, model.Spp} 
 // reportdurations maintains the interval length of each report using constants from the model directory
-var reportdurations [5]string = [5]string{model.Minute, model.Hourly, model.Daily, model.Weekly, model.Monthly}
+//var reportdurations [5]string = [5]string{model.Minute, model.Hourly, model.Daily, model.Weekly, model.Monthly}
 // common start date for regions
 const regionstartdate = "2020-01-01T00:00:00+00:00"
 // The AESO region start date is earlier than other region start dates
@@ -85,12 +84,9 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 		if err != nil {
 			return mapAndLogError(ctx, err)
 		}
-		region := regions[i]
-		
 		log.Info(ctx, log.KV{K: "region", V: regions[i]}, 
 		log.KV{K: "startTime", V: startTime},
 		log.KV{K: "endTime", V: finalEndTime})
-
 		for startTime.Before(finalEndTime) {
 			newEndTime := startTime.AddDate(0, 0, 7)
 			if !newEndTime.Before(finalEndTime) {
@@ -110,6 +106,7 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			log.KV{K: "startTime", V: startTime},
 			log.KV{K: "endTime", V: newEndTime},
 			log.KV{K: "report type", V: model.Minute})
+			/**
 			dateConfigs, err := s.getDatesHelper(ctx, minreports)
 			if err != nil {
 				log.Error(ctx, err)
@@ -121,10 +118,12 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 					log.KV{K: "length of daily dates", V: len(dateConfigs[1])},
 					log.KV{K: "length of weekly dates", V: len(dateConfigs[2])},
 					log.KV{K: "length of monthly dates", V: len(dateConfigs[3])})
+					*/
 			err = s.dbc.SaveCarbonReports(ctx, minreports)
 			if err != nil {
 				return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
 			}
+			/**
 			for j := 0; j < len(dateConfigs); j++ {
 				if dateConfigs[j] != nil {
 					res, aggErr := s.aggregateData(ctx, region, dateConfigs[j], reportdurations[(j+1)])
@@ -140,12 +139,13 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 					}
 				}
 			}
+			*/
 			startTime = newEndTime
 		}
 	}
 	return nil
 }
-
+/**
 func (ser *pollersrvc) getDatesHelper(ctx context.Context, minutereports []*genpoller.CarbonForecast) ([][]*genpoller.Period, error) {
 	var dates [][]*genpoller.Period
 	for i := 1; i < len(reportdurations); i++ {
@@ -157,7 +157,7 @@ func (ser *pollersrvc) getDatesHelper(ctx context.Context, minutereports []*genp
 	}
 	return dates, nil
 }
-
+*/
 // R&D can use this function to obtain CO2 intensity reports for a specific region
 func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoller.CarbonPayload) ([]*genpoller.CarbonForecast, error) {
 	var start = input.Start
@@ -172,6 +172,7 @@ func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoll
 }
 
 // aggregateData gets aggregate reports for all report dates returned by GetDates and store them in clickhouse
+/**
 func (ser *pollersrvc) aggregateData(ctx context.Context, region string, dates []*genpoller.Period, duration string) ([]*genpoller.CarbonForecast, error) {
 	aggregateres, getErr := ser.dbc.GetAggregateReports(ctx, dates, region, duration)
 	if getErr != nil {
@@ -183,8 +184,9 @@ func (ser *pollersrvc) aggregateData(ctx context.Context, region string, dates [
 	}
 	return aggregateres, nil
 }
-
+*/
 // getDates will take an intervalType(for example hour, day, week) and configure dates based on that interval
+/**
 func getDates(ctx context.Context, reports []*genpoller.CarbonForecast, intervalType string) ([]*genpoller.Period, error) {
 	if reports == nil {
 		return nil, fmt.Errorf("no reports for get dates")
@@ -235,3 +237,4 @@ func getDates(ctx context.Context, reports []*genpoller.CarbonForecast, interval
 	}
 return finalDates, nil
 }
+*/
