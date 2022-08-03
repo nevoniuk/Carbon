@@ -11,4 +11,3 @@ resources:
 
 commonAnnotations:
   crossnokaye.com/carbon-calc-version: ${VERSION}
-  

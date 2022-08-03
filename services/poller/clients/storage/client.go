@@ -87,21 +87,26 @@ func (c *client) Init(ctx context.Context, test bool) error {
 		}
 		return err
 	}
+	
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
 		log.Errorf(ctx, err, "error initializing database: %w", err)
 		return err
 	}
+
 	if err := c.chcon.Exec(ctx, `
-			CREATE TABLE IF NOT EXISTS carbondb.carbon_reports (
-					start DateTime,
-					end DateTime,
-					generatedrate Float64,
-					marginalrate Float64,
-					consumedrate Float64,
-					region String,
-					duration String
-				) Engine =  MergeTree()
-				ORDER BY (start)
+	CREATE TABLE carbondb.carbon_reports ON CLUSTER 'office2'
+	(
+		start DateTime,
+		end DateTime,
+		generatedrate Float64,
+		marginalrate Float64,
+		consumedrate Float64,
+		region LowCardinality(String)
+	)
+	ENGINE = ReplicatedMergeTree('/clickhouse/{cluster}/tables/{shard}/{database}/{table}', '{replica}') 
+	PARTITION BY (toYYYYMM(start), ignore(end))
+	ORDER BY (region, start)
+	SETTINGS index_granularity = 8192
 	`); err != nil {
 		log.Errorf(ctx, err, "error initializing database: %w", err)
 		return fmt.Errorf("error initializing clickhouse[%w]", err)
