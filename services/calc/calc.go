@@ -46,8 +46,13 @@ func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, fc facil
 //note: need to keep UUID's as such in design because this maintains their format
 // HistoricalCarbonEmissions will output the CO2 intensity, Power Meter, and resulting CO2 emission reports
 func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.RequestPayload) (*gencalc.AllReports, error) {
-	fmt.Println(req.Duration.StartTime)
-	fmt.Println(req.Duration.EndTime)
+	log.Info(ctx, log.KV{K: "orgID", V: req.OrgID}, 
+		log.KV{K: "facilityID", V: req.FacilityID},
+		log.KV{K: "locationID", V: req.LocationID},
+		log.KV{K: "start", V: req.Duration.StartTime},
+		log.KV{K: "end", V: req.Duration.EndTime},
+		log.KV{K: "type", V: req.Interval},
+	)
 	/* 
 	read in minute reports
 	get the dates based on the below interval and duration
@@ -59,7 +64,8 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 		log.Errorf(ctx, err, "error parsing time in getDates:%w\n", err)
 		return nil, err
 	}
-	//remove after testing
+	log.Info(ctx, log.KV{K: "length of dates", V: len(dates)})
+	//remove after PR is merged into legacy
 	/**
 	var res *facilityconfig.Carbon
 	res, err = s.getLocationData(ctx, string(req.OrgID), string(req.FacilityID), string(req.LocationID))
@@ -139,12 +145,9 @@ func (s *calcSvc) getCarbonIntensityData(ctx context.Context, dates []*gencalc.P
 
 // getDates returns an array of dates for the storage client in order to correctly query for carbon reports
 func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *gencalc.Period) ([]*gencalc.Period, error) {
-	fmt.Println("IN GET DATES")
 	var newDates []*gencalc.Period
 	initialstart, _ := time.Parse(timeFormat, duration.StartTime)
-	fmt.Println(initialstart)
 	end, _ := time.Parse(timeFormat, duration.EndTime)
-	fmt.Println(end)
 	var diff = end.Sub(initialstart)
 	var datesCount int
 	var durationType int
@@ -153,34 +156,30 @@ func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *g
 		datesCount = int(math.Ceil(diff.Minutes()))
 		durationType = int(time.Minute)
 	case model.Hourly:
-		fmt.Println("HERE")
 		datesCount = int(math.Ceil(diff.Hours()))
-		fmt.Println(datesCount)
 		durationType = int(time.Hour)
-		fmt.Println(durationType)
 	case model.Daily: 
 		datesCount = int(math.Ceil(diff.Hours())) / 24
 		durationType = int(time.Hour) * 24
 	case model.Weekly:
 		datesCount = int(math.Ceil(diff.Hours())) / (24 * 7)
 		durationType = int(time.Hour) * 24 * 7
-	case model.Monthly: 
+	case model.Monthly: //TODO this differently
 		datesCount = int(math.Ceil(diff.Hours())) / (24 * 29)
 		durationType = int(time.Hour) * 24 * 29
+	default:
+		datesCount = 1
 	}
 	var tempstart = initialstart
 	var tempend time.Time
 	for i := 0; i < datesCount; i++ {
 		tempend = tempstart.Add(time.Duration(durationType))
-		fmt.Println("TEMP END IS")
-		fmt.Println(tempend)
 		if tempend.After(end) { //truncates last date but dates count adds an additional date
 			break
 		}
+		//implement logic to iterate until the end of the month
 		var startString = tempstart.Format(timeFormat)
 		var endString = tempend.Format(timeFormat)
-		fmt.Println("NEW DATE")
-		fmt.Println(&gencalc.Period{StartTime: startString, EndTime: endString})
 		newDates = append(newDates, &gencalc.Period{StartTime: startString, EndTime: endString})
 		tempstart = tempend
 	}
