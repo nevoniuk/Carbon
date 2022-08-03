@@ -35,9 +35,9 @@ spec:
             - "-monitoring-enabled=${MONITORING_ENABLED}"
           env:
             - name: ENV
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.annotations['env']
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['env']
           ports:
             - containerPort: 12500
               name: grpc
