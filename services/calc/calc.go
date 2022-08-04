@@ -85,7 +85,9 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 
 	//this may need to be carbon reports start and end time instead because getDates may have truncatedthe time
 	endTime, _ := time.Parse(timeFormat, req.Duration.EndTime)
+	//2020-09-24 00:00:00
 	startTime, _ := time.Parse(timeFormat, req.Duration.StartTime)
+	//2020-09-23 00:00:00
 	difference := endTime.Sub(startTime)
 	duration := difference.Nanoseconds()
 	
@@ -157,6 +159,7 @@ func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *g
 		datesCount = int(math.Ceil(diff.Minutes()))
 		durationType = int(time.Minute)
 	case model.Hourly:
+		fmt.Println("hourly average")
 		datesCount = int(math.Ceil(diff.Hours()))
 		durationType = int(time.Hour)
 	case model.Daily: 
