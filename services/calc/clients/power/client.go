@@ -50,26 +50,28 @@ func newPoint(unit string, value float64) (*PowerPoint) {
 
 // GetPower will call the Past Value functions "FindControlPointConfigsByName" and "GetValues" to get control point ID's and power data
 func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval string, formula *string, agentname string) (*gencalc.ElectricalReport, error) {
-    var cpIDs []genvalues.UUID
-    pointIDs, err := c.getControlPointID(ctx, orgID, agentname, cpaliasname)
+    cpID := make([]genvalues.UUID, 1)
+    pointID, err := c.getControlPointID(ctx, orgID, agentname, cpaliasname)
     if err != nil {
-        return nil, &ErrPowerReportsNotFound{fmt.Errorf("control point id not found for name %s for agent %s with err: %w\n", cpaliasname, agentname, err)}
+        return nil, &ErrPowerReportsNotFound{fmt.Errorf("control point id not found for name %s for agent %s with err: %w", cpaliasname, agentname, err)}
     }
-    for _, p := range pointIDs { //going to be one Point ID
-        cpIDs = append(cpIDs, *p.ID)
-    }
+    cpID[0] = *pointID[0].ID
     p := &genvalues.ValuesQuery{
         OrgID: genvalues.UUID(orgID),
-        PointIds: cpIDs,
+        PointIds: cpID,
         Start: dateRange.StartTime,
         End: dateRange.EndTime,
         Interval: pastValInterval,
     }
-    res, err := c.getValues(ctx, &p)
+    fmt.Println(p)
+    res, err := c.getValues(ctx, p)
     if err != nil {
         return nil, &ErrPowerReportsNotFound{Err: fmt.Errorf("err in getvalues: %w\n", err)}
     }
     analogValues, err := toPower(res)
+    if err != nil {
+        return nil, &ErrPowerReportsNotFound{fmt.Errorf("values not found for org: %s for pointID %s with err: %w", orgID, cpID[0], err)}
+    }
 	var durationType time.Duration
 	switch reportInterval {
 	case model.Minute:
@@ -136,8 +138,11 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
 func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
     res := r.(*genvalues.HistoricalValues)
     var analogPoints = res.Analog
+    fmt.Println(analogPoints)
     var analogForCP = analogPoints[0]
+    fmt.Println(analogForCP)
     analogVals := analogForCP.Values //[{timestamp, value}, {timestamp, value} ...]
+    fmt.Println(analogVals)
 	return analogVals, nil
 }
 
@@ -150,7 +155,7 @@ func (c *client) getControlPointID(ctx context.Context, orgID string, agentName 
         return nil, err
     }
     newres, err := toControlPointID(res)
-    if err != nil {
+    if err != nil || newres == nil {
         return nil, err
     }
     fmt.Println("control point ID")
