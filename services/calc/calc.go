@@ -148,10 +148,15 @@ func (s *calcSvc) getCarbonIntensityData(ctx context.Context, dates []*gencalc.P
 
 // getDates returns an array of dates for the storage client in order to correctly query for carbon reports
 func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *gencalc.Period) ([]*gencalc.Period, error) {
-	
 	var newDates []*gencalc.Period
-	initialstart, _ := time.Parse(timeFormat, duration.StartTime)
-  	end, _ := time.Parse(timeFormat, duration.EndTime)
+	initialstart, err := time.Parse(timeFormat, duration.StartTime)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	fmt.Println(initialstart)
+  	end, err:= time.Parse(timeFormat, duration.EndTime)
+	fmt.Println(end)
 	var diff = end.Sub(initialstart)
 	fmt.Println(diff)
 	var datesCount int
