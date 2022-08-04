@@ -18,8 +18,7 @@ var _ = API("Calc", func() {
 })
 
 var _ = Service("Calc", func() {
-    Description("Service to interpret CO2 emissions through KW and carbon intensity data. Offers the endpoint Historical Carbon Emissions")
-    
+    Description("Service to interpret CO2 emissions through KW and carbon intensity data. Offers the endpoint Historical Carbon Emissions")  
 	Method("historical_carbon_emissions", func() {
         Description("This endpoint is used by a front end service to return carbon emission reports")
         Payload(RequestPayload)
@@ -51,25 +50,7 @@ var RequestPayload = Type("RequestPayload", func() {
     Field(5, "location_id", UUID, "LocationID")
     Required("org_id", "duration", "interval", "facility_id", "location_id")
 })
-/**
-var PastValPayload = Type("PastValPayload", func() {
-    Description("Payload wraps the payload for past-values GetValues() and carbon poller service")
-    Field(1, "orgID", String, "OrgID")
-    Field(2, "duration", Period, "Duration")
-    Field(3, "past_val_interval", Int64, "PastValInterval")
-    Field(4, "interval", String, IntervalFunc)
-    Field(5, "control_point", String, "ControlPoint", func() {
-        MinLength(1)
-    })
-    Field(6, "formula", String, "Formula", func() {
-        MinLength(1)
-    })
-    Field(7, "agent_name", String, "AgentName", func() {
-        MinLength(1)
-    })
-    Required("orgID", "duration", "interval", "past_val_interval", "control_point", "agent_name")
-})
-*/
+
 var EmissionsReport = Type("EmissionsReport", func() {
     Description("Carbon/Energy Generation Report")
     Field(1, "duration", Period, "Duration")

@@ -45,7 +45,6 @@ func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, fc facil
 //note: need to keep UUID's as such in design because this maintains their format
 // HistoricalCarbonEmissions will output the CO2 intensity, Power Meter, and resulting CO2 emission reports
 func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.RequestPayload) (*gencalc.AllReports, error) {
-	fmt.Println("IN METHOD")
 	fmt.Println(req.Duration.StartTime)
 	fmt.Println(req.Duration.EndTime)
 	fmt.Println(req.OrgID)
@@ -78,11 +77,15 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 	cpaliasname := "energy_meter_4_pulse_val"
 	formula := "0.6"
 	agentName := "Lineage Oxnard Building 4"
-	singularityRegion, controlPointName, formula, agentName := model.Caiso, cpaliasname, formula, agentName
+	//singularityRegion, controlPointName, formula, agentName := model.Caiso, cpaliasname, formula, agentName
+	controlPointName, formula, agentName := cpaliasname, formula, agentName
+	var carbonReports *gencalc.CarbonReport
+	/**
 	carbonReports, err := s.getCarbonIntensityData(ctx, dates, req.Interval, singularityRegion)
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetCarbonReports, err)
 	}
+	*/
 	//this may need to be carbon reports start and end time instead because getDates may have truncatedthe time
 	endTime, _ := time.Parse(timeFormat, req.Duration.EndTime)
 	startTime, _ := time.Parse(timeFormat, req.Duration.StartTime)

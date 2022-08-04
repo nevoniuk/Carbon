@@ -52,7 +52,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 		}
 		return ErrNotFound{fmt.Errorf("database could not be found: %w", err)}
 	}
-	/**
+
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
 		return err
 	}
@@ -62,13 +62,15 @@ func (c *client) Init(ctx context.Context, test bool) error {
 				start DateTime,
 				end DateTime,
 				generatedrate Float64,
+				intervaltype String,
+				
 				) Engine =  MergeTree()
 				ORDER BY (start)
 	`) 
 	if err != nil {
 		return fmt.Errorf("failed to create power reports table")
 	}
-	*/
+
 	return nil
 }
 
@@ -85,9 +87,9 @@ func (c *client) GetCarbonReports(ctx context.Context, duration []*gencalc.Perio
 		FROM 
 			carbondb.carbon_reports
 		WHERE
-			region = $1 AND start >= $2 AND end <= $3 AND duration = $4
+			region = $1 AND start >= $2 AND end <= $3
 		GROUP BY region
-				`, region, newstart.UTC(), newend.UTC(), intervalType)
+				`, region, newstart.UTC(), newend.UTC())
 		err := rows.Scan(&averagegen)
 		if err != nil {
 			return nil, ErrNotFound{Err: fmt.Errorf("could not get carbon intensity report for start %s and end %s: %w", period.StartTime, period.EndTime, err)}
