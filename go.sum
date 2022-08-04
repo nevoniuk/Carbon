@@ -37,8 +37,6 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/ClickHouse/clickhouse-go v1.5.4/go.mod h1:EaI/sW7Azgz9UATzd5ZdZHRUhHgv5+JMS9NSr2smCJI=
 github.com/ClickHouse/clickhouse-go/v2 v2.0.15 h1:lLAZliqrZEygkxosLaW1qHyeTb4Ho7fVCZ0WKCpLocU=
 github.com/ClickHouse/clickhouse-go/v2 v2.0.15/go.mod h1:Z21o82zD8FFqefOQDg93c0XITlxGbTsWQuRm588Azkk=
-github.com/Knetic/govaluate v3.0.0+incompatible h1:7o6+MAPhYTCF0+fdvoz1xDedhRb4f6s9Tn1Tt7/WTEg=
-github.com/Knetic/govaluate v3.0.0+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
@@ -74,15 +72,9 @@ github.com/cncf/xds/go v0.0.0-20211001041855-01bcc9b48dfe/go.mod h1:eXthEFrGJvWH
 github.com/cncf/xds/go v0.0.0-20211011173535-cb28da3451f1/go.mod h1:eXthEFrGJvWHgFFCl3hGmgk+/aYT6PnTQLykKQRLhEs=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/crossnokaye/past-values v0.0.5 h1:yJjoXo0uMIYtx3xWOVpDfVxKjtIr4AJ/48vQQL9YNYA=
-github.com/crossnokaye/past-values v0.0.5/go.mod h1:Cim7YCN2IHPU0LR4iKKcETwtiyb/za1bWsQVgfvPH2M=
-github.com/crossnokaye/facilityconfig v0.0.4 h1:gHmB0aXdPv8HYKutZBsBdtFdtUIVndIWUUl0O2h0VQc=
-github.com/crossnokaye/facilityconfig v0.0.4/go.mod h1:Bp6IiZiPdqalk3KBSEmtSYMjhERnhpcMfo2OerOEAvk=
-github.com/crossnokaye/facilityconfig v0.0.7 h1:4WBzbsTUQ6R1Xbdcf4tKOYt06L/+CruhrfinH0/5RnU=
-github.com/crossnokaye/facilityconfig v0.0.7/go.mod h1:Bp6IiZiPdqalk3KBSEmtSYMjhERnhpcMfo2OerOEAvk=
 github.com/crossnokaye/past-values v0.0.5 h1:yJjoXo0uMIYtx3xWOVpDfVxKjtIr4AJ/48vQQL9YNYA=
 github.com/crossnokaye/past-values v0.0.5/go.mod h1:Cim7YCN2IHPU0LR4iKKcETwtiyb/za1bWsQVgfvPH2M=
-github.com/crossnokaye/utility v0.0.3 h1:NzWGR0t1bZCiQDATxRMs+XERNLVeVHG8wkd4QYQ0fNA=
-github.com/crossnokaye/utility v0.0.3/go.mod h1:BHbaLuonHE8GDThKV9Y2UzeiIgOf8VzGKSM/+lnuUY0=
+github.com/crossnokaye/past-values v0.0.5/go.mod h1:Cim7YCN2IHPU0LR4iKKcETwtiyb/za1bWsQVgfvPH2M=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
