@@ -78,7 +78,7 @@ var DataPoint = Type("DataPoint", func() {
     Description("Contains carbon emissions in terms of DataPoints, which can be used as points for a time/CO2 emissions graph")
     Field(1, "time", String, "Time", func() {
         Format(FormatDateTime)
-        Example("2020-01-01T00:00:00Z")
+        Example("2006-01-02T15:04:05-07:00")
     })
     Field(2, "value", Float64, "value", func() {
         Example(37.8267)
@@ -103,11 +103,11 @@ var Period = Type("Period", func() {
     Description("Period of time from start to end for any report type")
     Field(1, "start_time", String, "Start time", func() {
         Format(FormatDateTime)
-        Example("2020-01-01T00:00:00Z")
+        Example("2006-01-02T15:04:05-07:00")
     })
     Field(2, "end_time", String, "End time", func() {
         Format(FormatDateTime)
-        Example("2020-01-01T00:00:00Z")
+        Example("2006-01-02T15:04:05-07:00")
     })
     Required("start_time", "end_time")
 })

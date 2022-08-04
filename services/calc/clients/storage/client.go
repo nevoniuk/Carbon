@@ -87,7 +87,7 @@ func (c *client) GetCarbonReports(ctx context.Context, duration []*gencalc.Perio
 		SELECT
 			AVG(generatedrate) AS generatedrate
 		FROM 
-			carbondb.carbon_reports
+			carbondb.carbon_intensity_reports
 		WHERE
 			region = $1 AND start >= $2 AND end <= $3
 		GROUP BY region
