@@ -55,7 +55,8 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     fmt.Println(agentname)
     fmt.Println("ALIAS NAME IS")
     fmt.Println(cpaliasname)
-    
+    var pointID = "aaa09388-98e4-11ec-b909-0242ac120002"
+    pvpointID := genvalues.UUID(pointID)
     var cpIDs []genvalues.UUID
     pointIDs, err := c.getControlPointID(ctx, orgID, agentname, cpaliasname)
     if err != nil {
@@ -65,7 +66,8 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
         cpIDs = append(cpIDs, *p.ID)
     }
     p := &genvalues.ValuesQuery{
-        OrgID: genvalues.UUID(orgID),
+        //OrgID: genvalues.UUID(orgID),
+        OrgID: pvpointID,
         PointIds: cpIDs,
         Start: dateRange.StartTime,
         End: dateRange.EndTime,
