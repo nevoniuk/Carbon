@@ -135,12 +135,21 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
 //ToPower will cast the response from GetValues and return 1 hour interval reports to match the ones
 //returned from the Poller service. It will read the values from the input control point and convert them to Power in KW utilizing the formula
 func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
-    res := r.(*genvalues.HistoricalValues)
-    var analogPoints = res.Analog
+    res := r.(*genvalues.GetValuesResult)
+    var analogPoints = res.Values.Analog
+    if len(analogPoints) < 1 || len(analogPoints) > 1 {
+        return nil, fmt.Errorf("incorrect analog points returned")
+    }
     fmt.Println(analogPoints)
     var analogForCP = analogPoints[0]
+    if analogForCP == nil {
+        return nil, fmt.Errorf("analog points are null")
+    }
     fmt.Println(analogForCP)
     analogVals := analogForCP.Values //[{timestamp, value}, {timestamp, value} ...]
+    if len(analogVals) == 0 {
+        return nil, fmt.Errorf("analog points are null")
+    }
     fmt.Println(analogVals)
 	return analogVals, nil
 }
