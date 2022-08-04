@@ -56,6 +56,7 @@ func (c *client) Init(ctx context.Context, test bool) error {
 	if err := c.chcon.Exec(ctx, `CREATE DATABASE IF NOT EXISTS carbondb;`); err != nil {
 		return err
 	}
+	/**
 	var err error 
 	err = c.chcon.Exec(ctx, `
 			CREATE TABLE IF NOT EXISTS carbondb.power_reports (
@@ -63,14 +64,15 @@ func (c *client) Init(ctx context.Context, test bool) error {
 				end DateTime,
 				generatedrate Float64,
 				intervaltype String,
-				
+
 				) Engine =  MergeTree()
 				ORDER BY (start)
 	`) 
+	
 	if err != nil {
 		return fmt.Errorf("failed to create power reports table")
 	}
-
+*/
 	return nil
 }
 

@@ -77,15 +77,12 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 	cpaliasname := "energy_meter_4_pulse_val"
 	formula := "0.6"
 	agentName := "Lineage Oxnard Building 4"
-	//singularityRegion, controlPointName, formula, agentName := model.Caiso, cpaliasname, formula, agentName
-	controlPointName, formula, agentName := cpaliasname, formula, agentName
-	var carbonReports *gencalc.CarbonReport
-	/**
+	singularityRegion, controlPointName, formula, agentName := model.Caiso, cpaliasname, formula, agentName
 	carbonReports, err := s.getCarbonIntensityData(ctx, dates, req.Interval, singularityRegion)
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetCarbonReports, err)
 	}
-	*/
+
 	//this may need to be carbon reports start and end time instead because getDates may have truncatedthe time
 	endTime, _ := time.Parse(timeFormat, req.Duration.EndTime)
 	startTime, _ := time.Parse(timeFormat, req.Duration.StartTime)
