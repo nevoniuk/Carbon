@@ -69,7 +69,7 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 	singularityRegion, controlPointName, formula, agentName := res.Region, res.ControlPointName, res.Formula, res.AgentName
 */
 	formula := "0.6"
-	agentName := "sandbox Lineage Oxnard Building 4"
+	agentName := "office Lineage Oxnard Building 4"
 	singularityRegion := model.Caiso
 	controlPointName := "energy_meter_4_pulse_val"
 	carbonReport, err := s.dbc.GetCarbonIntensityReports(ctx, dates, req.Interval, singularityRegion)
