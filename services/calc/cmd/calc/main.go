@@ -30,8 +30,6 @@ import (
     "goa.design/clue/log"
     "goa.design/clue/metrics"
     "goa.design/clue/trace"
- 
-    
 )
 func main() {
 	var (

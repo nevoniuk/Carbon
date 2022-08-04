@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 	"github.com/crossnokaye/carbon/model"
-    //utility "github.com/crossnokaye/utility/math"
-	//"github.com/Knetic/govaluate"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 	genvaluesc "github.com/crossnokaye/past-values/services/past-values/gen/grpc/past_values/client"
 	genvalues "github.com/crossnokaye/past-values/services/past-values/gen/past_values"

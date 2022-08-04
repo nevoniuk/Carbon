@@ -39,9 +39,9 @@ spec:
                 fieldRef:
                   fieldPath: metadata.annotations['env']
           ports:
-            - containerPort: 12500
+            - containerPort: 12200
               name: grpc
-            - containerPort: 12501
+            - containerPort: 12201
               name: http-metrics
           readinessProbe:
             httpGet:
