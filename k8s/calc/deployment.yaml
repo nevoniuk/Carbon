@@ -46,7 +46,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 12501
+              port: 12201
           securityContext:
             readOnlyRootFilesystem: true
           envFrom:
