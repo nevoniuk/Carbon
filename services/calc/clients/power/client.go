@@ -37,7 +37,6 @@ func New(conn *grpc.ClientConn) Client {
 }
 
 var unitTypes [3]string = [3]string{model.Kwh, model.Kwh_Min, model.Pulse_count}
-
 type PowerPoint struct {
     Unit string
     Value float64
@@ -45,7 +44,6 @@ type PowerPoint struct {
     EndTime string
 	IntervalType string
 }
-
 func newPoint(unit string, value float64) (*PowerPoint) {
     return &PowerPoint{Unit: unit, Value: value}
 }
@@ -243,5 +241,43 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
 	}
     return points, nil
 }
+/*
+func  convertToPowerr(analogPoints []*genvalues.AnalogPoint, formula *string, times []*gencalc.Period) ([]*gencalc.DataPoint, error) {
+    totalPoints := (len(analogPoints) - 1)
+	sfinalEndTime := *analogPoints[totalPoints].Timestamp
+	sstartTime := *analogPoints[0].Timestamp
+	start, _ := time.Parse(timeFormat, sstartTime)
+	end, _ := time.Parse(timeFormat, sfinalEndTime)
+	var points []*gencalc.DataPoint
+	var reportCounter = 0
+	var previousReport = *analogPoints[0]
+	
+    for _, per := range times {
+        analogPoint := analogPoints[reportCounter]
+        power := 
+        power := *previousReport.Value - *analogPoints[reportCounter].Value //TODO: convert this using formula
+			point := &gencalc.DataPoint{Time: reportTime.Format(timeFormat), Value: power}
+			points = append(points, point)
+    }
+	for start.Before(end) {
+		if reportCounter == totalPoints { //should not happen
+			return points, nil
+		}
+		if *analogPoints[reportCounter].Value == 0 {
+			reportCounter += 1
+			continue
+		}
+		reportTime, _ := time.Parse(timeFormat, *analogPoints[reportCounter].Timestamp)
+		if reportTime.Sub(start) >= durationtype {
+			power := *previousReport.Value - *analogPoints[reportCounter].Value //TODO: convert this using formula
+			point := &gencalc.DataPoint{Time: reportTime.Format(timeFormat), Value: power}
+			points = append(points, point)
+			previousReport = *analogPoints[reportCounter]
+			start = reportTime
+		}
+		reportCounter += 1
+	}
+    return points, nil
+}
 
-
+*/
