@@ -8,10 +8,10 @@ spec:
   type: ClusterIP
   ports:
    - name: grpc
-     targetPort: 12500
-     port: 12500
+     targetPort: 12200
+     port: 12200
    - name: http-metrics
-     targetPort: 12501
-     port: 12501
+     targetPort: 12201
+     port: 12201
   selector:
     app: calc
