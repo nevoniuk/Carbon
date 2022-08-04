@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"time"
+
 	"github.com/crossnokaye/carbon/model"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 	genvaluesc "github.com/crossnokaye/past-values/services/past-values/gen/grpc/past_values/client"
 	genvalues "github.com/crossnokaye/past-values/services/past-values/gen/past_values"
+	"github.com/google/uuid"
 	goa "goa.design/goa/v3/pkg"
 	"google.golang.org/grpc"
 )
@@ -56,7 +58,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     }
     p := &genvalues.ValuesQuery {
         OrgID: genvalues.UUID(orgID),
-        PointIds: pointID,
+        PointIds: []genvalues.UUID{pointID},
         Start: dateRange.StartTime,
         End: dateRange.EndTime,
         Interval: pastValInterval,
@@ -146,30 +148,35 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
 }
 
 // getControlPointID will use the past values function getControlPointConfigByName to get the point ID
-func (c *client) getControlPointID(ctx context.Context, orgID string, agentName string, pointName string) ([]genvalues.UUID, error) {
+func (c *client) getControlPointID(ctx context.Context, orgID string, agentName string, pointName string) (genvalues.UUID, error) {
     payload := genvalues.PointNameQuery{OrgID: genvalues.UUID(orgID), ClientName: agentName, PointName: pointName}
     fmt.Println(payload)
     res, err := c.findControlPointConfigsByName(ctx, &payload)
     if err != nil {
-        return nil, err
+        return genvalues.UUID(uuid.Nil.String()), err
     }
     newres, err := toControlPointID(res)
-    if err != nil || newres == nil {
-        return nil, err
+    if err != nil {
+        return genvalues.UUID(uuid.Nil.String()), err
     }
     return newres, nil
 }
-
 // toControlPointID will cast the response from getControlPointConfigByName to a point ID
-func toControlPointID(r interface{}) ([]genvalues.UUID, error) {
+func toControlPointID(r interface{}) (genvalues.UUID, error) {
     res := r.([]*genvalues.ControlPointConfig)
     fmt.Println(len(res))
-    cpIDs := make([]genvalues.UUID, len(res))
-    for _, cp := range res {
-        cpIDs = append(cpIDs, genvalues.UUID(*cp.ID))
+    if len(res) > 1 || len(res) == 0 {
+        return genvalues.UUID(uuid.Nil.String()), fmt.Errorf("more control points returned than input")
+    }
+    /**
+    for i, cp := range res {
+        cpIDs[i] = genvalues.UUID(*cp.ID)
+        //cpIDs = append(cpIDs, genvalues.UUID(*cp.ID))
         fmt.Println(*cp.ID)
     }
-    return cpIDs, nil
+    */
+    fmt.Println(genvalues.UUID(*res[0].ID))
+    return genvalues.UUID(*res[0].ID), nil
 }
 func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }
 
