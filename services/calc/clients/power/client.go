@@ -3,7 +3,7 @@ package power
 import (
 	"context"
 	"fmt"
-	//"time"
+	"time"
 
 	"github.com/crossnokaye/carbon/model"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
@@ -68,7 +68,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     fmt.Println(res)
     if err != nil {
         return nil, &ErrPowerReportsNotFound{Err: fmt.Errorf("err in getvalues: %w\n", err)}
-    }/**
+    }
     analogValues, err := toPower(res)
     if err != nil {
         return nil, &ErrPowerReportsNotFound{fmt.Errorf("values not found for org: %s for pointID %s with err: %w", orgID, pointID, err)}
@@ -86,11 +86,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
 	case model.Monthly:
 		durationType = time.Hour * 24 * 29
 	}
-    */ 
-	//newFormula, err := utility.ParseFormula(*formula)
-    //newFormula.Evaluate()//figure out what this formula would look like
-    var kwhPoints []*gencalc.DataPoint
-	//kwhPoints, err := convertToPower(analogValues, formula, durationType)
+	kwhPoints, err := convertToPower(analogValues, formula, durationType)
 
     if err != nil {
         return nil, ErrPowerReportsNotFound{Err: fmt.Errorf("err casting getvalues response: %w", err)}
@@ -134,7 +130,6 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     "Structures": []
 }
     */
-    return nil, nil
 }
 
 //ToPower will cast the response from GetValues and return 1 hour interval reports to match the ones
@@ -166,14 +161,14 @@ func (c *client) getControlPointID(ctx context.Context, orgID string, agentName 
 }
 // toControlPointID will cast the response from getControlPointConfigByName to a point ID
 func toControlPointID(r interface{}) (genvalues.UUID, error) {
-    //res := r.(*genvalues.FindControlPointConfigsByNameResult)
-    res := r.([]*genvalues.ControlPointConfig)
-    fmt.Println(len(res))
-    if len(res) > 1 || len(res) == 0 {
+    res := r.(*genvalues.FindControlPointConfigsByNameResult)
+    values := res.Values
+    fmt.Println(len(values))
+    if len(values) > 1 || len(values) == 0 {
         return genvalues.UUID(uuid.Nil.String()), fmt.Errorf("more control points returned than input")
     }
-    fmt.Println(genvalues.UUID(res[0].ID))
-    return genvalues.UUID(res[0].ID), nil
+    fmt.Println(genvalues.UUID(values[0].ID))
+    return genvalues.UUID(values[0].ID), nil
 }
 func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }
 
@@ -214,11 +209,11 @@ func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }
         1kWh = 60kWmin(energy used by doing 1 KW for an hour)
         formula: convert pulse count from power meters
     
-    *//**
+    */
 func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, durationtype time.Duration) ([]*gencalc.DataPoint, error) {
     totalPoints := (len(analogPoints) - 1)
-	sfinalEndTime := *analogPoints[totalPoints].Timestamp
-	sstartTime := *analogPoints[0].Timestamp
+	sfinalEndTime := analogPoints[totalPoints].Timestamp
+	sstartTime := analogPoints[0].Timestamp
 	start, _ := time.Parse(timeFormat, sstartTime)
 	end, _ := time.Parse(timeFormat, sfinalEndTime)
 	var points []*gencalc.DataPoint
@@ -229,13 +224,13 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
 		if reportCounter == totalPoints { //should not happen
 			return points, nil
 		}
-		if *analogPoints[reportCounter].Value == 0 {
+		if analogPoints[reportCounter].Value == 0 {
 			reportCounter += 1
 			continue
 		}
-		reportTime, _ := time.Parse(timeFormat, *analogPoints[reportCounter].Timestamp)
+		reportTime, _ := time.Parse(timeFormat, analogPoints[reportCounter].Timestamp)
 		if reportTime.Sub(start) >= durationtype {
-			power := *previousReport.Value - *analogPoints[reportCounter].Value //TODO: convert this using formula
+			power := previousReport.Value - analogPoints[reportCounter].Value //TODO: convert this using formula
 			point := &gencalc.DataPoint{Time: reportTime.Format(timeFormat), Value: power}
 			points = append(points, point)
 			previousReport = *analogPoints[reportCounter]
@@ -245,7 +240,7 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
 	}
     return points, nil
 }
-*/
+
 /*
 func  convertToPowerr(analogPoints []*genvalues.AnalogPoint, formula *string, times []*gencalc.Period) ([]*gencalc.DataPoint, error) {
     totalPoints := (len(analogPoints) - 1)
