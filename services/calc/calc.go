@@ -46,10 +46,12 @@ func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, fc facil
 // HistoricalCarbonEmissions will output the CO2 intensity, Power Meter, and resulting CO2 emission reports
 func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.RequestPayload) (*gencalc.AllReports, error) {
 	fmt.Println("IN METHOD")
-	if req == nil {
-		fmt.Println("req is null")
-	}
+	fmt.Println(req.Duration.StartTime)
+	fmt.Println(req.Duration.EndTime)
 	fmt.Println(req.OrgID)
+	fmt.Println(req.LocationID)
+	fmt.Println(req.FacilityID)
+	fmt.Println(req.Interval)
 	log.Info(ctx, log.KV{K: "orgID", V: req.OrgID}, 
 		log.KV{K: "facilityID", V: req.FacilityID},
 		log.KV{K: "locationID", V: req.LocationID},
