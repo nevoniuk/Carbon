@@ -50,13 +50,6 @@ func newPoint(unit string, value float64) (*PowerPoint) {
 
 // GetPower will call the Past Value functions "FindControlPointConfigsByName" and "GetValues" to get control point ID's and power data
 func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval string, formula *string, agentname string) (*gencalc.ElectricalReport, error) {
-    fmt.Println("IN GET POWER")
-    fmt.Println("AGENT NAME IS")
-    fmt.Println(agentname)
-    fmt.Println("ALIAS NAME IS")
-    fmt.Println(cpaliasname)
-    var pointID = "aaa09388-98e4-11ec-b909-0242ac120002"
-    pvpointID := genvalues.UUID(pointID)
     var cpIDs []genvalues.UUID
     pointIDs, err := c.getControlPointID(ctx, orgID, agentname, cpaliasname)
     if err != nil {
@@ -66,8 +59,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
         cpIDs = append(cpIDs, *p.ID)
     }
     p := &genvalues.ValuesQuery{
-        //OrgID: genvalues.UUID(orgID),
-        OrgID: pvpointID,
+        OrgID: genvalues.UUID(orgID),
         PointIds: cpIDs,
         Start: dateRange.StartTime,
         End: dateRange.EndTime,
@@ -162,7 +154,7 @@ func (c *client) getControlPointID(ctx context.Context, orgID string, agentName 
         return nil, err
     }
     fmt.Println("control point ID")
-    fmt.Println(newres)
+    fmt.Println(newres[0].ID)
     return newres, nil
 }
 
