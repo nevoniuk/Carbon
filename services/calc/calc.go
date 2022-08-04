@@ -161,7 +161,9 @@ func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *g
 	case model.Hourly:
 		fmt.Println("hourly average")
 		datesCount = int(math.Ceil(diff.Hours()))
+		fmt.Println(datesCount)
 		durationType = int(time.Hour)
+		fmt.Println(durationType)
 	case model.Daily: 
 		datesCount = int(math.Ceil(diff.Hours())) / 24
 		durationType = int(time.Hour) * 24
@@ -177,6 +179,8 @@ func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *g
 	var tempstart = initialstart
 	var tempend time.Time
 	for i := 0; i < datesCount; i++ {
+		fmt.Println(tempstart)
+		fmt.Println(tempend)
 		tempend = tempstart.Add(time.Duration(durationType))
 		if tempend.After(end) { 
 			break
