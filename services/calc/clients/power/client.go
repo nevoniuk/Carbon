@@ -137,7 +137,8 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
 func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
     res := r.(*genvalues.GetValuesResult)
     var analogPoints = res.Values.Analog
-    if len(analogPoints) < 1 || len(analogPoints) > 1 {
+    fmt.Println(len(analogPoints))
+    if len(analogPoints) != 1 {
         return nil, fmt.Errorf("incorrect analog points returned")
     }
     fmt.Println(analogPoints)
