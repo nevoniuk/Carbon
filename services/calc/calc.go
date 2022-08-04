@@ -45,6 +45,7 @@ func NewCalc(ctx context.Context, psc power.Client, dbc storage.Client, fc facil
 //note: need to keep UUID's as such in design because this maintains their format
 // HistoricalCarbonEmissions will output the CO2 intensity, Power Meter, and resulting CO2 emission reports
 func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.RequestPayload) (*gencalc.AllReports, error) {
+	fmt.Println("IN METHOD")
 	log.Info(ctx, log.KV{K: "orgID", V: req.OrgID}, 
 		log.KV{K: "facilityID", V: req.FacilityID},
 		log.KV{K: "locationID", V: req.LocationID},
