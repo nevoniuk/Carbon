@@ -75,6 +75,8 @@ github.com/crossnokaye/past-values v0.0.5 h1:yJjoXo0uMIYtx3xWOVpDfVxKjtIr4AJ/48v
 github.com/crossnokaye/past-values v0.0.5 h1:yJjoXo0uMIYtx3xWOVpDfVxKjtIr4AJ/48vQQL9YNYA=
 github.com/crossnokaye/past-values v0.0.5/go.mod h1:Cim7YCN2IHPU0LR4iKKcETwtiyb/za1bWsQVgfvPH2M=
 github.com/crossnokaye/past-values v0.0.5/go.mod h1:Cim7YCN2IHPU0LR4iKKcETwtiyb/za1bWsQVgfvPH2M=
+github.com/crossnokaye/past-values v0.0.7 h1:hJ38KRuA40FZePd3XMs/+dtpRKPFydLl+FvJQGOKdHE=
+github.com/crossnokaye/past-values v0.0.7/go.mod h1:MJKoWZ99jaHVkFrkEv4Qo4FiMgk0Ls64OyyeRPuF3Qk=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

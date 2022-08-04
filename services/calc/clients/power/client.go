@@ -3,7 +3,7 @@ package power
 import (
 	"context"
 	"fmt"
-	"time"
+	//"time"
 
 	"github.com/crossnokaye/carbon/model"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
@@ -63,12 +63,12 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
         End: dateRange.EndTime,
         Interval: pastValInterval,
     }
-
     fmt.Println(p)
     res, err := c.getValues(ctx, p)
+    fmt.Println(res)
     if err != nil {
         return nil, &ErrPowerReportsNotFound{Err: fmt.Errorf("err in getvalues: %w\n", err)}
-    }
+    }/**
     analogValues, err := toPower(res)
     if err != nil {
         return nil, &ErrPowerReportsNotFound{fmt.Errorf("values not found for org: %s for pointID %s with err: %w", orgID, pointID, err)}
@@ -85,10 +85,12 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
 		durationType = time.Hour * 24 * 7
 	case model.Monthly:
 		durationType = time.Hour * 24 * 29
-	} 
+	}
+    */ 
 	//newFormula, err := utility.ParseFormula(*formula)
     //newFormula.Evaluate()//figure out what this formula would look like
-	kwhPoints, err := convertToPower(analogValues, formula, durationType)
+    var kwhPoints []*gencalc.DataPoint
+	//kwhPoints, err := convertToPower(analogValues, formula, durationType)
 
     if err != nil {
         return nil, ErrPowerReportsNotFound{Err: fmt.Errorf("err casting getvalues response: %w", err)}
@@ -132,6 +134,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     "Structures": []
 }
     */
+    return nil, nil
 }
 
 //ToPower will cast the response from GetValues and return 1 hour interval reports to match the ones
@@ -163,20 +166,14 @@ func (c *client) getControlPointID(ctx context.Context, orgID string, agentName 
 }
 // toControlPointID will cast the response from getControlPointConfigByName to a point ID
 func toControlPointID(r interface{}) (genvalues.UUID, error) {
+    //res := r.(*genvalues.FindControlPointConfigsByNameResult)
     res := r.([]*genvalues.ControlPointConfig)
     fmt.Println(len(res))
     if len(res) > 1 || len(res) == 0 {
         return genvalues.UUID(uuid.Nil.String()), fmt.Errorf("more control points returned than input")
     }
-    /**
-    for i, cp := range res {
-        cpIDs[i] = genvalues.UUID(*cp.ID)
-        //cpIDs = append(cpIDs, genvalues.UUID(*cp.ID))
-        fmt.Println(*cp.ID)
-    }
-    */
-    fmt.Println(genvalues.UUID(*res[0].ID))
-    return genvalues.UUID(*res[0].ID), nil
+    fmt.Println(genvalues.UUID(res[0].ID))
+    return genvalues.UUID(res[0].ID), nil
 }
 func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }
 
@@ -217,7 +214,7 @@ func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }
         1kWh = 60kWmin(energy used by doing 1 KW for an hour)
         formula: convert pulse count from power meters
     
-    */
+    *//**
 func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, durationtype time.Duration) ([]*gencalc.DataPoint, error) {
     totalPoints := (len(analogPoints) - 1)
 	sfinalEndTime := *analogPoints[totalPoints].Timestamp
@@ -248,6 +245,7 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
 	}
     return points, nil
 }
+*/
 /*
 func  convertToPowerr(analogPoints []*genvalues.AnalogPoint, formula *string, times []*gencalc.Period) ([]*gencalc.DataPoint, error) {
     totalPoints := (len(analogPoints) - 1)
