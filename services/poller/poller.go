@@ -30,6 +30,7 @@ model.Isone, model.Miso,
 // reportdurations maintains the interval length of each report using constants from the model directory
 // common start date for regions
 const regionstartdate = "2020-01-01T00:00:00+00:00"
+const regiontestdate = "2022-01-01T00:00:00+00:00"
 // The AESO region start date is earlier than other region start dates
 const AesoStartDate = "2020-05-15T16:00:00+00:00"
 // NewPoller returns the Poller service implementation.
@@ -65,7 +66,7 @@ func (s *pollersrvc) ensurePastData(ctx context.Context) (startDates []string) {
 			var defaultDate string
 			if regions[i] == model.Aeso {
 				defaultDate = AesoStartDate
-			} else {defaultDate = regionstartdate}
+			} else {defaultDate = regiontestdate}
 			dates = append(dates, defaultDate)
 		}
 	}
