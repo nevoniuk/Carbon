@@ -161,12 +161,11 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
         fmt.Println(p.Value) //error its 1
     }
     var mockAnalogPoints []*genvalues.AnalogPoint
-    var value float64
-    value = 8053882.00
+    var value = 8053882.00
     var counter float64
     var t = time.Date(2022, 3, 1, 0, 0, 0, 0, time.UTC)
     for i := 0; i < 10801; i++ {
-        var t = t.Add(time.Second)
+        t = t.Add(time.Second)
         var s = t.Format(time.RFC3339)
         var m = genvalues.AnalogPoint{Timestamp: s, Value: (value + counter)}
         fmt.Println("mock analog point:")
