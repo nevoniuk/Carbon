@@ -162,7 +162,7 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
     }
     var mockAnalogPoints []*genvalues.AnalogPoint
     var value float64
-    value = 8053882
+    value = 8053882.00
     var counter float64
     var t = time.Date(2022, 3, 1, 0, 0, 0, 0, time.UTC)
     for i := 0; i < 10801; i++ {
@@ -172,7 +172,7 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
         fmt.Println("mock analog point:")
         fmt.Println(m)
         mockAnalogPoints = append(mockAnalogPoints, &m)
-        counter += 1
+        counter += 1.0
     }
 	return mockAnalogPoints, nil
 }
@@ -229,11 +229,11 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
     totalPoints := (len(analogPoints) - 1)
 	sfinalEndTime := analogPoints[totalPoints].Timestamp
 	sstartTime := analogPoints[0].Timestamp
-	start, err := time.Parse(timeFormat, sstartTime)
+	start, err := convertToISOFormat(sstartTime)
     if err != nil {
         return nil, err
     }
-	end, err := time.Parse(timeFormat, sfinalEndTime)
+	end, err := convertToISOFormat(sfinalEndTime)
     if err != nil {
         return nil, err
     }
@@ -246,7 +246,7 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
         return nil, err
     }
 	for start.Before(end) {
-		if reportCounter == totalPoints {
+		if reportCounter == len(analogPoints) {
 			return points, nil
 		}
         analogPoint := analogPoints[reportCounter]
@@ -257,7 +257,7 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
 			continue
 		}
 
-		reportTime, err := time.Parse(timeFormat, analogPoint.Timestamp)
+		reportTime, err := convertToISOFormat(analogPoint.Timestamp)
         if err != nil {
             return nil, err
         }
@@ -273,6 +273,16 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
 		reportCounter += 1
 	}
     return points, nil
+}
+
+func convertToISOFormat(t string) (time.Time, error) {
+    start, err := time.Parse(time.RFC3339, t)
+    if err != nil {
+        return time.Time{}, err
+    }
+    newTime := time.Date(start.Year(), start.Month(), start.Day(),
+    start.Hour(), start.Minute(), start.Second(), start.Nanosecond(), start.Location())
+    return newTime, nil
 }
 
 
