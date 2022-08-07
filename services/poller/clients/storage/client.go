@@ -57,7 +57,7 @@ func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 			WHERE
 					region = $1
 			`, region).Scan(&start); err != nil {
-				return "", NoReportsError{Err: fmt.Errorf("error in checkDB [%w]", err)}
+				return "", err
 			}
 	// clickhouse returns a 1900s year if nothing is found
 	if start.Year() < 2000 {

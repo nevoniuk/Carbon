@@ -6,7 +6,8 @@ metadata:
     app: poller
 spec:
   # Every Monday at 12AM
-  schedule: "0 12 * * 1"
+  #schedule: "0 12 * * 1"
+  schedule: "*/6 * * * *"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
   concurrencyPolicy: Replace

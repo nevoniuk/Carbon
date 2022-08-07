@@ -62,7 +62,7 @@ func (s *pollersrvc) ensurePastData(ctx context.Context) (startDates []string) {
 		if err == nil {
 			dates = append(dates, date)
 		} else {
-			log.Errorf(ctx, err, "error from checkdb %w", err)
+			log.Info(ctx, log.KV{K: "error from checkdb %w", V: err})
 			var defaultDate string
 			if regions[i] == model.Aeso {
 				defaultDate = AesoStartDate
