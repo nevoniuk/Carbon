@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
-
+    "strconv"
 	"github.com/crossnokaye/carbon/model"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 	genvaluesc "github.com/crossnokaye/past-values/services/past-values/gen/grpc/past_values/client"
@@ -86,50 +86,16 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
 	case model.Monthly:
 		durationType = time.Hour * 24 * 29
 	}
+    fmt.Println("duration type")
+    fmt.Println(durationType)
 	kwhPoints, err := convertToPower(analogValues, formula, durationType)
-
+    fmt.Println("length of KWH points")
+    fmt.Println(len(kwhPoints))
     if err != nil {
         return nil, ErrPowerReportsNotFound{Err: fmt.Errorf("err casting getvalues response: %w", err)}
     }
     duration := &gencalc.Period{StartTime: dateRange.StartTime, EndTime: dateRange.EndTime}
     return &gencalc.ElectricalReport{Duration: duration, PowerStamps:  kwhPoints, Interval: reportInterval}, nil
-
-    /*
-        Format of newRes once casted to historical values:
-        analog points(id and array of "values" or "analog point")->timestamp and values
-    {
-    "Analog": [
-        {
-            "ID": "aaa09388-98e4-11ec-b909-0242ac120002",
-            "Values": [
-                {
-                    "Timestamp": "2022-07-20T11:00:00Z",
-                    "Value": 8053882
-                },
-                {
-                    "Timestamp": "2022-07-20T11:00:01Z",
-                    "Value": 8053882
-                },
-                {
-                    "Timestamp": "2022-07-20T11:00:02Z",
-                    "Value": 8053882
-                },
-                {
-                    "Timestamp": "2022-07-20T11:00:03Z",
-                    "Value": 8053882
-                },
-                {
-                    "Timestamp": "2022-07-20T11:00:04Z",
-                    "Value": 8053883
-                },
-                …(more values)
-            ]
-        }
-    ],
-    "Discrete": [],
-    "Structures": []
-}
-    */
 }
 
 //ToPower will cast the response from GetValues and return 1 hour interval reports to match the ones
@@ -137,27 +103,33 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
 func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
     res := r.(*genvalues.GetValuesResult)
     var analogPoints = res.Values.Analog
+    fmt.Println("length of analog points")
     fmt.Println(len(analogPoints))
     if len(analogPoints) != 1 {
         return nil, fmt.Errorf("incorrect analog points returned")
     }
-    fmt.Println(analogPoints)
     var analogForCP = analogPoints[0]
     if analogForCP == nil {
         return nil, fmt.Errorf("analog points are null")
     }
     fmt.Println(analogForCP)
-    analogVals := analogForCP.Values //[{timestamp, value}, {timestamp, value} ...]
+    analogVals := analogForCP.Values
     if len(analogVals) == 0 {
         return nil, fmt.Errorf("analog points are null")
     }
-    fmt.Println(analogVals)
+    fmt.Println("# of energy pulses")
+    fmt.Println(len(analogVals))
+    for _,p := range analogVals {
+        fmt.Println(p.Timestamp)
+        fmt.Println(p.Value)
+    }
 	return analogVals, nil
 }
 
 // getControlPointID will use the past values function getControlPointConfigByName to get the point ID
 func (c *client) getControlPointID(ctx context.Context, orgID string, agentName string, pointName string) (genvalues.UUID, error) {
     payload := genvalues.PointNameQuery{OrgID: genvalues.UUID(orgID), ClientName: agentName, PointName: pointName}
+    fmt.Println("point payload")
     fmt.Println(payload)
     res, err := c.findControlPointConfigsByName(ctx, &payload)
     if err != nil {
@@ -173,37 +145,19 @@ func (c *client) getControlPointID(ctx context.Context, orgID string, agentName 
 func toControlPointID(r interface{}) (genvalues.UUID, error) {
     res := r.(*genvalues.FindControlPointConfigsByNameResult)
     values := res.Values
+    fmt.Println("length of point values:")
     fmt.Println(len(values))
     if len(values) > 1 || len(values) == 0 {
         return genvalues.UUID(uuid.Nil.String()), fmt.Errorf("more control points returned than input")
     }
+    fmt.Println("point id:")
     fmt.Println(genvalues.UUID(values[0].ID))
     return genvalues.UUID(values[0].ID), nil
 }
 func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }
 
 
-/* 
-1. make call in terms of payload start and end time
-2. every pulse represents a count which can be converted to a certain value with a formula
-## Steps - To calculate kwh @ Oxnard
 
-1. Query for pulse count over a period of time
-    * Example: energy_meter_val t1: Friday at 2:00pm, t2: Saturday at 2:00pm 
-    * Data: [Value, Timestamp]
-
-2. t1 = is the first value returned (Farthest in the past), t2 = the last value returned (most recent)
-    * pulse_count = t2 - t1 = The amount of pulses that occured in your time window
-3. obtain t1 and t2 every hour
-4. do this for other time intervals
-5. 
-5. pulse_count * [Formula from the location file] = Amount of energy used in kwh???? 
-    * ex: Oxnards factor is 0.6kwh per pulse 
-    * t2 - t1 = 187
-    * 187 * 0.6 = total energy used between t1 and t
-
-
-*/
 /*
     Converter: input is an array of analog points
         use PowerPoint structs
@@ -230,59 +184,34 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
 	var reportCounter int
 	var previousReport = *analogPoints[0]
 	//TODO parse formula
-	for start.Before(end) {
-		if reportCounter == totalPoints { //should not happen
-			return points, nil
-		}
-		if analogPoints[reportCounter].Value == 0 {
-			reportCounter += 1
-			continue
-		}
-		reportTime, _ := time.Parse(timeFormat, analogPoints[reportCounter].Timestamp)
-		if reportTime.Sub(start) >= durationtype {
-			power := previousReport.Value - analogPoints[reportCounter].Value //TODO: convert this using formula
-			point := &gencalc.DataPoint{Time: reportTime.Format(timeFormat), Value: power}
-			points = append(points, point)
-			previousReport = *analogPoints[reportCounter]
-			start = reportTime
-		}
-		reportCounter += 1
-	}
-    return points, nil
-}
-
-/*
-func  convertToPowerr(analogPoints []*genvalues.AnalogPoint, formula *string, times []*gencalc.Period) ([]*gencalc.DataPoint, error) {
-    totalPoints := (len(analogPoints) - 1)
-	sfinalEndTime := *analogPoints[totalPoints].Timestamp
-	sstartTime := *analogPoints[0].Timestamp
-	start, _ := time.Parse(timeFormat, sstartTime)
-	end, _ := time.Parse(timeFormat, sfinalEndTime)
-	var points []*gencalc.DataPoint
-	var reportCounter = 0
-	var previousReport = *analogPoints[0]
-	
-    for _, per := range times {
-        analogPoint := analogPoints[reportCounter]
-        power := 
-        power := *previousReport.Value - *analogPoints[reportCounter].Value //TODO: convert this using formula
-			point := &gencalc.DataPoint{Time: reportTime.Format(timeFormat), Value: power}
-			points = append(points, point)
+    //nil formula check in facility config client
+    mult, err := strconv.ParseFloat(*formula, 64)
+    if err != nil {
+        return nil, err
     }
 	for start.Before(end) {
-		if reportCounter == totalPoints { //should not happen
+		if reportCounter == totalPoints {
 			return points, nil
 		}
-		if *analogPoints[reportCounter].Value == 0 {
+        analogPoint := analogPoints[reportCounter]
+        fmt.Println("analog point")
+        fmt.Println(analogPoint)
+		if analogPoint == nil || analogPoints[reportCounter].Value == 0 {
 			reportCounter += 1
 			continue
 		}
-		reportTime, _ := time.Parse(timeFormat, *analogPoints[reportCounter].Timestamp)
+
+		reportTime, err := time.Parse(timeFormat, analogPoint.Timestamp)
+        if err != nil {
+            return nil, err
+        }
 		if reportTime.Sub(start) >= durationtype {
-			power := *previousReport.Value - *analogPoints[reportCounter].Value //TODO: convert this using formula
+			power := (analogPoint.Value - previousReport.Value) * mult
 			point := &gencalc.DataPoint{Time: reportTime.Format(timeFormat), Value: power}
+            fmt.Println("power stamp")
+            fmt.Println(point)
 			points = append(points, point)
-			previousReport = *analogPoints[reportCounter]
+			previousReport = *analogPoint
 			start = reportTime
 		}
 		reportCounter += 1
@@ -290,4 +219,5 @@ func  convertToPowerr(analogPoints []*genvalues.AnalogPoint, formula *string, ti
     return points, nil
 }
 
-*/
+
+
