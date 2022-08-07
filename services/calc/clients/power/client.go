@@ -17,6 +17,42 @@ import (
 // timeFormat is used to parse times in order to store time as ISO8601 format
 const timeFormat = "2006-01-02T15:04:05-07:00"
 
+var powervals = `
+{
+    "Analog": [
+        {
+            "ID": "aaa09388-98e4-11ec-b909-0242ac120002",
+            "Values": [
+                {
+                    "Timestamp": "2022-03-01T00:00:00Z",
+                    "Value": 8053882
+                },
+                {
+                    "Timestamp": "2022-03-01T00:00:01Z",
+                    "Value": 8053882
+                },
+                {
+                    "Timestamp": "2022-03-01T00:00:02Z",
+                    "Value": 8053882
+                },
+                {
+                    "Timestamp": "2022-03-01T00:00:03Z",
+                    "Value": 8053882
+                },
+                {
+                    "Timestamp": "2022-03-01T00:00:04Z",
+                    "Value": 8053883
+                },
+        …
+]
+        }
+    ],
+    "Discrete": [],
+    "Structures": []
+}
+
+
+`
 type (
     Client interface {
         // GetPower will call the Past Value functions "FindControlPointConfigsByName" and "GetValues" to get control point ID's and power data 
@@ -69,6 +105,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     if err != nil {
         return nil, &ErrPowerReportsNotFound{Err: fmt.Errorf("err in getvalues: %w\n", err)}
     }
+    
     analogValues, err := toPower(res)
     if err != nil {
         return nil, &ErrPowerReportsNotFound{fmt.Errorf("values not found for org: %s for pointID %s with err: %w", orgID, pointID, err)}
@@ -123,7 +160,21 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
         fmt.Println(p.Timestamp)
         fmt.Println(p.Value) //error its 1
     }
-	return analogVals, nil
+    var mockAnalogPoints []*genvalues.AnalogPoint
+    var value float64
+    value = 8053882
+    var counter float64
+    var t = time.Date(2022, 3, 1, 0, 0, 0, 0, time.UTC)
+    for i := 0; i < 10801; i++ {
+        var t = t.Add(time.Second)
+        var s = t.Format(time.RFC3339)
+        var m = genvalues.AnalogPoint{Timestamp: s, Value: (value + counter)}
+        fmt.Println("mock analog point:")
+        fmt.Println(m)
+        mockAnalogPoints = append(mockAnalogPoints, &m)
+        counter += 1
+    }
+	return mockAnalogPoints, nil
 }
 
 // getControlPointID will use the past values function getControlPointConfigByName to get the point ID
