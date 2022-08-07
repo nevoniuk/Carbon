@@ -92,7 +92,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     fmt.Println("length of KWH points")
     fmt.Println(len(kwhPoints))
     if err != nil {
-        return nil, ErrPowerReportsNotFound{Err: fmt.Errorf("err casting getvalues response: %w", err)}
+        return nil, ErrPowerReportsNotFound{Err: fmt.Errorf("err converting to KWh: %w", err)}
     }
     duration := &gencalc.Period{StartTime: dateRange.StartTime, EndTime: dateRange.EndTime}
     return &gencalc.ElectricalReport{Duration: duration, PowerStamps:  kwhPoints, Interval: reportInterval}, nil
@@ -119,9 +119,9 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
     }
     fmt.Println("# of energy pulses")
     fmt.Println(len(analogVals))
-    for _,p := range analogVals {
+    for _, p := range analogVals {
         fmt.Println(p.Timestamp)
-        fmt.Println(p.Value)
+        fmt.Println(p.Value) //error its 1
     }
 	return analogVals, nil
 }
@@ -178,12 +178,17 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
     totalPoints := (len(analogPoints) - 1)
 	sfinalEndTime := analogPoints[totalPoints].Timestamp
 	sstartTime := analogPoints[0].Timestamp
-	start, _ := time.Parse(timeFormat, sstartTime)
-	end, _ := time.Parse(timeFormat, sfinalEndTime)
+	start, err := time.Parse(timeFormat, sstartTime)
+    if err != nil {
+        return nil, err
+    }
+	end, err := time.Parse(timeFormat, sfinalEndTime)
+    if err != nil {
+        return nil, err
+    }
 	var points []*gencalc.DataPoint
 	var reportCounter int
 	var previousReport = *analogPoints[0]
-	//TODO parse formula
     //nil formula check in facility config client
     mult, err := strconv.ParseFloat(*formula, 64)
     if err != nil {
