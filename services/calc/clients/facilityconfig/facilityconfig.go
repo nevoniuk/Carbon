@@ -111,7 +111,9 @@ func findOrg(ctx context.Context, env, orgID string) (string, error) {
 
 // findFacility returns the path to the facility config for the given org and facility IDs.
 func findFacility(ctx context.Context, env, orgID string, facilityID string) (string, error) {
-	path, err := findOrg(ctx, env, orgID)
+	path, err := findOrg(ctx, env, orgID) //deploy/facility_data/lineage
+	fmt.Println("env")
+	fmt.Println(env)
 	if err != nil {
 		return "", err
 	}
@@ -123,6 +125,9 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 	}
 	var facilityPath string
 	for _, f := range facilities {
+		fmt.Println("facility info")
+		fmt.Println(f)
+		fmt.Println(f.Name())
 		if !f.IsDir() {
 			continue
 		}
