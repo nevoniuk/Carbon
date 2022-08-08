@@ -144,7 +144,6 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 }
 // findLocation will find the location path from location/building ID instead of the agentID
 func findLocation(ctx context.Context, env string, orgID string, facilityID string, locationID string) (string, error) {
-	fmt.Println("FIND FACILITY")
 	path, err := findFacility(ctx, env, orgID, facilityID) //no error just returns null
 	if err != nil {
 		return "", &ErrFacilityNotFound{fmt.Errorf("facility not found for org %s facility %s: %w", orgID, facilityID, err)}
@@ -225,6 +224,8 @@ func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID 
 func mapIDToNonProd(id, facilityID string) string { //fails here
 	fmt.Println("ID:")
 	fmt.Println(id)
+	fmt.Println("facility ID")
+	fmt.Println(facilityID)
 	return mapToNonProd(uuid.MustParse(id), uuid.MustParse(facilityID))
 }
 
