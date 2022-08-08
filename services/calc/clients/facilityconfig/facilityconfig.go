@@ -167,14 +167,15 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 		}
 		fmt.Println("BUILDING NAME")
 		fmt.Println(b.Name())
-		tempPath := filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
+		locationPath := filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
 		fmt.Println("temp path")
-		fmt.Println(tempPath)
-		read := readID(ctx, tempPath)
+		fmt.Println(locationPath)
+		read := readID(ctx, locationPath)
 		if env != "production" {
-			read = mapIDToNonProd(read, locationID)
-			if read == locationID {
-				locationPath = tempPath
+			read = mapIDToNonProd(read, facilityID)
+			if read != locationID {
+				locationPath = ""
+			} else {
 				fmt.Println("Found location path")
 				fmt.Println(locationPath)
 				break
