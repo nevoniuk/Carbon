@@ -107,38 +107,40 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 // calculateCarbonEmissionsReport yields lbs of CO2 given CO2 intensity(CO2lbs/MWh) and Power(KWh) reports
 func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.CarbonReport, powerReport *gencalc.ElectricalReport, intervalType time.Duration) (*gencalc.EmissionsReport, error) {
 	var dataPoints []*gencalc.DataPoint
-	for i, r := range carbonReport.IntensityPoints {
-		if i == len(powerReport.PowerStamps) {
-			break
-		}
+	var powerreportCounter = 0
+	var intenreportCounter = 0
+	for intenreportCounter < len(carbonReport.IntensityPoints) {
 		fmt.Println("Intensity point")
-		fmt.Println(r)
+		fmt.Println(carbonReport.IntensityPoints[intenreportCounter])
 		fmt.Println("Power point")
-		fmt.Println(powerReport.PowerStamps[i])
-		if powerReport.PowerStamps[i] == nil {
-			continue
-		}
-		powerT,_ := time.Parse(timeFormat, powerReport.PowerStamps[i].Time)
-		carbonT,_ := time.Parse(timeFormat, r.Time)
+		fmt.Println(powerReport.PowerStamps[powerreportCounter])
+		powerT,_ := time.Parse(timeFormat, powerReport.PowerStamps[powerreportCounter].Time)
+		carbonT,_ := time.Parse(timeFormat, carbonReport.IntensityPoints[intenreportCounter].Time)
 		var difference time.Duration
 		var leastTime = true
 		if powerT.Before(carbonT) {
 			difference = carbonT.Sub(powerT)
+			if difference > intervalType {
+				powerreportCounter += 1
+				continue
+			}
 		} else {
 			leastTime = false
 			difference = powerT.Sub(carbonT)
+			if difference > intervalType {
+				intenreportCounter += 1
+				continue
+			}
 		}
-		if  difference < intervalType {
-			toKWh := r.Value * 1000 //convert mwh->kwh
-			carbonemissions := toKWh * powerReport.PowerStamps[i].Value
-			fmt.Println("Data Point")
-			var time = r.Time
-			if leastTime {
-				time = powerReport.PowerStamps[i].Time
-			} 
-			fmt.Println(&gencalc.DataPoint{Time: time, Value: carbonemissions})
-			dataPoints = append(dataPoints, &gencalc.DataPoint{Time: r.Time, Value: carbonemissions})
-		}
+		toKWh := carbonReport.IntensityPoints[intenreportCounter].Value * 1000 //convert mwh->kwh
+		carbonemissions := toKWh * powerReport.PowerStamps[powerreportCounter].Value
+		fmt.Println("Data Point")
+		var time = carbonReport.IntensityPoints[intenreportCounter].Time
+		if leastTime {
+			time = powerReport.PowerStamps[powerreportCounter].Time
+		} 
+		fmt.Println(&gencalc.DataPoint{Time: time, Value: carbonemissions})
+		dataPoints = append(dataPoints, &gencalc.DataPoint{Time: time, Value: carbonemissions})
 	}
 	return &gencalc.EmissionsReport{Duration: powerReport.Duration, Interval: powerReport.Interval, Points: dataPoints}, nil
 }
