@@ -141,12 +141,13 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 }
 // findLocation will find the location path from location/building ID instead of the agentID
 func findLocation(ctx context.Context, env string, orgID string, facilityID string, locationID string) (string, error) {
-	fmt.Println("FIND LOCATION")
+	fmt.Println("FIND FACILITY")
 	path, err := findFacility(ctx, env, orgID, facilityID)
 	if err != nil {
 		return "", &ErrFacilityNotFound{fmt.Errorf("facility not found for org %s facility %s: %w", orgID, facilityID, err)}
 	}
-	fmt.Println("FIND LOCATION")
+	fmt.Println(path)
+	fmt.Println("building path")
 	buildings, err := ioutil.ReadDir(filepath.Dir(path))
 	if err != nil {
 		return "", &ErrLocationNotFound{fmt.Errorf("failed to list buildings in path %s: %w", path, err)}
@@ -156,6 +157,8 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 		if !b.IsDir() {
 			continue
 		}
+		fmt.Println("BUILDING")
+		fmt.Println(b.Name())
 		tempPath := filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
 		read := readID(ctx, locationPath)
 		if env != "production" {
@@ -198,16 +201,18 @@ func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID 
 	if err != nil {
 		return "", nil, err
 	}
-	fmt.Println("IN LOCATION CONFIG")
+	fmt.Println("BUILDING PATH IN LOCATION CONFIG")
+	fmt.Println(buildingPath)
 	cfg, err := ioutil.ReadFile(buildingPath)
 	if err != nil {
 		return "", nil, &ErrLocationNotFound{fmt.Errorf("failed to read building config file %s: %w", buildingPath, err)}
 	}
-	fmt.Println("IN LOCATION CONFIG")
+	fmt.Println("CONFIG IN LOCATION CONFIG")
 	var config locationConfig
 	if err := yaml.Unmarshal(cfg, &config); err != nil {
 		return "", nil, &ErrLocationNotFound{fmt.Errorf("failed to unmarshal into location config %s: %w", buildingPath, err)}
 	}
+	fmt.Println(config)
 	return buildingPath, &config, nil
 }
 
