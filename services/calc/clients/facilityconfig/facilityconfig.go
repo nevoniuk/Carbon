@@ -136,7 +136,7 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 		}
 		if read == facilityID {
 			fmt.Println("EQUAL")
-			facilityPath = filepath.Join(path, f.Name())
+			facilityPath = filepath.Join(path, f.Name(), "facility.yaml")
 			fmt.Println("facility path")
 			fmt.Println(facilityPath)
 			break
@@ -154,10 +154,7 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 	if err != nil {
 		return "", &ErrFacilityNotFound{fmt.Errorf("facility not found for org %s facility %s: %w", orgID, facilityID, err)}
 	}
-	fmt.Println("facility path")
-	fmt.Println(path)
-	//path = deploy/facility_data/lineage/oxnard/facility.yaml
-	//now deploy/facility_data/lineage/oxnard/
+	//now deploy/facility_data/lineage/oxnard/facility.yaml
 	buildings, err := ioutil.ReadDir(filepath.Dir(path))
 	if err != nil {
 		return "", &ErrLocationNotFound{fmt.Errorf("failed to list buildings in path %s: %w", path, err)}
@@ -168,6 +165,8 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 		if !b.IsDir() {
 			continue
 		}
+		fmt.Println("BUILDING NAME")
+		fmt.Println(b.Name())
 		tempPath := filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
 		fmt.Println("temp path")
 		fmt.Println(tempPath)
@@ -175,7 +174,7 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 		if env != "production" {
 			read = mapIDToNonProd(read, locationID)
 			if read == locationID {
-				locationPath = filepath.Join(filepath.Dir(path), b.Name())
+				locationPath = tempPath
 				fmt.Println("Found location path")
 				fmt.Println(locationPath)
 				break
@@ -195,6 +194,7 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 	if locationPath == "" {
 		return "", &ErrLocationNotFound{fmt.Errorf("location config not found for org %s and facility %s\n", orgID, facilityID)}
 	}
+
 	return locationPath, nil
 
 }
@@ -204,8 +204,11 @@ func findAgentNameFromLocation(ctx context.Context, env, orgID, facilityID, loca
 	if locationPath == "" {
 		return "", fmt.Errorf("No location path")
 	}
+	//deploy/facility_data/lineage/oxnard/location.yaml
 	var agentPath = filepath.Join(filepath.Dir(locationPath), "agent.yaml")
 	read := readName(ctx, agentPath)
+	fmt.Println("agent name")
+	fmt.Println(read)
 	return read, nil
 }
 
