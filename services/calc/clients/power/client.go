@@ -225,19 +225,18 @@ func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }
     
     */
 func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, durationtype time.Duration) ([]*gencalc.DataPoint, error) {
-    totalPoints := (len(analogPoints) - 1)
-	sfinalEndTime := analogPoints[totalPoints].Timestamp
-	sstartTime := analogPoints[0].Timestamp
-	start, err := convertToISOFormat(sstartTime)
+	endTime := analogPoints[(len(analogPoints) - 1)].Timestamp
+	startTime := analogPoints[0].Timestamp
+	start, err := time.Parse(time.RFC3339, startTime)
     if err != nil {
         return nil, err
     }
-	end, err := convertToISOFormat(sfinalEndTime)
+	end, err := time.Parse(time.RFC3339, endTime)
     if err != nil {
         return nil, err
     }
 	var points []*gencalc.DataPoint
-	var reportCounter int
+	var reportCounter = 0
 	var previousReport = *analogPoints[0]
     //nil formula check in facility config client
     mult, err := strconv.ParseFloat(*formula, 64)
@@ -251,12 +250,11 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
         analogPoint := analogPoints[reportCounter]
         fmt.Println("analog point")
         fmt.Println(analogPoint)
-		if analogPoint == nil || analogPoints[reportCounter].Value == 0 {
+		if analogPoint == nil || analogPoint.Value == 0 {
 			reportCounter += 1
 			continue
 		}
-
-		reportTime, err := convertToISOFormat(analogPoint.Timestamp)
+		reportTime, err := time.Parse(timeFormat, analogPoint.Timestamp)
         if err != nil {
             return nil, err
         }
@@ -274,15 +272,7 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
     return points, nil
 }
 
-func convertToISOFormat(t string) (time.Time, error) {
-    start, err := time.Parse(time.RFC3339, t)
-    if err != nil {
-        return time.Time{}, err
-    }
-    newTime := time.Date(start.Year(), start.Month(), start.Day(),
-    start.Hour(), start.Minute(), start.Second(), start.Nanosecond(), start.Location())
-    return newTime, nil
-}
+
 
 
 
