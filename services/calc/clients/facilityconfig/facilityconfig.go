@@ -136,7 +136,7 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 		}
 		if read == facilityID {
 			fmt.Println("EQUAL")
-			facilityPath = filepath.Join(path, f.Name(), "facility.yaml")
+			facilityPath = filepath.Join(path, f.Name())
 			fmt.Println("facility path")
 			fmt.Println(facilityPath)
 			break
@@ -150,40 +150,46 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 }
 // findLocation will find the location path from location/building ID instead of the agentID
 func findLocation(ctx context.Context, env string, orgID string, facilityID string, locationID string) (string, error) {
-	path, err := findFacility(ctx, env, orgID, facilityID) //no error just returns null
+	path, err := findFacility(ctx, env, orgID, facilityID)
 	if err != nil {
 		return "", &ErrFacilityNotFound{fmt.Errorf("facility not found for org %s facility %s: %w", orgID, facilityID, err)}
 	}
+	fmt.Println("facility path")
 	fmt.Println(path)
-	fmt.Println("building path")
+	//path = deploy/facility_data/lineage/oxnard/facility.yaml
+	//now deploy/facility_data/lineage/oxnard/
 	buildings, err := ioutil.ReadDir(filepath.Dir(path))
 	if err != nil {
 		return "", &ErrLocationNotFound{fmt.Errorf("failed to list buildings in path %s: %w", path, err)}
 	}
-	fmt.Println("facility ID")
-	fmt.Println(facilityID)
+
 	var locationPath string
 	for _, b := range buildings {
 		if !b.IsDir() {
 			continue
 		}
-		fmt.Println("BUILDING")
-		fmt.Println(b.Name())
 		tempPath := filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
-		read := readID(ctx, locationPath)
+		fmt.Println("temp path")
+		fmt.Println(tempPath)
+		read := readID(ctx, tempPath)
 		if env != "production" {
-			read = mapIDToNonProd(read, facilityID)
+			read = mapIDToNonProd(read, locationID)
+			if read == locationID {
+				locationPath = filepath.Join(filepath.Dir(path), b.Name())
+				fmt.Println("Found location path")
+				fmt.Println(locationPath)
+				break
+			}
+			/**
 			if env == "office" {
+				fmt.Println("office")
 				name := readName(ctx, tempPath)
 				id := mapAgentToNonProd(name)
 				if id != "" {
 					read = id
 				}
 			}
-		}
-		if read == locationID {
-			locationPath = tempPath
-			break
+			*/
 		}
 	}
 	if locationPath == "" {
