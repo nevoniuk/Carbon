@@ -104,7 +104,6 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     if err != nil {
         return nil, &ErrPowerReportsNotFound{Err: fmt.Errorf("err in getvalues: %w\n", err)}
     }
-    
     analogValues, err := toPower(res)
     if err != nil {
         return nil, &ErrPowerReportsNotFound{fmt.Errorf("values not found for org: %s for pointID %s with err: %w", orgID, pointID, err)}
@@ -243,6 +242,10 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
         return nil, err
     }
 	for start.Before(end) {
+        fmt.Println("start")
+        fmt.Println(start)
+        fmt.Println("end")
+        fmt.Println(end)
 		if reportCounter == len(analogPoints) {
 			return points, nil
 		}
@@ -253,13 +256,15 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
 			reportCounter += 1
 			continue
 		}
-		reportTime, err := time.Parse(timeFormat, analogPoint.Timestamp)
+		reportTime, err := time.Parse(time.RFC3339, analogPoint.Timestamp)
         if err != nil {
             return nil, err
         }
 		if reportTime.Sub(start) >= durationtype {
 			power := (analogPoint.Value - previousReport.Value) * mult
-			point := &gencalc.DataPoint{Time: reportTime.Format(timeFormat), Value: power}
+            timeInISO := time.Date(reportTime.Year(), reportTime.Month(), reportTime.Day(),
+             reportTime.Hour(), reportTime.Minute(), reportTime.Second(), reportTime.Nanosecond(), reportTime.Location())
+             point := &gencalc.DataPoint{Time: timeInISO.Format(timeFormat), Value: power}
             fmt.Println("power stamp")
             fmt.Println(point)
 			points = append(points, point)
