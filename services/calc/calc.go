@@ -72,17 +72,18 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 	}
 	//remove after PR is merged into legacy
 	//remove after testing
-	carbonData, err := s.fc.GetCarbonConfig(ctx, string(req.OrgID), string(req.FacilityID), string(req.LocationID))
-	if err != nil {
-		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetLocationData, err)
-	}
-	fmt.Println("carbon config")
-	fmt.Println(carbonData)
+	//carbonData, err := s.fc.GetCarbonConfig(ctx, string(req.OrgID), string(req.FacilityID), string(req.LocationID))
+	//if err != nil {
+	//	return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetLocationData, err)
+	//}
+	//fmt.Println("carbon config")
+	//fmt.Println(carbonData)
 	//singularityRegion, controlPointName, formula, agentName := res.Region, res.ControlPointName, res.Formula, res.AgentName
 	formula := "0.6"
 	agentName := "office Lineage Oxnard Building 4"
 	singularityRegion := model.Caiso
 	controlPointName := "energy_meter_4_pulse_val"
+	
 	carbonReport, err := s.dbc.GetCarbonIntensityReports(ctx, dates, req.Interval, singularityRegion)
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetCarbonReports, err)
