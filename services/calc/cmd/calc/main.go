@@ -57,7 +57,8 @@ func main() {
 	log.Info(ctx,
 		log.KV{K: "pastval-add", V: *pastValaddr},
         log.KV{K: "ch-addr", V: *chaddr},
-        log.KV{K: "ch-user", V: *chuser})
+        log.KV{K: "ch-user", V: *chuser},
+		log.KV{K: "env", V: *env})
 		log.Info(ctx,
 			log.KV{K: "monitoringEnabled", V: *monitoringEnabled})
 	

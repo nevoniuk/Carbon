@@ -115,6 +115,8 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 	if err != nil {
 		return "", err
 	}
+	fmt.Println("find facility path")
+	fmt.Println(path)
 	facilities, err := ioutil.ReadDir(path)
 	if err != nil {
 		return "", err
@@ -124,7 +126,6 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 		if !f.IsDir() {
 			continue
 		}
-
 		read := readID(ctx, filepath.Join(path, f.Name(), "facility.yaml"))
 		if env != "production" {
 			read = mapIDToNonProd(read, read)
@@ -135,6 +136,7 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 		}
 	}
 	if facilityPath == "" {
+		fmt.Println("facility path is null")
 		return "", err
 	}
 	return facilityPath, nil
@@ -142,7 +144,7 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 // findLocation will find the location path from location/building ID instead of the agentID
 func findLocation(ctx context.Context, env string, orgID string, facilityID string, locationID string) (string, error) {
 	fmt.Println("FIND FACILITY")
-	path, err := findFacility(ctx, env, orgID, facilityID)
+	path, err := findFacility(ctx, env, orgID, facilityID) //no error just returns null
 	if err != nil {
 		return "", &ErrFacilityNotFound{fmt.Errorf("facility not found for org %s facility %s: %w", orgID, facilityID, err)}
 	}
@@ -197,7 +199,7 @@ func findAgentNameFromLocation(ctx context.Context, env, orgID, facilityID, loca
 // loadLocationConfig returns the building config for the given org, facility, and agent IDs.
 // it will also return the buildingpath in order to avoid an extra function call to use findAgentIDFromLocation
 func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID string) (string, *locationConfig, error) {
-	buildingPath, err := findLocation(ctx, env, orgID, facilityID, locationID)
+	buildingPath, err := findLocation(ctx, env, orgID, facilityID, locationID) //fails here
 	if err != nil {
 		return "", nil, err
 	}
@@ -217,7 +219,7 @@ func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID 
 }
 
 
-func mapIDToNonProd(id, facilityID string) string {
+func mapIDToNonProd(id, facilityID string) string { //fails here
 	return mapToNonProd(uuid.MustParse(id), uuid.MustParse(facilityID))
 }
 
