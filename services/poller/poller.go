@@ -85,6 +85,9 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 		if err != nil {
 			return mapAndLogError(ctx, err)
 		}
+		if finalEndTime.Sub(startTime) > (time.Hour * 24 * 14) {
+			finalEndTime = startTime.Add(time.Hour * 24 * 14)
+		}
 		for startTime.Before(finalEndTime) {
 			newEndTime := startTime.AddDate(0, 0, 7)
 			if !newEndTime.Before(finalEndTime) {
