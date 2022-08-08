@@ -96,9 +96,9 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			minreports, err := s.csc.GetEmissions(ctx, regions[i], startTime.Format(timeFormat), newEndTime.Format(timeFormat))
 			log.Info(ctx, log.KV{K: "length of reports", V: len(minreports)},
 			log.KV{K: "region:", V: regions[i]})
-			var NoDataError carbonara.NoDataError
+			var noDataError carbonara.NoDataError
 			if err != nil {
-				if !errors.As(err, &NoDataError) {
+				if !errors.As(err, &noDataError) {
 					return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
 				}
 				newEndTime = newEndTime.AddDate(0, 0, 1)
