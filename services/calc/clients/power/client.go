@@ -16,8 +16,8 @@ import (
 
 // timeFormat is used to parse times in order to store time as ISO8601 format
 const timeFormat = "2006-01-02T15:04:05-07:00"
-
-var powervals = `
+/**
+`
 {
     "Analog": [
         {
@@ -50,9 +50,8 @@ var powervals = `
     "Discrete": [],
     "Structures": []
 }
-
-
 `
+*/
 type (
     Client interface {
         // GetPower will call the Past Value functions "FindControlPointConfigsByName" and "GetValues" to get control point ID's and power data 
