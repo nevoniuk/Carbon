@@ -72,15 +72,13 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 	}
 	//remove after PR is merged into legacy
 	//remove after testing
-	/**
-	var res *facilityconfig.Carbon
-	carbonData, err := s.fc.GetCarbonConfig(ctx, orgID, facilityID, locationID)
-	res, err = s.getLocationData(ctx, string(req.OrgID), string(req.FacilityID), string(req.LocationID))
+	carbonData, err := s.fc.GetCarbonConfig(ctx, string(req.OrgID), string(req.FacilityID), string(req.LocationID))
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetLocationData, err)
 	}
-	singularityRegion, controlPointName, formula, agentName := res.Region, res.ControlPointName, res.Formula, res.AgentName
-*/
+	fmt.Println("carbon config")
+	fmt.Println(carbonData)
+	//singularityRegion, controlPointName, formula, agentName := res.Region, res.ControlPointName, res.Formula, res.AgentName
 	formula := "0.6"
 	agentName := "office Lineage Oxnard Building 4"
 	singularityRegion := model.Caiso
@@ -109,6 +107,10 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 	var dataPoints []*gencalc.DataPoint
 	var powerreportCounter = 0
 	var intenreportCounter = 0
+	/* 
+		
+	
+	*/
 	for intenreportCounter < len(carbonReport.IntensityPoints) && powerreportCounter < len(powerReport.PowerStamps) {
 		fmt.Println("Intensity point")
 		fmt.Println(carbonReport.IntensityPoints[intenreportCounter])
@@ -132,7 +134,7 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 				continue
 			}
 		}
-		toKWh := carbonReport.IntensityPoints[intenreportCounter].Value * 1000 //convert mwh->kwh
+		toKWh := carbonReport.IntensityPoints[intenreportCounter].Value / 1000 //convert mwh->kwh
 		carbonemissions := toKWh * powerReport.PowerStamps[powerreportCounter].Value
 		fmt.Println("Data Point")
 		var time = carbonReport.IntensityPoints[intenreportCounter].Time
@@ -145,15 +147,6 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 		powerreportCounter += 1
 	}
 	return &gencalc.EmissionsReport{Duration: powerReport.Duration, Interval: powerReport.Interval, Points: dataPoints}, nil
-}
-
-// getLocationData uses a facility config client to get the following input for past-values service: control point name for power meter, formula for power conversion, and region for carbonemissions
-func (s *calcSvc) getLocationData(ctx context.Context, orgID string, facilityID string, locationID string) (*facilityconfig.Carbon, error) {
-	carbonData, err := s.fc.GetCarbonConfig(ctx, orgID, facilityID, locationID)
-	if err != nil {
-		return nil, err
-	}
-	return carbonData, nil
 }
 
 // getDates returns an array of dates for the storage client in order to correctly query for carbon reports
