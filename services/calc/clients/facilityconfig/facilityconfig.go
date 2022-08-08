@@ -167,7 +167,7 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 		}
 		fmt.Println("BUILDING NAME")
 		fmt.Println(b.Name())
-		locationPath := filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
+		locationPath = filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
 		fmt.Println("temp path")
 		fmt.Println(locationPath)
 		read := readID(ctx, locationPath)
