@@ -26,6 +26,23 @@ spec:
         runAsNonRoot: true
         runAsUser: 100001
       serviceAccountName: calc
+      initContainers:
+        # Facilitydata is an init pod that copies /deploy data to /deploy-vol
+        - name: facilitydata
+          image: ${REPOSITORY_BASE_URL}/crossnokaye/legacy/facilitydata:${FACILITYDATA_VERSION}
+          securityContext:
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              memory: '100Mi'
+              cpu: '200m'
+            limits:
+              memory: '100Mi'
+              cpu: '1000m'
+          volumeMounts:
+            - name: facilitydata-vol
+              mountPath: /deploy-vol
+              readOnly: false
       containers:
         - name: calc
           image: ${REPOSITORY_BASE_URL}/crossnokaye/carbon/calc:${VERSION}
@@ -59,6 +76,10 @@ spec:
             limits:
               memory: '3000Mi'
               cpu: '2000m'
+          volumeMounts:
+            - name: facilitydata-vol
+              mountPath: /app/deploy
+              readOnly: true
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -70,3 +91,7 @@ spec:
                       operator: In
                       values: [calc]
                 topologyKey: kubernetes.io/hostname
+      volumes:
+        # A temporary volume where we copy facility data
+        - name: facilitydata-vol
+          emptyDir: {}
