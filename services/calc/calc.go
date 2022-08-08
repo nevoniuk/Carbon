@@ -97,6 +97,8 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 	for i, r := range carbonReport.IntensityPoints {
 		toKWh := r.Value * 1000 //convert mwh->kwh
 		carbonemissions := toKWh * powerReport.PowerStamps[i].Value
+		fmt.Println("Data Point")
+		fmt.Println(&gencalc.DataPoint{Time: powerReport.Duration.StartTime, Value: carbonemissions})
 		dataPoints = append(dataPoints, &gencalc.DataPoint{Time: powerReport.Duration.StartTime, Value: carbonemissions})
 	}
 	return &gencalc.EmissionsReport{Duration: powerReport.Duration, Interval: powerReport.Interval, Points: dataPoints}, nil

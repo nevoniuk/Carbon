@@ -241,6 +241,8 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
     if err != nil {
         return nil, err
     }
+    fmt.Println("mult")
+    fmt.Println(mult)
 	for start.Before(end) {
         fmt.Println("start")
         fmt.Println(start)
