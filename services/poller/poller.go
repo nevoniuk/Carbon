@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"time"
+	"fmt"
 	"goa.design/clue/log"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
@@ -85,19 +86,17 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 		if err != nil {
 			return mapAndLogError(ctx, err)
 		}
-		var twoWeeksDuration = time.Hour * 24 * 14 * -1
-		var oneweekDuration = time.Hour + 24 * 7 * -1
-		if startTime.Before(finalEndTime.Add(twoWeeksDuration)) {
-			startTime = finalEndTime.Add(twoWeeksDuration)
+		var endTime = finalEndTime
+		var twoWeeksDuration = time.Hour * 24 * 14
+		if startTime.Before(finalEndTime.Add(twoWeeksDuration * -1)) {
+			endTime = startTime.Add(twoWeeksDuration)
+			fmt.Println("new end time")
+			fmt.Println(endTime)
 		}
-		/**
-		if finalEndTime.Sub(startTime) > (time.Hour * 24 * 14) {
-			finalEndTime = startTime.Add(time.Hour * 24 * 14)
-		}
-		*/
-		for startTime.Before(finalEndTime) {
-			newEndTime := startTime.Add(oneweekDuration)
-			//newEndTime := startTime.AddDate(0, 0, 7)
+		log.Info(ctx, log.KV{K: "start", V: startTime},
+			log.KV{K: "end", V: endTime})
+		for startTime.Before(endTime) {
+			newEndTime := startTime.AddDate(0, 0, 7)
 			if !newEndTime.Before(finalEndTime) {
 				newEndTime = finalEndTime 
 			}

@@ -84,6 +84,9 @@ func (c *client) GetEmissions(ctx context.Context, region string, startime strin
 	var reports []*genpoller.CarbonForecast
 	var page = 1
 	var last = 100
+	fmt.Println(startime)
+	fmt.Println(endtime)
+	fmt.Println(region)
 	for page <= last {
 		carbonUrl := strings.Join([]string{cs_url, "region_events/search?", "region=", region, "&event_type=carbon_intensity&start=",
 		startime, "&end=", endtime, "&per_page=1000", "&page=", strconv.Itoa(page)}, "")
