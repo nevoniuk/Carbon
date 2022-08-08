@@ -81,12 +81,6 @@ func (c *client) HttpGetRequestCall(ctx context.Context, req *http.Request) (*ht
 
 // GetEmissions gets 5 min interval reports from the Carbonara API with pagination
 func (c *client) GetEmissions(ctx context.Context, region string, startime string, endtime string) ([]*genpoller.CarbonForecast, error) {
-	fmt.Println("start time:")
-	fmt.Println(startime)
-	fmt.Println("end time:")
-	fmt.Println(endtime)
-	fmt.Println("region:")
-	fmt.Println(region)
 	var reports []*genpoller.CarbonForecast
 	var page = 1
 	var last = 100
