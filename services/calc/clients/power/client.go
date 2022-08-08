@@ -55,7 +55,7 @@ const timeFormat = "2006-01-02T15:04:05-07:00"
 type (
     Client interface {
         // GetPower will call the Past Value functions "FindControlPointConfigsByName" and "GetValues" to get control point ID's and power data 
-        GetPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval string, formula *string, agentname string) (*gencalc.ElectricalReport, error)
+        GetPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval time.Duration, formula *string, agentname string) (*gencalc.ElectricalReport, error)
     }
     client struct {
         getValues goa.Endpoint
@@ -86,7 +86,7 @@ func newPoint(unit string, value float64) (*PowerPoint) {
 }
 
 // GetPower will call the Past Value functions "FindControlPointConfigsByName" and "GetValues" to get control point ID's and power data
-func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval string, formula *string, agentname string) (*gencalc.ElectricalReport, error) {
+func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval time.Duration, formula *string, agentname string) (*gencalc.ElectricalReport, error) {
     pointID, err := c.getControlPointID(ctx, orgID, agentname, cpaliasname)
     if err != nil {
         return nil, &ErrPowerReportsNotFound{fmt.Errorf("control point id not found for name %s for agent %s with err: %w", cpaliasname, agentname, err)}
@@ -98,9 +98,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
         End: dateRange.EndTime,
         Interval: pastValInterval,
     }
-    fmt.Println(p)
     res, err := c.getValues(ctx, p)
-    fmt.Println(res)
     if err != nil {
         return nil, &ErrPowerReportsNotFound{Err: fmt.Errorf("err in getvalues: %w\n", err)}
     }
@@ -108,27 +106,14 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     if err != nil {
         return nil, &ErrPowerReportsNotFound{fmt.Errorf("values not found for org: %s for pointID %s with err: %w", orgID, pointID, err)}
     }
-	var durationType time.Duration
-	switch reportInterval {
-	case model.Minute:
-		durationType = time.Minute * 5
-	case model.Hourly:
-		durationType = time.Hour
-	case model.Daily:
-		durationType = time.Hour * 24
-	case model.Weekly:
-		durationType = time.Hour * 24 * 7
-	case model.Monthly:
-		durationType = time.Hour * 24 * 29
-	}
-	kwhPoints, err := convertToPower(analogValues, formula, durationType)
+	kwhPoints, err := convertToPower(analogValues, formula, reportInterval)
     fmt.Println("length of KWH points")
     fmt.Println(len(kwhPoints))
     if err != nil {
         return nil, ErrPowerReportsNotFound{Err: fmt.Errorf("err converting to KWh: %w", err)}
     }
     duration := &gencalc.Period{StartTime: dateRange.StartTime, EndTime: dateRange.EndTime}
-    return &gencalc.ElectricalReport{Duration: duration, PowerStamps:  kwhPoints, Interval: reportInterval}, nil
+    return &gencalc.ElectricalReport{Duration: duration, PowerStamps:  kwhPoints}, nil
 }
 
 //ToPower will cast the response from GetValues and return 1 hour interval reports to match the ones

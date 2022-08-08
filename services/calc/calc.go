@@ -57,6 +57,19 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToConfigureDates, err)
 	}
 	log.Info(ctx, log.KV{K: "length of dates", V: len(dates)})
+	var intervalduration time.Duration
+	switch req.Interval{
+	case model.Minute:
+		intervalduration = time.Minute
+	case model.Hourly:
+		intervalduration = time.Hour
+	case model.Daily:
+		intervalduration = time.Hour * 24
+	case model.Weekly:
+		intervalduration = time.Hour * 24 * 7
+	case model.Monthly:
+		intervalduration = time.Hour * 24 * 29
+	}
 	//remove after PR is merged into legacy
 	//remove after testing
 	/**
@@ -80,11 +93,11 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 	startTime, _ := time.Parse(timeFormat, req.Duration.StartTime)
 	difference := endTime.Sub(startTime)
 	duration := difference.Nanoseconds()
-	powerReport, err := s.psc.GetPower(ctx, string(req.OrgID), req.Duration, controlPointName, duration, req.Interval, &formula, agentName)
+	powerReport, err := s.psc.GetPower(ctx, string(req.OrgID), req.Duration, controlPointName, duration, intervalduration, &formula, agentName)
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetPowerReports, err)
 	}
-	emissionReport, err := calculateCarbonEmissionsReport(ctx, carbonReport, powerReport)
+	emissionReport, err := calculateCarbonEmissionsReport(ctx, carbonReport, powerReport, intervalduration)
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToCalculateEmissionReports, err)
 	}
@@ -92,7 +105,7 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 }
 
 // calculateCarbonEmissionsReport yields lbs of CO2 given CO2 intensity(CO2lbs/MWh) and Power(KWh) reports
-func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.CarbonReport, powerReport *gencalc.ElectricalReport) (*gencalc.EmissionsReport, error) {
+func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.CarbonReport, powerReport *gencalc.ElectricalReport, intervalType time.Duration) (*gencalc.EmissionsReport, error) {
 	var dataPoints []*gencalc.DataPoint
 	for i, r := range carbonReport.IntensityPoints {
 		if i == len(powerReport.PowerStamps) {
@@ -103,11 +116,23 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 		}
 		powerT,_ := time.Parse(timeFormat, powerReport.PowerStamps[i].Time)
 		carbonT,_ := time.Parse(timeFormat, r.Time)
-		if powerT.Equal(carbonT) {
+		var difference time.Duration
+		var leastTime = true
+		if powerT.Before(carbonT) {
+			difference = carbonT.Sub(powerT)
+		} else {
+			leastTime = false
+			difference = powerT.Sub(carbonT)
+		}
+		if  difference < intervalType {
 			toKWh := r.Value * 1000 //convert mwh->kwh
 			carbonemissions := toKWh * powerReport.PowerStamps[i].Value
 			fmt.Println("Data Point")
-			fmt.Println(&gencalc.DataPoint{Time: r.Time, Value: carbonemissions})
+			var time = r.Time
+			if leastTime {
+				time = powerReport.PowerStamps[i].Time
+			} 
+			fmt.Println(&gencalc.DataPoint{Time: time, Value: carbonemissions})
 			dataPoints = append(dataPoints, &gencalc.DataPoint{Time: r.Time, Value: carbonemissions})
 		}
 	}
