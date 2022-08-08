@@ -141,6 +141,8 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 		} 
 		fmt.Println(&gencalc.DataPoint{Time: time, Value: carbonemissions})
 		dataPoints = append(dataPoints, &gencalc.DataPoint{Time: time, Value: carbonemissions})
+		intenreportCounter += 1
+		powerreportCounter += 1
 	}
 	return &gencalc.EmissionsReport{Duration: powerReport.Duration, Interval: powerReport.Interval, Points: dataPoints}, nil
 }
