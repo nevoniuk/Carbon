@@ -109,7 +109,7 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 	var dataPoints []*gencalc.DataPoint
 	var powerreportCounter = 0
 	var intenreportCounter = 0
-	for intenreportCounter < len(carbonReport.IntensityPoints) {
+	for intenreportCounter < len(carbonReport.IntensityPoints) && powerreportCounter < len(powerReport.PowerStamps) {
 		fmt.Println("Intensity point")
 		fmt.Println(carbonReport.IntensityPoints[intenreportCounter])
 		fmt.Println("Power point")
