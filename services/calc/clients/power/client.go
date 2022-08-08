@@ -147,8 +147,6 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
         t = t.Add(time.Second)
         var s = t.Format(time.RFC3339)
         var m = genvalues.AnalogPoint{Timestamp: s, Value: (value + counter)}
-        fmt.Println("mock analog point:")
-        fmt.Println(m)
         mockAnalogPoints = append(mockAnalogPoints, &m)
         counter += 1.0
     }

@@ -70,14 +70,13 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 	case model.Monthly:
 		intervalduration = time.Hour * 24 * 29
 	}
-	//remove after PR is merged into legacy
-	//remove after testing
-	//carbonData, err := s.fc.GetCarbonConfig(ctx, string(req.OrgID), string(req.FacilityID), string(req.LocationID))
-	//if err != nil {
-	//	return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetLocationData, err)
-	//}
-	//fmt.Println("carbon config")
-	//fmt.Println(carbonData)
+	
+	carbonData, err := s.fc.GetCarbonConfig(ctx, string(req.OrgID), string(req.FacilityID), string(req.LocationID))
+	if err != nil {
+		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetLocationData, err)
+	}
+	fmt.Println("carbon config")
+	fmt.Println(carbonData)
 	//singularityRegion, controlPointName, formula, agentName := res.Region, res.ControlPointName, res.Formula, res.AgentName
 	formula := "0.6"
 	agentName := "office Lineage Oxnard Building 4"
@@ -157,14 +156,11 @@ func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *g
 	if err != nil {
 		return nil, gencalc.MakeReportsNotFound(fmt.Errorf("incorrect start date given: %w", err))
 	}
-	fmt.Println(initialstart)
   	end, err:= time.Parse(timeFormat, duration.EndTime)
 	  if err != nil {
 		return nil, gencalc.MakeReportsNotFound(fmt.Errorf("incorrect end date given: %w", err))
 	}
-	fmt.Println(end)
 	var diff = end.Sub(initialstart)
-	fmt.Println(diff)
 	var datesCount int
 	var durationType int
 	switch intervalType {
@@ -172,13 +168,8 @@ func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *g
 		datesCount = int(math.Ceil(diff.Minutes()))
 		durationType = int(time.Minute)
 	case model.Hourly:
-		fmt.Println("hourly average")
-		fmt.Println(diff.Hours())
-		fmt.Println(math.Ceil(diff.Hours()))
 		datesCount = int(math.Ceil(diff.Hours()))
-		fmt.Println(datesCount)
 		durationType = int(time.Hour)
-		fmt.Println(durationType)
 	case model.Daily: 
 		datesCount = int(math.Ceil(diff.Hours())) / 24
 		durationType = int(time.Hour) * 24
@@ -194,8 +185,6 @@ func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *g
 	var tempstart = initialstart
 	var tempend time.Time
 	for i := 0; i < datesCount; i++ {
-		fmt.Println(tempstart)
-		fmt.Println(tempend)
 		tempend = tempstart.Add(time.Duration(durationType))
 		if tempend.After(end) { 
 			break
@@ -203,7 +192,6 @@ func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *g
 		//implement logic to iterate until the end of the month
 		var startString = tempstart.Format(timeFormat)
 		var endString = tempend.Format(timeFormat)
-		fmt.Println(&gencalc.Period{StartTime: startString, EndTime: endString})
 		newDates = append(newDates, &gencalc.Period{StartTime: startString, EndTime: endString})
 		tempstart = tempend
 	}
