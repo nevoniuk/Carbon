@@ -112,6 +112,7 @@ func findOrg(ctx context.Context, env, orgID string) (string, error) {
 // findFacility returns the path to the facility config for the given org and facility IDs.
 func findFacility(ctx context.Context, env, orgID string, facilityID string) (string, error) {
 	path, err := findOrg(ctx, env, orgID) //deploy/facility_data/lineage
+	fmt.Println(path)
 	if err != nil {
 		return "", err
 	}
@@ -130,9 +131,14 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 		read := readID(ctx, filepath.Join(path, f.Name(), "facility.yaml"))
 		if env != "production" {
 			read = mapIDToNonProd(read, read)
+			fmt.Println("READ VALUE")
+			fmt.Println(read)
 		}
 		if read == facilityID {
+			fmt.Println("EQUAL")
 			facilityPath = filepath.Join(path, f.Name(), "facility.yaml")
+			fmt.Println("facility path")
+			fmt.Println(facilityPath)
 			break
 		}
 	}
