@@ -105,8 +105,8 @@ func (c *client) GetCarbonIntensityReports(ctx context.Context, duration []*genc
 			return nil, ErrReportsNotFound{Err: fmt.Errorf("could not get carbon intensity report for start %s and end %s and region %s: %w", period.StartTime, period.EndTime, region, err)}
 		}
 		intensityPoint := &gencalc.DataPoint{Time: period.StartTime, Value: averagegen}
-		fmt.Println("INTENSITY POINT")
-		fmt.Println(intensityPoint)
+		//fmt.Println("INTENSITY POINT")
+		//fmt.Println(intensityPoint)
 		intensityPoints = append(intensityPoints, intensityPoint)	
 	}
 	var startTime = duration[0].StartTime

@@ -216,8 +216,8 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
             timeInISO := time.Date(reportTime.Year(), reportTime.Month(), reportTime.Day(),
              reportTime.Hour(), reportTime.Minute(), reportTime.Second(), reportTime.Nanosecond(), reportTime.Location())
              point := &gencalc.DataPoint{Time: timeInISO.Format(timeFormat), Value: power}
-            fmt.Println("power stamp")
-            fmt.Println(point)
+            //fmt.Println("power stamp")
+            //fmt.Println(point)
 			points = append(points, point)
 			previousReport = *analogPoint
 			start = reportTime

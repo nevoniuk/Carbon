@@ -111,6 +111,10 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 		if i == len(powerReport.PowerStamps) {
 			break
 		}
+		fmt.Println("Intensity point")
+		fmt.Println(r)
+		fmt.Println("Power point")
+		fmt.Println(powerReport.PowerStamps[i])
 		if powerReport.PowerStamps[i] == nil {
 			continue
 		}
