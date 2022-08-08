@@ -112,13 +112,9 @@ func findOrg(ctx context.Context, env, orgID string) (string, error) {
 // findFacility returns the path to the facility config for the given org and facility IDs.
 func findFacility(ctx context.Context, env, orgID string, facilityID string) (string, error) {
 	path, err := findOrg(ctx, env, orgID) //deploy/facility_data/lineage
-	fmt.Println("env")
-	fmt.Println(env)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("find facility path")
-	fmt.Println(path)
 	facilities, err := ioutil.ReadDir(path)
 	if err != nil {
 		return "", err
@@ -159,6 +155,8 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 	if err != nil {
 		return "", &ErrLocationNotFound{fmt.Errorf("failed to list buildings in path %s: %w", path, err)}
 	}
+	fmt.Println("facility ID")
+	fmt.Println(facilityID)
 	var locationPath string
 	for _, b := range buildings {
 		if !b.IsDir() {
@@ -225,6 +223,8 @@ func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID 
 
 
 func mapIDToNonProd(id, facilityID string) string { //fails here
+	fmt.Println("ID:")
+	fmt.Println(id)
 	return mapToNonProd(uuid.MustParse(id), uuid.MustParse(facilityID))
 }
 
