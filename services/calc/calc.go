@@ -95,11 +95,21 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.CarbonReport, powerReport *gencalc.ElectricalReport) (*gencalc.EmissionsReport, error) {
 	var dataPoints []*gencalc.DataPoint
 	for i, r := range carbonReport.IntensityPoints {
-		toKWh := r.Value * 1000 //convert mwh->kwh
-		carbonemissions := toKWh * powerReport.PowerStamps[i].Value
-		fmt.Println("Data Point")
-		fmt.Println(&gencalc.DataPoint{Time: powerReport.Duration.StartTime, Value: carbonemissions})
-		dataPoints = append(dataPoints, &gencalc.DataPoint{Time: powerReport.Duration.StartTime, Value: carbonemissions})
+		if i == len(powerReport.PowerStamps) {
+			break
+		}
+		if powerReport.PowerStamps[i] == nil {
+			continue
+		}
+		powerT,_ := time.Parse(timeFormat, powerReport.PowerStamps[i].Time)
+		carbonT,_ := time.Parse(timeFormat, r.Time)
+		if powerT.Equal(carbonT) {
+			toKWh := r.Value * 1000 //convert mwh->kwh
+			carbonemissions := toKWh * powerReport.PowerStamps[i].Value
+			fmt.Println("Data Point")
+			fmt.Println(&gencalc.DataPoint{Time: r.Time, Value: carbonemissions})
+			dataPoints = append(dataPoints, &gencalc.DataPoint{Time: r.Time, Value: carbonemissions})
+		}
 	}
 	return &gencalc.EmissionsReport{Duration: powerReport.Duration, Interval: powerReport.Interval, Points: dataPoints}, nil
 }

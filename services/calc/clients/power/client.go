@@ -121,8 +121,6 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
 	case model.Monthly:
 		durationType = time.Hour * 24 * 29
 	}
-    fmt.Println("duration type")
-    fmt.Println(durationType)
 	kwhPoints, err := convertToPower(analogValues, formula, durationType)
     fmt.Println("length of KWH points")
     fmt.Println(len(kwhPoints))
@@ -138,8 +136,6 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
 func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
     res := r.(*genvalues.GetValuesResult)
     var analogPoints = res.Values.Analog
-    fmt.Println("length of analog points")
-    fmt.Println(len(analogPoints))
     if len(analogPoints) != 1 {
         return nil, fmt.Errorf("incorrect analog points returned")
     }
@@ -147,11 +143,11 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
     if analogForCP == nil {
         return nil, fmt.Errorf("analog points are null")
     }
-    fmt.Println(analogForCP)
     analogVals := analogForCP.Values
     if len(analogVals) == 0 {
-        return nil, fmt.Errorf("analog points are null")
+        return nil, fmt.Errorf("no analog points")
     }
+    //remove after debugging
     fmt.Println("# of energy pulses")
     fmt.Println(len(analogVals))
     for _, p := range analogVals {
@@ -177,8 +173,6 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
 // getControlPointID will use the past values function getControlPointConfigByName to get the point ID
 func (c *client) getControlPointID(ctx context.Context, orgID string, agentName string, pointName string) (genvalues.UUID, error) {
     payload := genvalues.PointNameQuery{OrgID: genvalues.UUID(orgID), ClientName: agentName, PointName: pointName}
-    fmt.Println("point payload")
-    fmt.Println(payload)
     res, err := c.findControlPointConfigsByName(ctx, &payload)
     if err != nil {
         return genvalues.UUID(uuid.Nil.String()), err
@@ -193,35 +187,13 @@ func (c *client) getControlPointID(ctx context.Context, orgID string, agentName 
 func toControlPointID(r interface{}) (genvalues.UUID, error) {
     res := r.(*genvalues.FindControlPointConfigsByNameResult)
     values := res.Values
-    fmt.Println("length of point values:")
-    fmt.Println(len(values))
     if len(values) > 1 || len(values) == 0 {
         return genvalues.UUID(uuid.Nil.String()), fmt.Errorf("more control points returned than input")
     }
-    fmt.Println("point id:")
-    fmt.Println(genvalues.UUID(values[0].ID))
     return genvalues.UUID(values[0].ID), nil
 }
 func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }
 
-
-
-/*
-    Converter: input is an array of analog points
-        use PowerPoint structs
-            ->units(KW, KWh, KWh/min)
-            ->scaling(formula to convert pulse count -> Kwh)
-            1. convert raw pulses into # of pulses per minute
-            2. use formula to convert # of pulses per minute -> KWh
-            3. convert Kwh -> KW
-        converts raw pulse values -> power
-        GOAL: get KW: a rate
-        KWh is the substance/energy
-        pulse count -> energy(KWh)/min -> take derivative of energy wrt time to get rate of energy consumed->
-        1kWh = 60kWmin(energy used by doing 1 KW for an hour)
-        formula: convert pulse count from power meters
-    
-    */
 func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, durationtype time.Duration) ([]*gencalc.DataPoint, error) {
 	endTime := analogPoints[(len(analogPoints) - 1)].Timestamp
 	startTime := analogPoints[0].Timestamp
@@ -241,19 +213,11 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
     if err != nil {
         return nil, err
     }
-    fmt.Println("mult")
-    fmt.Println(mult)
 	for start.Before(end) {
-        fmt.Println("start")
-        fmt.Println(start)
-        fmt.Println("end")
-        fmt.Println(end)
 		if reportCounter == len(analogPoints) {
 			return points, nil
 		}
         analogPoint := analogPoints[reportCounter]
-        fmt.Println("analog point")
-        fmt.Println(analogPoint)
 		if analogPoint == nil || analogPoint.Value == 0 {
 			reportCounter += 1
 			continue
