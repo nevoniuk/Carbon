@@ -82,19 +82,19 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 		return mapAndLogError(ctx, err)
 	}
 	for i := 0; i < len(regions); i++ {
-		fmt.Println("start time")
 		startTime, err := time.Parse(timeFormat, times[i])
+		fmt.Println("start time")
 		fmt.Println(startTime)
+		fmt.Println("region")
+		fmt.Println(regions[i])
 		if err != nil {
 			return mapAndLogError(ctx, err)
 		}
 		var endTime = finalEndTime
 		var twoWeeksDuration = time.Hour * 24 * 14
-		fmt.Println("region")
-		fmt.Println(regions[i])
-		if startTime.Before(finalEndTime.Add(twoWeeksDuration * -1)) {
-			endTime = startTime.Add(twoWeeksDuration)
-			fmt.Println("new end time")
+		if startTime.Before(finalEndTime.Add(twoWeeksDuration * -1)) {//if the query is longer than two weeks
+			endTime = startTime.Add(twoWeeksDuration + time.Second)
+			fmt.Println("query over two weeks: new end time")
 			fmt.Println(endTime)
 		}
 
@@ -103,9 +103,9 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			if !newEndTime.Before(finalEndTime) {
 				newEndTime = finalEndTime 
 			}
-			fmt.Println("start time")
+			fmt.Println("in loop start time")
 			fmt.Println(startTime)
-			fmt.Println("new end time")
+			fmt.Println("in loop end time")
 			fmt.Println(newEndTime)
 			minreports, err := s.csc.GetEmissions(ctx, regions[i], startTime.Format(timeFormat), newEndTime.Format(timeFormat))
 			fmt.Println("length of reports")
@@ -115,7 +115,7 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 				if !errors.As(err, &noDataError) {
 					return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
 				}
-				newEndTime = newEndTime.AddDate(0, 0, 1)
+				//newEndTime = newEndTime.AddDate(0, 0, 1)
 				startTime = newEndTime
 				continue
 			}	

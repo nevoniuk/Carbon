@@ -61,9 +61,14 @@ func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 			}
 	// clickhouse returns a 1900s year if nothing is found
 	if start.Year() < 2000 {
-		return "", NoReportsError{Err: fmt.Errorf("error in checkdb: no records for a given region")}
+		log.Info(ctx, log.KV{K: "No logs for region:", V: region})
+		return "", nil
 	}
 	start = start.UTC()
+	fmt.Println("start date found by check DB:")
+	fmt.Println(start)
+	fmt.Println("for region:")
+	fmt.Println(region)
 	return start.Format(timeFormat), err
 }
 
