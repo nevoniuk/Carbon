@@ -1,2 +1,2 @@
-#poller: bin/poller -debug
+poller: bin/poller -debug
 calc: bin/calc -debug

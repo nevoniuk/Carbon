@@ -5,8 +5,6 @@ metadata:
   labels:
     app: poller
 spec:
-  # Every Monday at 12AM
-  #schedule: "0 12 * * 1"
   schedule: "0/15 * * * *"
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
