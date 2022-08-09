@@ -29,7 +29,7 @@ type(
 	}
 	LocationConfig struct {
 		ID string `yaml: id`
-		Carbon *CarbonConfig `yaml: carbon`
+		Carbon *CarbonConfig `yaml: "carbon"`
 	}
 	CarbonConfig struct {
 		ControlPoint string `yaml: "controlpoint"`
@@ -73,8 +73,12 @@ func (c *client) GetCarbonConfig(ctx context.Context, orgID string, facilityID s
 	}
 	agentName, err := findAgentNameFromLocation(ctx, c.env, orgID, facilityID, path)
 	if err != nil || agentName == "" {
-		return nil, ErrConfigNotFound{fmt.Errorf("could not find the agent name for location %s with err: %w\n", path, err)}
+		return nil, ErrConfigNotFound{fmt.Errorf("could not find the agent name for location %s with err: %w", path, err)}
 	}
+	if config == nil {
+		return nil, ErrConfigNotFound{fmt.Errorf("could not find the carbon config for orgID: %s, agent %s, location %s, facility %s", orgID, agentName, locationID, facilityID)}
+	}
+	log.Info(ctx, log.KV{K: "carbon config", V: config.Carbon})
 	carbon := &Carbon{OrgID: orgID, FacilityID: facilityID, BuildingID: locationID, ControlPointName: config.Carbon.ControlPoint, Formula: config.Carbon.Multiplier, 
 	Region: config.Carbon.SingularityRegion, AgentName: agentName}
 	err = validate(carbon)
@@ -192,6 +196,7 @@ func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID 
 	if err := yaml.Unmarshal(cfg, &config); err != nil {
 		return "", nil, &ErrLocationNotFound{fmt.Errorf("failed to unmarshal into location config %s: %w", buildingPath, err)}
 	}
+	log.Info(ctx, log.KV{K: "location config", V: config.ID})
 	return buildingPath, &config, nil
 }
 
