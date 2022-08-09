@@ -82,6 +82,7 @@ func (c *client) GetCarbonConfig(ctx context.Context, orgID string, facilityID s
 	if config == nil {
 		return nil, ErrConfigNotFound{fmt.Errorf("could not find the carbon config for orgID: %s, agent %s, location %s, facility %s", orgID, agentName, locationID, facilityID)}
 	}
+	fmt.Println(config)
 	log.Info(ctx, log.KV{K: "carbon config", V: config.Carbon})
 	carbon := &Carbon{OrgID: orgID, FacilityID: facilityID, BuildingID: locationID, ControlPointName: config.Carbon.ControlPoint, Formula: config.Carbon.Multiplier, 
 	Region: config.Carbon.SingularityRegion, AgentName: agentName}

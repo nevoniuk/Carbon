@@ -43,6 +43,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     if err != nil {
         return nil, &ErrPowerReportsNotFound{fmt.Errorf("control point id not found for name %s for agent %s with err: %w", cpaliasname, agentname, err)}
     }
+    fmt.Println(pointID)
     p := &genvalues.ValuesQuery {
         OrgID: genvalues.UUID(orgID),
         PointIds: []genvalues.UUID{pointID},
@@ -82,7 +83,28 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
     if len(analogVals) == 0 {
         return nil, fmt.Errorf("no analog points")
     }
-    
+    //remove after debugging
+    fmt.Println("# of energy pulses")
+    fmt.Println(len(analogVals))
+    for _, p := range analogVals {
+        fmt.Println(p.Timestamp)
+        fmt.Println(p.Value) //error its 1
+    }
+    var mockAnalogPoints []*genvalues.AnalogPoint
+    var value = 8053882.00
+    var counter float64
+    var t = time.Date(2022, 3, 1, 0, 0, 0, 0, time.UTC)
+    for i := 0; i < 10801; i++ {
+        t = t.Add(time.Second)
+        var s = t.Format(time.RFC3339)
+        var m = genvalues.AnalogPoint{Timestamp: s, Value: (value + counter)}
+        if i == 100 || i == 200 || i == 300 {
+            m = genvalues.AnalogPoint{Timestamp: s, Value: 0}
+        }
+        mockAnalogPoints = append(mockAnalogPoints, &m)
+        counter += 1.0
+    }
+    analogVals = mockAnalogPoints
 	return analogVals, nil
 }
 
