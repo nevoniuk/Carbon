@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"time"
-	"fmt"
 	"goa.design/clue/log"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
@@ -67,7 +66,7 @@ func (s *pollersrvc) ensurePastData(ctx context.Context) (startDates []string) {
 			var defaultDate string
 			if regions[i] == model.Aeso {
 				defaultDate = AesoStartDate
-			} else {defaultDate = regiontestdate}
+			} else {defaultDate = regiontestdate} //can be set back to regionstartdate later.
 			dates = append(dates, defaultDate)
 		}
 	}
@@ -83,19 +82,13 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 	}
 	for i := 0; i < len(regions); i++ {
 		startTime, err := time.Parse(timeFormat, times[i])
-		fmt.Println("start time")
-		fmt.Println(startTime)
-		fmt.Println("region")
-		fmt.Println(regions[i])
 		if err != nil {
 			return mapAndLogError(ctx, err)
 		}
 		var endTime = finalEndTime
 		var twoWeeksDuration = time.Hour * 24 * 14
-		if startTime.Before(finalEndTime.Add(twoWeeksDuration * -1)) {//if the query is longer than two weeks
+		if startTime.Before(finalEndTime.Add(twoWeeksDuration * -1)) {
 			endTime = startTime.Add(twoWeeksDuration)
-			fmt.Println("query over two weeks: new end time")
-			fmt.Println(endTime)
 		}
 
 		for startTime.Before(endTime) {
@@ -103,19 +96,12 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			if !newEndTime.Before(finalEndTime) {
 				newEndTime = finalEndTime 
 			}
-			fmt.Println("in loop start time")
-			fmt.Println(startTime)
-			fmt.Println("in loop end time")
-			fmt.Println(newEndTime)
 			minreports, err := s.csc.GetEmissions(ctx, regions[i], startTime.Format(timeFormat), newEndTime.Format(timeFormat))
-			fmt.Println("length of reports")
-			fmt.Println(len(minreports))
 			var noDataError carbonara.NoDataError
 			if err != nil {
 				if !errors.As(err, &noDataError) {
 					return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
 				}
-				fmt.Println("no data")
 				startTime = newEndTime
 				continue
 			}	

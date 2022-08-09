@@ -65,10 +65,6 @@ func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 		return "", fmt.Errorf("no records for region")
 	}
 	start = start.UTC()
-	fmt.Println("start date found by check DB:")
-	fmt.Println(start)
-	fmt.Println("for region:")
-	fmt.Println(region)
 	return start.Format(timeFormat), err
 }
 
