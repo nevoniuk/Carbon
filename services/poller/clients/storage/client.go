@@ -53,7 +53,7 @@ func (c *client) CheckDB(ctx context.Context, region string) (string, error) {
 			SELECT
 					MAX(end) as max_end
 			FROM 
-					carbondb.carbon_reports
+					carbondb.carbon_intensity_reports
 			WHERE
 					region = $1
 			`, region).Scan(&start); err != nil {
