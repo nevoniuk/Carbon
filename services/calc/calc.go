@@ -70,19 +70,17 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 	case model.Monthly:
 		intervalduration = time.Hour * 24 * 29
 	}
-	
 	carbonData, err := s.fc.GetCarbonConfig(ctx, string(req.OrgID), string(req.FacilityID), string(req.LocationID))
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetLocationData, err)
 	}
 	fmt.Println("carbon config")
 	fmt.Println(carbonData)
-	//singularityRegion, controlPointName, formula, agentName := res.Region, res.ControlPointName, res.Formula, res.AgentName
-	formula := "0.6"
-	agentName := "office Lineage Oxnard Building 4"
-	singularityRegion := model.Caiso
-	controlPointName := "energy_meter_4_pulse_val"
-	
+	singularityRegion, controlPointName, formula, agentName := carbonData.Region, carbonData.ControlPointName, carbonData.Formula, carbonData.AgentName
+	//formula := "0.6"
+	//agentName := "office Lineage Oxnard Building 4"
+	//singularityRegion := model.Caiso
+	//controlPointName := "energy_meter_4_pulse_val"
 	carbonReport, err := s.dbc.GetCarbonIntensityReports(ctx, dates, req.Interval, singularityRegion)
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetCarbonReports, err)
@@ -107,10 +105,6 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 	var dataPoints []*gencalc.DataPoint
 	var powerreportCounter = 0
 	var intenreportCounter = 0
-	/* 
-		
-	
-	*/
 	for intenreportCounter < len(carbonReport.IntensityPoints) && powerreportCounter < len(powerReport.PowerStamps) {
 		fmt.Println("Intensity point")
 		fmt.Println(carbonReport.IntensityPoints[intenreportCounter])

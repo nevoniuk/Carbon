@@ -90,7 +90,6 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 		if startTime.Before(finalEndTime.Add(twoWeeksDuration * -1)) {
 			endTime = startTime.Add(twoWeeksDuration)
 		}
-
 		for startTime.Before(endTime) {
 			newEndTime := startTime.AddDate(0, 0, 7)
 			if !newEndTime.Before(finalEndTime) {
