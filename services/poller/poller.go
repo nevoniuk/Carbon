@@ -93,7 +93,7 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 		var endTime = finalEndTime
 		var twoWeeksDuration = time.Hour * 24 * 14
 		if startTime.Before(finalEndTime.Add(twoWeeksDuration * -1)) {//if the query is longer than two weeks
-			endTime = startTime.Add(twoWeeksDuration + time.Second)
+			endTime = startTime.Add(twoWeeksDuration)
 			fmt.Println("query over two weeks: new end time")
 			fmt.Println(endTime)
 		}
@@ -115,7 +115,7 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 				if !errors.As(err, &noDataError) {
 					return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
 				}
-				//newEndTime = newEndTime.AddDate(0, 0, 1)
+				fmt.Println("no data")
 				startTime = newEndTime
 				continue
 			}	
