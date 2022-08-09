@@ -19,7 +19,6 @@ import (
 		formula:(This will be read and parsed using the GoMath)
 		SingularityRegion:
 */
-
 type(
 	Client interface {
 		// GetCarbonConfig obtains the above carbon configuration for the given input
@@ -28,12 +27,10 @@ type(
 	client struct {
 		env string
 	}
-
 	LocationConfig struct {
 		ID string `yaml: id`
 		Carbon *CarbonConfig `yaml: carbon`
 	}
-
 	CarbonConfig struct {
 		ControlPoint string `yaml: "controlpoint"`
 		Multiplier string `yaml: "multiplier"`
@@ -70,21 +67,17 @@ func New(env string) Client {
 
 // GetCarbonConfig will load the data from a location.yaml file into a Carbon struct
 func (c *client) GetCarbonConfig(ctx context.Context, orgID string, facilityID string, locationID string) (*Carbon, error) {
-	fmt.Println("IN CARBON CONFIG")
 	path, config, err := loadLocationConfig(ctx, c.env, orgID, facilityID, locationID)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("IN CARBON CONFIG")
 	agentName, err := findAgentNameFromLocation(ctx, c.env, orgID, facilityID, path)
 	if err != nil || agentName == "" {
 		return nil, ErrConfigNotFound{fmt.Errorf("could not find the agent name for location %s with err: %w\n", path, err)}
 	}
-	fmt.Println("IN CARBON CONFIG")
 	carbon := &Carbon{OrgID: orgID, FacilityID: facilityID, BuildingID: locationID, ControlPointName: config.Carbon.ControlPoint, Formula: config.Carbon.Multiplier, 
 	Region: config.Carbon.SingularityRegion, AgentName: agentName}
 	err = validate(carbon)
-	fmt.Println("IN CARBON CONFIG")
 	if err != nil {
 		return nil, ErrConfigNotFound{fmt.Errorf("could not validate carbon config with err: %w\n", err)}
 	}
@@ -122,28 +115,19 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 	}
 	var facilityPath string
 	for _, f := range facilities {
-		fmt.Println("facility info")
-		fmt.Println(f)
-		fmt.Println(f.Name())
 		if !f.IsDir() {
 			continue
 		}
 		read := readID(ctx, filepath.Join(path, f.Name(), "facility.yaml"))
 		if env != "production" {
 			read = mapIDToNonProd(read, read)
-			fmt.Println("READ VALUE")
-			fmt.Println(read)
 		}
 		if read == facilityID {
-			fmt.Println("EQUAL")
 			facilityPath = filepath.Join(path, f.Name(), "facility.yaml")
-			fmt.Println("facility path")
-			fmt.Println(facilityPath)
 			break
 		}
 	}
 	if facilityPath == "" {
-		fmt.Println("facility path is null")
 		return "", err
 	}
 	return facilityPath, nil
@@ -165,31 +149,15 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 		if !b.IsDir() {
 			continue
 		}
-		fmt.Println("BUILDING NAME")
-		fmt.Println(b.Name())
 		locationPath = filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
-		fmt.Println("temp path")
-		fmt.Println(locationPath)
 		read := readID(ctx, locationPath)
 		if env != "production" {
 			read = mapIDToNonProd(read, facilityID)
 			if read != locationID {
 				locationPath = ""
 			} else {
-				fmt.Println("Found location path")
-				fmt.Println(locationPath)
 				break
 			}
-			/**
-			if env == "office" {
-				fmt.Println("office")
-				name := readName(ctx, tempPath)
-				id := mapAgentToNonProd(name)
-				if id != "" {
-					read = id
-				}
-			}
-			*/
 		}
 	}
 	if locationPath == "" {
@@ -208,8 +176,6 @@ func findAgentNameFromLocation(ctx context.Context, env, orgID, facilityID, loca
 	//deploy/facility_data/lineage/oxnard/location.yaml
 	var agentPath = filepath.Join(filepath.Dir(locationPath), "agent.yaml")
 	read := readName(ctx, agentPath)
-	fmt.Println("agent name")
-	fmt.Println(read)
 	return read, nil
 }
 
@@ -221,18 +187,14 @@ func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID 
 	if err != nil {
 		return "", nil, err
 	}
-	fmt.Println("BUILDING PATH IN LOCATION CONFIG")
-	fmt.Println(buildingPath)
 	cfg, err := ioutil.ReadFile(buildingPath)
 	if err != nil {
 		return "", nil, &ErrLocationNotFound{fmt.Errorf("failed to read building config file %s: %w", buildingPath, err)}
 	}
-	fmt.Println("CONFIG IN LOCATION CONFIG")
 	var config LocationConfig
 	if err := yaml.Unmarshal(cfg, &config); err != nil {
 		return "", nil, &ErrLocationNotFound{fmt.Errorf("failed to unmarshal into location config %s: %w", buildingPath, err)}
 	}
-	fmt.Println(config)
 	return buildingPath, &config, nil
 }
 

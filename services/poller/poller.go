@@ -82,22 +82,30 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 		return mapAndLogError(ctx, err)
 	}
 	for i := 0; i < len(regions); i++ {
+		fmt.Println("start time")
 		startTime, err := time.Parse(timeFormat, times[i])
+		fmt.Println(startTime)
 		if err != nil {
 			return mapAndLogError(ctx, err)
 		}
 		var endTime = finalEndTime
 		var twoWeeksDuration = time.Hour * 24 * 14
+
 		if startTime.Before(finalEndTime.Add(twoWeeksDuration * -1)) {
 			endTime = startTime.Add(twoWeeksDuration)
 			fmt.Println("new end time")
 			fmt.Println(endTime)
 		}
+
 		for startTime.Before(endTime) {
 			newEndTime := startTime.AddDate(0, 0, 7)
 			if !newEndTime.Before(finalEndTime) {
 				newEndTime = finalEndTime 
 			}
+			fmt.Println("start time")
+			fmt.Println(startTime)
+			fmt.Println("new end time")
+			fmt.Println(newEndTime)
 			minreports, err := s.csc.GetEmissions(ctx, regions[i], startTime.Format(timeFormat), newEndTime.Format(timeFormat))
 			fmt.Println("length of reports")
 			fmt.Println(len(minreports))

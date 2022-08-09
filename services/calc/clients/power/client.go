@@ -16,42 +16,6 @@ import (
 
 // timeFormat is used to parse times in order to store time as ISO8601 format
 const timeFormat = "2006-01-02T15:04:05-07:00"
-/**
-`
-{
-    "Analog": [
-        {
-            "ID": "aaa09388-98e4-11ec-b909-0242ac120002",
-            "Values": [
-                {
-                    "Timestamp": "2022-03-01T00:00:00Z",
-                    "Value": 8053882
-                },
-                {
-                    "Timestamp": "2022-03-01T00:00:01Z",
-                    "Value": 8053882
-                },
-                {
-                    "Timestamp": "2022-03-01T00:00:02Z",
-                    "Value": 8053882
-                },
-                {
-                    "Timestamp": "2022-03-01T00:00:03Z",
-                    "Value": 8053882
-                },
-                {
-                    "Timestamp": "2022-03-01T00:00:04Z",
-                    "Value": 8053883
-                },
-        …
-]
-        }
-    ],
-    "Discrete": [],
-    "Structures": []
-}
-`
-*/
 type (
     Client interface {
         // GetPower will call the Past Value functions "FindControlPointConfigsByName" and "GetValues" to get control point ID's and power data 
@@ -147,6 +111,9 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
         t = t.Add(time.Second)
         var s = t.Format(time.RFC3339)
         var m = genvalues.AnalogPoint{Timestamp: s, Value: (value + counter)}
+        if i == 100 || i == 200 || i == 300 {
+            m = genvalues.AnalogPoint{Timestamp: s, Value: 0}
+        }
         mockAnalogPoints = append(mockAnalogPoints, &m)
         counter += 1.0
     }
@@ -214,8 +181,8 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
             timeInISO := time.Date(reportTime.Year(), reportTime.Month(), reportTime.Day(),
              reportTime.Hour(), reportTime.Minute(), reportTime.Second(), reportTime.Nanosecond(), reportTime.Location())
              point := &gencalc.DataPoint{Time: timeInISO.Format(timeFormat), Value: power}
-            //fmt.Println("power stamp")
-            //fmt.Println(point)
+            fmt.Println("power stamp")
+            fmt.Println(point)
 			points = append(points, point)
 			previousReport = *analogPoint
 			start = reportTime
