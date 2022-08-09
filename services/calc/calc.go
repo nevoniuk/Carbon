@@ -130,7 +130,6 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 			time = powerReport.PowerStamps[powerreportCounter].Time
 		} 
 		log.Info(ctx, log.KV{K: "Emissions Point", V: &gencalc.DataPoint{Time: time, Value: carbonemissions}})
-		fmt.Println(&gencalc.DataPoint{Time: time, Value: carbonemissions})
 		dataPoints = append(dataPoints, &gencalc.DataPoint{Time: time, Value: carbonemissions})
 		intenreportCounter += 1
 		powerreportCounter += 1
