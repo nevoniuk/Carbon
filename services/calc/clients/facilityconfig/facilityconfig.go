@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"github.com/google/uuid"
 	"goa.design/clue/log"
+	"strings"
 	"gopkg.in/yaml.v3"
 )
 
@@ -74,6 +75,9 @@ func (c *client) GetCarbonConfig(ctx context.Context, orgID string, facilityID s
 	agentName, err := findAgentNameFromLocation(ctx, c.env, orgID, facilityID, path)
 	if err != nil || agentName == "" {
 		return nil, ErrConfigNotFound{fmt.Errorf("could not find the agent name for location %s with err: %w", path, err)}
+	}
+	if c.env == "office" {
+		agentName = strings.Join([]string{"office ", agentName}, "")
 	}
 	if config == nil {
 		return nil, ErrConfigNotFound{fmt.Errorf("could not find the carbon config for orgID: %s, agent %s, location %s, facility %s", orgID, agentName, locationID, facilityID)}

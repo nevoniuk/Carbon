@@ -89,6 +89,7 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
 // getControlPointID will use the past values function getControlPointConfigByName to get the point ID
 func (c *client) getControlPointID(ctx context.Context, orgID string, agentName string, pointName string) (genvalues.UUID, error) {
     payload := genvalues.PointNameQuery{OrgID: genvalues.UUID(orgID), ClientName: agentName, PointName: pointName}
+    log.Info(ctx, log.KV{K: "payload to getcontrolpoint", V: payload})
     res, err := c.findControlPointConfigsByName(ctx, &payload)
     if err != nil {
         return genvalues.UUID(uuid.Nil.String()), err
@@ -97,6 +98,7 @@ func (c *client) getControlPointID(ctx context.Context, orgID string, agentName 
     if err != nil {
         return genvalues.UUID(uuid.Nil.String()), err
     }
+
     return newres, nil
 }
 // toControlPointID will cast the response from getControlPointConfigByName to a point ID
