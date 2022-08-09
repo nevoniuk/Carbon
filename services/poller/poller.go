@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"time"
+	"strings"
 	"goa.design/clue/log"
 	"github.com/crossnokaye/carbon/services/poller/clients/carbonara"
 	"github.com/crossnokaye/carbon/services/poller/clients/storage"
@@ -72,7 +73,7 @@ func (s *pollersrvc) ensurePastData(ctx context.Context) (startDates []string) {
 	}
 	return dates
 }
-
+//TODO: handle server error by adjusting to a week later
 // Update will fetch the latest reports for all regions and return either a server or no-data error
 func (s *pollersrvc) Update(ctx context.Context) error {
 	times := s.ensurePastData(ctx)
@@ -96,13 +97,25 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 				newEndTime = finalEndTime 
 			}
 			minreports, err := s.csc.GetEmissions(ctx, regions[i], startTime.Format(timeFormat), newEndTime.Format(timeFormat))
-			var noDataError carbonara.NoDataError
+			var serverError carbonara.ServerError
 			if err != nil {
-				if !errors.As(err, &noDataError) {
-					return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
+				if errors.As(err, &serverError) {
+					if strings.Contains(err.Error(), "5") { //if a singularity server error
+						return mapAndLogErrorf(ctx, "failed to get Carbon Intensity Reports:%w\n", err)
+					}
+				} else {
+					period := &genpoller.Period{StartTime: startTime.Format(timeFormat), EndTime: newEndTime.Format(timeFormat)}
+					report := &genpoller.CarbonForecast{GeneratedRate: 0, MarginalRate: 0, ConsumedRate: 0, Duration: period, Region: regions[i]}
+					//write a null report if no data is available
+					var reportArray []*genpoller.CarbonForecast
+					reportArray = append(reportArray, report)
+					err := s.dbc.SaveCarbonReports(ctx, reportArray)
+					if err != nil {
+						return mapAndLogErrorf(ctx, "failed to Save Carbon Reports:%w\n", err)
+					}
+					startTime = newEndTime
+					continue
 				}
-				startTime = newEndTime
-				continue
 			}	
 			err = s.dbc.SaveCarbonReports(ctx, minreports)
 			if err != nil {
@@ -126,5 +139,7 @@ func (ser *pollersrvc) GetEmissionsForRegion(ctx context.Context, input *genpoll
 	}
 	return reports, err
 }
+
+
 
 
