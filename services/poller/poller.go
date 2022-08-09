@@ -90,7 +90,8 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 		}
 		var endTime = finalEndTime
 		var twoWeeksDuration = time.Hour * 24 * 14
-
+		fmt.Println("region")
+		fmt.Println(regions[i])
 		if startTime.Before(finalEndTime.Add(twoWeeksDuration * -1)) {
 			endTime = startTime.Add(twoWeeksDuration)
 			fmt.Println("new end time")
