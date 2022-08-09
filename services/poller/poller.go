@@ -93,16 +93,14 @@ func (s *pollersrvc) Update(ctx context.Context) error {
 			fmt.Println("new end time")
 			fmt.Println(endTime)
 		}
-		log.Info(ctx, log.KV{K: "start", V: startTime},
-			log.KV{K: "end", V: endTime})
 		for startTime.Before(endTime) {
 			newEndTime := startTime.AddDate(0, 0, 7)
 			if !newEndTime.Before(finalEndTime) {
 				newEndTime = finalEndTime 
 			}
 			minreports, err := s.csc.GetEmissions(ctx, regions[i], startTime.Format(timeFormat), newEndTime.Format(timeFormat))
-			log.Info(ctx, log.KV{K: "length of reports", V: len(minreports)},
-			log.KV{K: "region:", V: regions[i]})
+			fmt.Println("length of reports")
+			fmt.Println(len(minreports))
 			var noDataError carbonara.NoDataError
 			if err != nil {
 				if !errors.As(err, &noDataError) {
