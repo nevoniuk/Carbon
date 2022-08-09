@@ -74,13 +74,10 @@ func (s *calcSvc) HistoricalCarbonEmissions(ctx context.Context, req *gencalc.Re
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetLocationData, err)
 	}
-	fmt.Println("carbon config")
-	fmt.Println(carbonData)
+	log.Info(ctx, log.KV{K: "control point name from facility config", V: carbonData.ControlPointName})
+	log.Info(ctx, log.KV{K: "agent name from facility config", V: carbonData.AgentName})
+	log.Info(ctx, log.KV{K: "formula from facility config", V: carbonData.Formula})
 	singularityRegion, controlPointName, formula, agentName := carbonData.Region, carbonData.ControlPointName, carbonData.Formula, carbonData.AgentName
-	//formula := "0.6"
-	//agentName := "office Lineage Oxnard Building 4"
-	//singularityRegion := model.Caiso
-	//controlPointName := "energy_meter_4_pulse_val"
 	carbonReport, err := s.dbc.GetCarbonIntensityReports(ctx, dates, req.Interval, singularityRegion)
 	if err != nil {
 		return nil, mapAndLogErrorf(ctx, "%s: %w", FailedToGetCarbonReports, err)
@@ -106,10 +103,8 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 	var powerreportCounter = 0
 	var intenreportCounter = 0
 	for intenreportCounter < len(carbonReport.IntensityPoints) && powerreportCounter < len(powerReport.PowerStamps) {
-		fmt.Println("Intensity point")
-		fmt.Println(carbonReport.IntensityPoints[intenreportCounter])
-		fmt.Println("Power point")
-		fmt.Println(powerReport.PowerStamps[powerreportCounter])
+		log.Info(ctx, log.KV{K: "Intensity Point", V: carbonReport.IntensityPoints[intenreportCounter]})
+		log.Info(ctx, log.KV{K: "Power Point", V: powerReport.PowerStamps[powerreportCounter]})
 		powerT,_ := time.Parse(timeFormat, powerReport.PowerStamps[powerreportCounter].Time)
 		carbonT,_ := time.Parse(timeFormat, carbonReport.IntensityPoints[intenreportCounter].Time)
 		var difference time.Duration
@@ -130,12 +125,11 @@ func calculateCarbonEmissionsReport(ctx context.Context, carbonReport *gencalc.C
 		}
 		toKWh := carbonReport.IntensityPoints[intenreportCounter].Value / 1000 //convert mwh->kwh
 		carbonemissions := toKWh * powerReport.PowerStamps[powerreportCounter].Value
-		fmt.Println("Data Point")
 		var time = carbonReport.IntensityPoints[intenreportCounter].Time
 		if leastTime {
 			time = powerReport.PowerStamps[powerreportCounter].Time
 		} 
-		fmt.Println(&gencalc.DataPoint{Time: time, Value: carbonemissions})
+		log.Info(ctx, log.KV{K: "Emissions Point", V: &gencalc.DataPoint{Time: time, Value: carbonemissions}})
 		dataPoints = append(dataPoints, &gencalc.DataPoint{Time: time, Value: carbonemissions})
 		intenreportCounter += 1
 		powerreportCounter += 1
@@ -183,7 +177,6 @@ func (s *calcSvc) getDates(ctx context.Context, intervalType string, duration *g
 		if tempend.After(end) { 
 			break
 		}
-		//implement logic to iterate until the end of the month
 		var startString = tempstart.Format(timeFormat)
 		var endString = tempend.Format(timeFormat)
 		newDates = append(newDates, &gencalc.Period{StartTime: startString, EndTime: endString})

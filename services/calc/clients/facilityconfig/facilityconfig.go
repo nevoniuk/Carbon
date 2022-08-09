@@ -104,8 +104,7 @@ func findOrg(ctx context.Context, env, orgID string) (string, error) {
 
 // findFacility returns the path to the facility config for the given org and facility IDs.
 func findFacility(ctx context.Context, env, orgID string, facilityID string) (string, error) {
-	path, err := findOrg(ctx, env, orgID) //deploy/facility_data/lineage
-	fmt.Println(path)
+	path, err := findOrg(ctx, env, orgID)
 	if err != nil {
 		return "", err
 	}
@@ -138,7 +137,6 @@ func findLocation(ctx context.Context, env string, orgID string, facilityID stri
 	if err != nil {
 		return "", &ErrFacilityNotFound{fmt.Errorf("facility not found for org %s facility %s: %w", orgID, facilityID, err)}
 	}
-	//now deploy/facility_data/lineage/oxnard/facility.yaml
 	buildings, err := ioutil.ReadDir(filepath.Dir(path))
 	if err != nil {
 		return "", &ErrLocationNotFound{fmt.Errorf("failed to list buildings in path %s: %w", path, err)}
@@ -173,7 +171,6 @@ func findAgentNameFromLocation(ctx context.Context, env, orgID, facilityID, loca
 	if locationPath == "" {
 		return "", fmt.Errorf("No location path")
 	}
-	//deploy/facility_data/lineage/oxnard/location.yaml
 	var agentPath = filepath.Join(filepath.Dir(locationPath), "agent.yaml")
 	read := readName(ctx, agentPath)
 	return read, nil

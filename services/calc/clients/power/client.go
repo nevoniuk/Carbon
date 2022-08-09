@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
     "strconv"
-	"github.com/crossnokaye/carbon/model"
+    "goa.design/clue/log"
 	gencalc "github.com/crossnokaye/carbon/services/calc/gen/calc"
 	genvaluesc "github.com/crossnokaye/past-values/services/past-values/gen/grpc/past_values/client"
 	genvalues "github.com/crossnokaye/past-values/services/past-values/gen/past_values"
@@ -37,18 +37,6 @@ func New(conn *grpc.ClientConn) Client {
     }
 }
 
-var unitTypes [3]string = [3]string{model.Kwh, model.Kwh_Min, model.Pulse_count}
-type PowerPoint struct {
-    Unit string
-    Value float64
-    StartTime string
-    EndTime string
-	IntervalType string
-}
-func newPoint(unit string, value float64) (*PowerPoint) {
-    return &PowerPoint{Unit: unit, Value: value}
-}
-
 // GetPower will call the Past Value functions "FindControlPointConfigsByName" and "GetValues" to get control point ID's and power data
 func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.Period, cpaliasname string, pastValInterval int64, reportInterval time.Duration, formula *string, agentname string) (*gencalc.ElectricalReport, error) {
     pointID, err := c.getControlPointID(ctx, orgID, agentname, cpaliasname)
@@ -70,9 +58,7 @@ func (c *client) GetPower(ctx context.Context, orgID string, dateRange *gencalc.
     if err != nil {
         return nil, &ErrPowerReportsNotFound{fmt.Errorf("values not found for org: %s for pointID %s with err: %w", orgID, pointID, err)}
     }
-	kwhPoints, err := convertToPower(analogValues, formula, reportInterval)
-    fmt.Println("length of KWH points")
-    fmt.Println(len(kwhPoints))
+	kwhPoints, err := convertToPower(ctx, analogValues, formula, reportInterval)
     if err != nil {
         return nil, ErrPowerReportsNotFound{Err: fmt.Errorf("err converting to KWh: %w", err)}
     }
@@ -96,28 +82,8 @@ func toPower(r interface{}) ([]*genvalues.AnalogPoint, error) {
     if len(analogVals) == 0 {
         return nil, fmt.Errorf("no analog points")
     }
-    //remove after debugging
-    fmt.Println("# of energy pulses")
-    fmt.Println(len(analogVals))
-    for _, p := range analogVals {
-        fmt.Println(p.Timestamp)
-        fmt.Println(p.Value) //error its 1
-    }
-    var mockAnalogPoints []*genvalues.AnalogPoint
-    var value = 8053882.00
-    var counter float64
-    var t = time.Date(2022, 3, 1, 0, 0, 0, 0, time.UTC)
-    for i := 0; i < 10801; i++ {
-        t = t.Add(time.Second)
-        var s = t.Format(time.RFC3339)
-        var m = genvalues.AnalogPoint{Timestamp: s, Value: (value + counter)}
-        if i == 100 || i == 200 || i == 300 {
-            m = genvalues.AnalogPoint{Timestamp: s, Value: 0}
-        }
-        mockAnalogPoints = append(mockAnalogPoints, &m)
-        counter += 1.0
-    }
-	return mockAnalogPoints, nil
+    
+	return analogVals, nil
 }
 
 // getControlPointID will use the past values function getControlPointConfigByName to get the point ID
@@ -144,7 +110,7 @@ func toControlPointID(r interface{}) (genvalues.UUID, error) {
 }
 func (err ErrPowerReportsNotFound) Error() string { return err.Err.Error() }
 
-func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, durationtype time.Duration) ([]*gencalc.DataPoint, error) {
+func  convertToPower(ctx context.Context, analogPoints []*genvalues.AnalogPoint, formula *string, durationtype time.Duration) ([]*gencalc.DataPoint, error) {
 	endTime := analogPoints[(len(analogPoints) - 1)].Timestamp
 	startTime := analogPoints[0].Timestamp
 	start, err := time.Parse(time.RFC3339, startTime)
@@ -158,7 +124,6 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
 	var points []*gencalc.DataPoint
 	var reportCounter = 0
 	var previousReport = *analogPoints[0]
-    //nil formula check in facility config client
     mult, err := strconv.ParseFloat(*formula, 64)
     if err != nil {
         return nil, err
@@ -181,8 +146,7 @@ func  convertToPower(analogPoints []*genvalues.AnalogPoint, formula *string, dur
             timeInISO := time.Date(reportTime.Year(), reportTime.Month(), reportTime.Day(),
              reportTime.Hour(), reportTime.Minute(), reportTime.Second(), reportTime.Nanosecond(), reportTime.Location())
              point := &gencalc.DataPoint{Time: timeInISO.Format(timeFormat), Value: power}
-            fmt.Println("power stamp")
-            fmt.Println(point)
+            log.Info(ctx, log.KV{K: "power point", V: point})
 			points = append(points, point)
 			previousReport = *analogPoint
 			start = reportTime

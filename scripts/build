@@ -9,7 +9,7 @@ pushd ${GIT_ROOT}
 echo "Rebuilding services..."
 
 mkdir -p bin
-for svc in calc; do
+for svc in calc poller; do
   go build -o bin/${svc} -ldflags "-X goa.design/clue/health.Version=$GIT_COMMIT" github.com/crossnokaye/carbon/services/${svc}/cmd/${svc}
 done
 
