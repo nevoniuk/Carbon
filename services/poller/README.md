@@ -81,7 +81,7 @@ Testing the Poller service Locally:
 
 5. Call update using grpcurl:
 		1. brew install grpcurl
-		2. grpcurl -plaintext localhost:12500 poller.Poller.Update
+		2. grpcurl -plaintext -max-time=1200 localhost:12500 poller.Poller.Update
 
 Connect to clickhouse locally to ensure that carbon intensity reports were written:
 
@@ -103,5 +103,5 @@ docker exec -it 2698324fc48b /bin/sh
 
 4. query for carbon intensity reports
 
-2698324fc48b :) select * from carbondb.carbon_reports
+2698324fc48b :) select * from carbondb.carbon_intensity_reports
 

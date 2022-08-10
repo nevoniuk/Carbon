@@ -42,8 +42,7 @@ type CarbonForecast struct {
 	// consumed_rate
 	ConsumedRate float64
 	// Duration
-	Duration     *Period
-	DurationType string
+	Duration *Period
 	// region
 	Region string
 }

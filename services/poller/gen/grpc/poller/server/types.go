@@ -43,7 +43,6 @@ func NewProtoGetEmissionsForRegionResponse(result []*poller.CarbonForecast) *pol
 			GeneratedRate: val.GeneratedRate,
 			MarginalRate:  val.MarginalRate,
 			ConsumedRate:  val.ConsumedRate,
-			DurationType:  val.DurationType,
 			Region:        val.Region,
 		}
 		if val.Duration != nil {

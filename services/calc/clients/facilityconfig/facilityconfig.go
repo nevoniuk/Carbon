@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"github.com/google/uuid"
 	"goa.design/clue/log"
+	"strings"
 	"gopkg.in/yaml.v3"
 )
 
@@ -19,7 +20,6 @@ import (
 		formula:(This will be read and parsed using the GoMath)
 		SingularityRegion:
 */
-
 type(
 	Client interface {
 		// GetCarbonConfig obtains the above carbon configuration for the given input
@@ -28,16 +28,14 @@ type(
 	client struct {
 		env string
 	}
-
-	locationConfig struct {
+	LocationConfig struct {
 		ID string `yaml: id`
-		Carbon *carbonConfig `yaml: carbon`
+		Carbon *CarbonConfig `yaml: "carbon"`
 	}
-
-	carbonConfig struct {
-		ControlPointName string `yaml: "controlPointAliasName"`
-		Formula string `yaml: "formula"`
-		SingularityRegion string `yaml: "region"`
+	CarbonConfig struct {
+		ControlPoint string `yaml: "controlpoint"`
+		Multiplier string `yaml: "multiplier"`
+		SingularityRegion string `yaml: "singularityregion"`
 	}
 
 	Carbon struct {
@@ -74,15 +72,22 @@ func (c *client) GetCarbonConfig(ctx context.Context, orgID string, facilityID s
 	if err != nil {
 		return nil, err
 	}
-	name, err := findAgentNameFromLocation(ctx, c.env, orgID, facilityID, path)
-	if err != nil || name == "" {
-		return nil, ErrConfigNotFound{fmt.Errorf("could not find the agent name for location %s with err: %w\n", path, err)}
+	agentName, err := findAgentNameFromLocation(ctx, c.env, orgID, facilityID, path)
+	if err != nil || agentName == "" {
+		return nil, ErrConfigNotFound{fmt.Errorf("could not find the agent name for location %s with err: %w", path, err)}
 	}
-	carbon := &Carbon{OrgID: orgID, FacilityID: facilityID, BuildingID: locationID, ControlPointName: config.Carbon.ControlPointName, Formula: config.Carbon.Formula, 
-	Region: config.Carbon.SingularityRegion, AgentName: name}
+	if c.env == "office" {
+		agentName = strings.Join([]string{"office ", agentName}, "")
+	}
+	if config == nil {
+		return nil, ErrConfigNotFound{fmt.Errorf("could not find the carbon config for orgID: %s, agent %s, location %s, facility %s", orgID, agentName, locationID, facilityID)}
+	}
+	log.Info(ctx, log.KV{K: "carbon config", V: config.Carbon})
+	carbon := &Carbon{OrgID: orgID, FacilityID: facilityID, BuildingID: locationID, ControlPointName: config.Carbon.ControlPoint, Formula: config.Carbon.Multiplier, 
+	Region: config.Carbon.SingularityRegion, AgentName: agentName}
 	err = validate(carbon)
 	if err != nil {
-		return nil, ErrConfigNotFound{fmt.Errorf("could not get carbon config with err: %w\n", err)}
+		return nil, ErrConfigNotFound{fmt.Errorf("could not validate carbon config with err: %w\n", err)}
 	}
 	return carbon, nil
 }
@@ -102,7 +107,7 @@ func findOrg(ctx context.Context, env, orgID string) (string, error) {
 			return filepath.Dir(path), nil
 		}
 	}
-	return "", ErrFacilityNotFound{Err: fmt.Errorf("org %s not found", orgID)}
+	return "", err
 }
 
 // findFacility returns the path to the facility config for the given org and facility IDs.
@@ -113,14 +118,13 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 	}
 	facilities, err := ioutil.ReadDir(path)
 	if err != nil {
-		return "", fmt.Errorf("failed to list facilities in path %s: %w", path, err)
+		return "", err
 	}
 	var facilityPath string
 	for _, f := range facilities {
 		if !f.IsDir() {
 			continue
 		}
-
 		read := readID(ctx, filepath.Join(path, f.Name(), "facility.yaml"))
 		if env != "production" {
 			read = mapIDToNonProd(read, read)
@@ -131,7 +135,7 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 		}
 	}
 	if facilityPath == "" {
-		return "", &ErrFacilityNotFound{fmt.Errorf("facility config not found for org path %s facility %s", path, facilityID)}
+		return "", err
 	}
 	return facilityPath, nil
 }
@@ -139,37 +143,33 @@ func findFacility(ctx context.Context, env, orgID string, facilityID string) (st
 func findLocation(ctx context.Context, env string, orgID string, facilityID string, locationID string) (string, error) {
 	path, err := findFacility(ctx, env, orgID, facilityID)
 	if err != nil {
-		return "", err
+		return "", &ErrFacilityNotFound{fmt.Errorf("facility not found for org %s facility %s: %w", orgID, facilityID, err)}
 	}
 	buildings, err := ioutil.ReadDir(filepath.Dir(path))
 	if err != nil {
-		return "", fmt.Errorf("failed to list buildings in path %s: %w", path, err)
+		return "", &ErrLocationNotFound{fmt.Errorf("failed to list buildings in path %s: %w", path, err)}
 	}
+
 	var locationPath string
 	for _, b := range buildings {
 		if !b.IsDir() {
 			continue
 		}
-		tempPath := filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
+		locationPath = filepath.Join(filepath.Dir(path), b.Name(), "location.yaml")
 		read := readID(ctx, locationPath)
 		if env != "production" {
 			read = mapIDToNonProd(read, facilityID)
-			if env == "office" {
-				name := readName(ctx, tempPath)
-				id := mapAgentToNonProd(name)
-				if id != "" {
-					read = id
-				}
+			if read != locationID {
+				locationPath = ""
+			} else {
+				break
 			}
-		}
-		if read == locationID {
-			locationPath = tempPath
-			break
 		}
 	}
 	if locationPath == "" {
 		return "", &ErrLocationNotFound{fmt.Errorf("location config not found for org %s and facility %s\n", orgID, facilityID)}
 	}
+
 	return locationPath, nil
 
 }
@@ -187,19 +187,20 @@ func findAgentNameFromLocation(ctx context.Context, env, orgID, facilityID, loca
 
 // loadLocationConfig returns the building config for the given org, facility, and agent IDs.
 // it will also return the buildingpath in order to avoid an extra function call to use findAgentIDFromLocation
-func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID string) (string, *locationConfig, error) {
+func loadLocationConfig(ctx context.Context, env, orgID, facilityID, locationID string) (string, *LocationConfig, error) {
 	buildingPath, err := findLocation(ctx, env, orgID, facilityID, locationID)
 	if err != nil {
 		return "", nil, err
 	}
 	cfg, err := ioutil.ReadFile(buildingPath)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to read building config file %s: %w", buildingPath, err)
+		return "", nil, &ErrLocationNotFound{fmt.Errorf("failed to read building config file %s: %w", buildingPath, err)}
 	}
-	var config locationConfig
+	var config LocationConfig
 	if err := yaml.Unmarshal(cfg, &config); err != nil {
-		return "", nil, fmt.Errorf("failed to parse building config file %s: %w", buildingPath, err)
+		return "", nil, &ErrLocationNotFound{fmt.Errorf("failed to unmarshal into location config %s: %w", buildingPath, err)}
 	}
+	log.Info(ctx, log.KV{K: "location config", V: config.ID})
 	return buildingPath, &config, nil
 }
 

@@ -1,5 +1,6 @@
 cmd/dl/dl
 services/poller/cmd/poller/poller
+services/calc/cmd/calc/calc
 
 bin/
 cmd/carbon/carbon

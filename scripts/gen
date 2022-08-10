@@ -7,7 +7,7 @@ pushd ${GIT_ROOT}
 
 echo "Generating Goa code..."
 
-for svc in poller calc; do
+for svc in calc poller; do
   goa gen github.com/crossnokaye/carbon/services/${svc}/design -o services/${svc}
 done
 

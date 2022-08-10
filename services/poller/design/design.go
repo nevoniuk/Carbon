@@ -58,9 +58,8 @@ var CarbonForecast = Type("CarbonForecast", func() {
 		Example(37.8267)
 	})
 	Field(4, "duration", Period, "Duration")
-	Field(5, "duration_type", String, IntervalFunc)
-	Field(6, "region", String, "region")
-	Required("generated_rate", "marginal_rate", "consumed_rate", "region", "duration", "duration_type")
+	Field(5, "region", String, "region")
+	Required("generated_rate", "marginal_rate", "consumed_rate", "region", "duration")
 })
 
 var Period = Type("Period", func() {
@@ -88,11 +87,6 @@ var CarbonPayload = Type("CarbonPayload", func() {
 	})
 	Required("region", "start", "end")
 })
-
-var IntervalFunc =  func() {
-	Enum(model.Minute, model.Hourly, model.Daily, model.Weekly, model.Monthly)
-}
-
 var RegionFunc = func() {
 	Enum(model.Caiso, model.Aeso, model.Bpa, model.Erco, model.Ieso, model.Isone, model.Miso, model.Nyiso, model.Nyiso_nycw,
 		 model.Nyiso_nyli, model.Nyiso_nyup, model.Pjm, model.Spp)

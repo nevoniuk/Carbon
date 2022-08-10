@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calc
+  labels:
+    app: calc
+  annotations:
+    reloader.stakater.com/auto: 'true'
+spec:
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: calc
+  template:
+    metadata:
+      labels:
+        app: calc
+        name: calc
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        runAsGroup: 100001
+        runAsNonRoot: true
+        runAsUser: 100001
+      serviceAccountName: calc
+      initContainers:
+        # Facilitydata is an init pod that copies /deploy data to /deploy-vol
+        - name: facilitydata
+          image: ${REPOSITORY_BASE_URL}/crossnokaye/legacy/facilitydata:${FACILITYDATA_VERSION}
+          securityContext:
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              memory: '100Mi'
+              cpu: '200m'
+            limits:
+              memory: '100Mi'
+              cpu: '1000m'
+          volumeMounts:
+            - name: facilitydata-vol
+              mountPath: /deploy-vol
+              readOnly: false
+      containers:
+        - name: calc
+          image: ${REPOSITORY_BASE_URL}/crossnokaye/carbon/calc:${VERSION}
+          args:
+            - "-agent-addr=grafana-agent-deployment.monitoring.svc.cluster.local.:4317"
+            - "-pastval-add=past-values.past-values.svc.cluster.local.:10140"
+            - "-monitoring-enabled=${MONITORING_ENABLED}"
+          env:
+            - name: ENV
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['env']
+          ports:
+            - containerPort: 12200
+              name: grpc
+            - containerPort: 12201
+              name: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 12201
+          securityContext:
+            readOnlyRootFilesystem: true
+          envFrom:
+            - secretRef:
+                name: clickhouse
+          resources:
+            requests:
+              memory: '500Mi'
+              cpu: '250m'
+            limits:
+              memory: '3000Mi'
+              cpu: '2000m'
+          volumeMounts:
+            - name: facilitydata-vol
+              mountPath: /app/deploy
+              readOnly: true
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: [calc]
+                topologyKey: kubernetes.io/hostname
+      volumes:
+        # A temporary volume where we copy facility data
+        - name: facilitydata-vol
+          emptyDir: {}

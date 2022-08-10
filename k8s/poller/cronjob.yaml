@@ -5,8 +5,9 @@ metadata:
   labels:
     app: poller
 spec:
-  # Every Monday at 12AM
-  schedule: "0 12 * * 1"
+  schedule: "0/15 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
   concurrencyPolicy: Replace
   startingDeadlineSeconds: 1200
   jobTemplate:
@@ -27,7 +28,7 @@ spec:
             args:
             - -plaintext
             - -vv
-            - -max-time=600
+            - -max-time=1200
             - poller.carbon.svc.cluster.local.:12500
             - poller.Poller.Update
             securityContext:

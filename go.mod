@@ -15,7 +15,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/crossnokaye/utility v0.0.3 // indirect
 	github.com/dimfeld/httppath v0.0.0-20170720192232-ee938bf73598 // indirect
 	github.com/dimfeld/httptreemux/v5 v5.4.0 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
@@ -58,8 +57,7 @@ require (
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.0.15
-	github.com/crossnokaye/facilityconfig v0.0.7
-	github.com/crossnokaye/past-values v0.0.5
+	github.com/crossnokaye/past-values v0.0.7
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	goa.design/clue v0.7.0
 	gopkg.in/yaml.v3 v3.0.1
